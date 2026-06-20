@@ -1,0 +1,74 @@
+name: Refresh Momentum Signals
+
+# Runs automatically — no manual trigger needed once this is set up.
+#
+# Schedule: every Saturday at 23:00 UTC (Sunday morning AEST), well after
+# US and AU markets have closed for the week, before Monday's open.
+# Adjust the cron line below if you want a different cadence.
+#
+# You can also trigger a manual run any time from the Actions tab
+# (workflow_dispatch), e.g. if you want a fresh snapshot before a decision.
+on:
+  schedule:
+    - cron: "0 23 * * 6"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install yfinance pandas numpy lxml requests
+
+      - name: Fetch current universe (S&P 500 + ASX 300)
+        run: python scripts/fetch_universe.py
+
+      - name: Fetch latest prices
+        run: python scripts/fetch_prices.py
+
+      - name: Compute signals and rankings
+        run: python scripts/run_signals.py
+
+      - name: Copy data into docs/ for the dashboard
+        run: |
+          mkdir -p docs/data
+          cp data/signals_latest.json docs/data/
+          cp data/picks_history.jsonl docs/data/ 2>/dev/null || true
+
+      - name: Commit updated data
+        run: |
+          git config user.name "momentum-bot"
+          git config user.email "actions@github.com"
+          git add data/ docs/data/
+          git diff --staged --quiet || git commit -m "Auto-refresh signals $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: Deploy to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy-pages:
+    needs: refresh
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
