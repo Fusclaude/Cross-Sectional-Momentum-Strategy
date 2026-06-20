@@ -180,8 +180,24 @@ function updateStatus(){
   const ageHours = (Date.now()-genTime)/3600000;
   const dot = document.getElementById('status-dot');
   const text = document.getElementById('status-text');
-  dot.className = 'status-dot' + (ageHours>48?' error':ageHours>9?' stale':'');
+  const usedFallback = market.universeUsedFallback;
+  dot.className = 'status-dot' + (ageHours>48||usedFallback?' error':ageHours>9?' stale':'');
   text.textContent = `As of ${market.asOf} · ${market.universeSize} stocks · run ${formatAge(ageHours)}`;
+
+  let banner = document.getElementById('fallback-banner');
+  if (usedFallback){
+    if (!banner){
+      banner = document.createElement('div');
+      banner.id = 'fallback-banner';
+      banner.className = 'warn';
+      banner.style.margin = '0 12px 12px';
+      document.querySelector('.page.active').prepend(banner);
+    }
+    banner.innerHTML = `⚠ The S&P 500 constituent list for this run came from a <b>cached fallback</b>, not a fresh fetch (the live source was unreachable or blocked that run). Stock prices are still current — only the membership list might be a cycle stale. Check the Actions log if this persists across multiple runs.`;
+    banner.style.display = 'block';
+  } else if (banner){
+    banner.style.display = 'none';
+  }
 }
 function formatAge(h){
   if (h<1) return 'just now';
