@@ -55,7 +55,7 @@ def eligible(ticker: str, date: pd.Timestamp, ipo_dates: dict) -> bool:
     return True
 
 
-def compute_factors_at(prices_df: pd.DataFrame, pos: int, ipo_dates: dict) -> dict:
+def compute_factors_at(prices_df: pd.DataFrame, pos: int, ipo_dates: dict, min_price: float = 1.0) -> dict:
     """All 8 factors for every eligible ticker at one point in time."""
     LB = {"r121": wk(12), "r91": wk(9), "r61": wk(6), "r31": wk(3)}
     SKIP = wk(1)
@@ -68,7 +68,7 @@ def compute_factors_at(prices_df: pd.DataFrame, pos: int, ipo_dates: dict) -> di
             continue
         arr = prices_df[t].values
         p_now = arr[pos]
-        if np.isnan(p_now) or p_now < 1:
+        if np.isnan(p_now) or p_now < min_price:
             continue
         try:
             p121b, p91b, p61b, p31b = (
@@ -130,7 +130,7 @@ def monthly_history(prices_df: pd.DataFrame, ticker: str, months: int = 12) -> l
     return out[-months:] if len(out) > months else out
 
 
-def run_market(market: str, prices_path: Path) -> dict:
+def run_market(market: str, prices_path: Path, min_price: float = 1.0) -> dict:
     with open(prices_path) as f:
         raw = json.load(f)
 
@@ -145,8 +145,8 @@ def run_market(market: str, prices_path: Path) -> dict:
     if latest_pos < max_lb + wk(1) + 2:
         raise ValueError(f"{market}: not enough history yet ({latest_pos} weeks)")
 
-    factors = compute_factors_at(df, latest_pos, ipo_dates)
-    print(f"  {market}: {len(factors)} eligible tickers at {dates[-1].date()}")
+    factors = compute_factors_at(df, latest_pos, ipo_dates, min_price=min_price)
+    print(f"  {market}: {len(factors)} eligible tickers at {dates[-1].date()} (min price ${min_price})")
 
     stocks = []
     for t, f in factors.items():
@@ -181,13 +181,19 @@ def run_market(market: str, prices_path: Path) -> dict:
 def main():
     out = {"generatedAt": datetime.now(timezone.utc).isoformat() + "Z", "markets": {}}
 
+    # ASX has many more legitimate small-cap stocks trading genuinely
+    # below $1 AUD than the S&P does below $1 USD (where sub-$1 is more
+    # often a sign of real distress) -- use a lower screen for ASX so
+    # real constituents like A4N ($0.85), MI6, BC8 etc. aren't dropped.
+    MIN_PRICE = {"sp500": 1.0, "asx300": 0.10}
+
     for market, fname in [("sp500", "sp500_prices.json"), ("asx300", "asx300_prices.json")]:
         path = DATA_DIR / fname
         if not path.exists():
             print(f"  Skipping {market}: {fname} not found (run fetch_prices.py first)")
             continue
         print(f"Computing signals for {market}...")
-        out["markets"][market] = run_market(market, path)
+        out["markets"][market] = run_market(market, path, min_price=MIN_PRICE.get(market, 1.0))
 
     out_path = DATA_DIR / "signals_latest.json"
     with open(out_path, "w") as f:
