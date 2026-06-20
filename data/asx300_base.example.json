@@ -1,0 +1,13 @@
+{
+  "_comment": "This is the ONE file in the whole system you touch manually — and only ~4x per year, when ASX rebalances the 300. Takes 2 minutes: find the latest constituent list (e.g. from the S&P/ASX 300 fact sheet at asx.com.au, or your broker's index page), update 'tickers' and 'names' below, commit, done. Everything else (prices, signals, dashboard) re-runs automatically on the next scheduled job.",
+  "_last_updated": "2026-06-20",
+  "_source": "S&P/ASX 300 constituent list — replace this comment block, it's not read by the script",
+  "tickers": ["BHP", "CBA", "CSL", "NAB", "WBC"],
+  "names": {
+    "BHP": "BHP GROUP LTD",
+    "CBA": "COMMONW BK AUSTR",
+    "CSL": "CSL LIMITED",
+    "NAB": "NATL AUST BANK",
+    "WBC": "WESTPAC BANKING"
+  }
+}

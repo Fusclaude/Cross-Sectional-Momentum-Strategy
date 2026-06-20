@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Momentum Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0E1A;--p1:#0F1525;--p2:#141C30;--p3:#1B2540;
+  --bdr:#23304D;--bdr2:#2E3E5E;
+  --teal:#00D4AA;--tglow:rgba(0,212,170,.14);
+  --amber:#F5A623;--green:#26D07C;--gd:rgba(38,208,124,.12);
+  --red:#FF5C5C;--rd:rgba(255,92,92,.12);--blue:#4D9FFF;--purple:#A78BFA;
+  --t1:#EAF0FB;--t2:#8A9CBC;--t3:#4A5B7A;
+  --mono:"JetBrains Mono",monospace;--sans:"Inter",sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:14px;background:var(--bg)}
+body{font-family:var(--sans);color:var(--t1);min-height:100vh;padding-bottom:calc(58px + var(--safe-b))}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+
+.top-hdr{position:sticky;top:0;z-index:200;background:var(--p1);border-bottom:1px solid var(--bdr);padding:9px 14px}
+.top-row{display:flex;align-items:center;gap:8px}
+.logo{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--teal);letter-spacing:.04em}
+.status-pill{font-family:var(--mono);font-size:9px;color:var(--t3);background:var(--p2);border:1px solid var(--bdr);border-radius:3px;padding:2px 7px;margin-left:auto;display:flex;align-items:center;gap:5px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.status-dot.stale{background:var(--amber)}
+.status-dot.error{background:var(--red)}
+.market-tabs{display:flex;gap:6px;margin-top:8px}
+.market-tab{flex:1;font-family:var(--mono);font-size:12px;font-weight:600;padding:7px;border-radius:7px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
+.market-tab.active{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--p1);border-top:1px solid var(--bdr);display:flex;padding-bottom:var(--safe-b)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;cursor:pointer;border:none;background:transparent;color:var(--t3);font-size:9px;font-family:var(--sans)}
+.nav-item.active{color:var(--teal)}
+.nav-item svg{width:19px;height:19px;fill:currentColor}
+
+.page{display:none;padding:12px}.page.active{display:block}
+
+.scenario-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.scenario-tab{flex-shrink:0;font-family:var(--mono);font-size:10px;font-weight:600;padding:7px 12px;border-radius:8px;border:1.5px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;white-space:nowrap}
+.scenario-tab.active{border-color:var(--teal);color:var(--t1);background:var(--p3)}
+
+.topn-tabs{display:flex;gap:4px;margin-bottom:12px}
+.topn-tab{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:6px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
+.topn-tab.active{background:var(--p3);border-color:var(--teal);color:var(--teal)}
+
+.section-hdr{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+.section-hdr::after{content:"";flex:1;height:1px;background:var(--bdr)}
+
+.pick-card{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:13px 14px;margin-bottom:9px;cursor:pointer;transition:border-color .15s}
+.pick-card:active{border-color:var(--teal)}
+.pick-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.pick-rank{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--teal);width:30px;flex-shrink:0}
+.pick-id{flex:1;min-width:0}
+.pick-tkr{font-family:var(--mono);font-weight:700;font-size:14px}
+.pick-name{font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.pick-right{text-align:right;flex-shrink:0}
+.pick-price{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--t1)}
+.pick-score{font-family:var(--mono);font-size:10px;color:var(--teal);margin-top:2px}
+
+.spark-wrap{height:34px;margin-bottom:8px}
+.spark-wrap canvas{width:100%;height:34px;display:block}
+
+.factor-row{display:flex;flex-wrap:wrap;gap:5px}
+.factor-chip{font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:5px;background:var(--p3);color:var(--t2)}
+.factor-chip.pos{color:var(--green)}
+.factor-chip.neg{color:var(--red)}
+
+.search-box{width:100%;background:var(--p2);border:1px solid var(--bdr2);border-radius:8px;color:var(--t1);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;margin-bottom:12px}
+.search-box:focus{border-color:var(--teal)}
+
+.ticker-detail{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:16px;margin-bottom:14px}
+.td-header{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.td-tkr{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--teal)}
+.td-name{font-size:11px;color:var(--t3)}
+.td-price{font-family:var(--mono);font-size:20px;font-weight:700;margin:8px 0}
+
+.rank-grid{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.rank-row{display:flex;align-items:center;gap:10px;background:var(--p3);border-radius:8px;padding:10px 12px}
+.rank-label{flex:1;font-size:11px;color:var(--t2)}
+.rank-badge{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--teal);min-width:42px;text-align:right}
+.rank-out{font-family:var(--mono);font-size:9px;color:var(--t3)}
+
+.empty{text-align:center;color:var(--t3);font-family:var(--mono);font-size:11px;padding:30px 0}
+.warn{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:10px;color:var(--amber);line-height:1.6}
+.error-box{background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.3);border-radius:8px;padding:14px;font-size:11px;color:var(--red);line-height:1.7}
+.history-row{display:flex;align-items:center;gap:10px;background:var(--p2);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-family:var(--mono);font-size:10px}
+.history-date{color:var(--t3);width:80px;flex-shrink:0}
+.history-tickers{flex:1;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.green{color:var(--green)}.red{color:var(--red)}.teal{color:var(--teal)}.amber{color:var(--amber)}.t2{color:var(--t2)}.t3{color:var(--t3)}
+</style>
+</head>
+<body>
+
+<header class="top-hdr">
+  <div class="top-row">
+    <div class="logo">MOMENTUM DASHBOARD</div>
+    <div class="status-pill" id="status-pill"><span class="status-dot" id="status-dot"></span><span id="status-text">Loading…</span></div>
+  </div>
+  <div class="market-tabs">
+    <button class="market-tab active" onclick="setMarket('sp500',this)">S&amp;P 500</button>
+    <button class="market-tab" onclick="setMarket('asx300',this)">ASX 300</button>
+  </div>
+</header>
+
+<div id="page-picks" class="page active">
+  <div class="scenario-tabs" id="scenario-tabs"></div>
+  <div class="topn-tabs">
+    <button class="topn-tab active" onclick="setTopN(5,this)">Top 5</button>
+    <button class="topn-tab" onclick="setTopN(10,this)">Top 10</button>
+    <button class="topn-tab" onclick="setTopN(20,this)">Top 20</button>
+  </div>
+  <div id="picks-list"></div>
+</div>
+
+<div id="page-lookup" class="page">
+  <input type="search" class="search-box" id="ticker-search" placeholder="Search any ticker (e.g. NVDA, BHP)…" oninput="onSearch()">
+  <div id="lookup-result"><div class="empty">Type a ticker to see its rank across every blend</div></div>
+</div>
+
+<div id="page-history" class="page">
+  <div class="section-hdr">Past Top-5 Calls (Pure Momentum)</div>
+  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">One snapshot per scheduled run. This is the record that lets you check whether last month's picks actually worked out.</div>
+  <div id="history-list"><div class="empty">No history yet — accumulates after the first few scheduled runs</div></div>
+</div>
+
+<div id="page-about" class="page">
+  <div class="warn" id="about-text"></div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-picks" onclick="showPage('picks',this)"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Top Picks</span></button>
+  <button class="nav-item" id="nav-lookup" onclick="showPage('lookup',this)"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><span>Lookup</span></button>
+  <button class="nav-item" id="nav-history" onclick="showPage('history',this)"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg><span>History</span></button>
+  <button class="nav-item" id="nav-about" onclick="showPage('about',this)"><svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg><span>About</span></button>
+</nav>
+
+<script>
+const DATA_URL = 'data/signals_latest.json';
+const HISTORY_URL = 'data/picks_history.jsonl';
+let DATA = null;
+let MARKET = 'sp500';
+let SCENARIO = null;
+let TOPN = 5;
+
+const pct=(v,d=0)=>v==null?'—':(v>=0?'+':'')+(v*100).toFixed(d)+'%';
+const rc=v=>v>0?'var(--green)':v<0?'var(--red)':'var(--t3)';
+
+async function loadData(){
+  try{
+    const resp = await fetch(DATA_URL, {cache:'no-store'});
+    if (!resp.ok) throw new Error('HTTP '+resp.status);
+    DATA = await resp.json();
+    const market = DATA.markets[MARKET];
+    SCENARIO = Object.keys(market.scenarios)[0];
+    updateStatus();
+    renderScenarioTabs();
+    renderPicks();
+    document.getElementById('about-text').innerHTML = aboutText();
+  }catch(err){
+    document.getElementById('status-dot').className='status-dot error';
+    document.getElementById('status-text').textContent='Failed to load';
+    document.getElementById('picks-list').innerHTML = `<div class="error-box">
+      Could not load <code>${DATA_URL}</code>.<br><br>
+      If you're viewing this file directly (file://), browsers block local fetch() calls —
+      serve it over http instead (e.g. <code>python3 -m http.server</code> in this folder,
+      or via GitHub Pages once deployed).<br><br>Error: ${err.message}</div>`;
+  }
+  loadHistory();
+}
+
+function updateStatus(){
+  const market = DATA.markets[MARKET];
+  const genTime = new Date(DATA.generatedAt);
+  const ageHours = (Date.now()-genTime)/3600000;
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className = 'status-dot' + (ageHours>48?' error':ageHours>9?' stale':'');
+  text.textContent = `As of ${market.asOf} · ${market.universeSize} stocks · run ${formatAge(ageHours)}`;
+}
+function formatAge(h){
+  if (h<1) return 'just now';
+  if (h<24) return Math.round(h)+'h ago';
+  return Math.round(h/24)+'d ago';
+}
+
+function setMarket(m, btn){
+  MARKET = m;
+  document.querySelectorAll('.market-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if (!DATA) return;
+  const market = DATA.markets[MARKET];
+  if (!market){ document.getElementById('picks-list').innerHTML='<div class="empty">No data for this market yet</div>'; return; }
+  if (!market.scenarios[SCENARIO]) SCENARIO = Object.keys(market.scenarios)[0];
+  updateStatus();
+  renderScenarioTabs();
+  renderPicks();
+}
+
+function renderScenarioTabs(){
+  const market = DATA.markets[MARKET];
+  if (!market) return;
+  const el = document.getElementById('scenario-tabs');
+  el.innerHTML = Object.entries(market.scenarios).map(([id,s])=>
+    `<button class="scenario-tab ${id===SCENARIO?'active':''}" onclick="setScenario('${id}',this)">${s.label}</button>`
+  ).join('');
+}
+function setScenario(id, btn){
+  SCENARIO = id;
+  document.querySelectorAll('.scenario-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPicks();
+}
+function setTopN(n, btn){
+  TOPN = n;
+  document.querySelectorAll('.topn-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPicks();
+}
+
+function drawSpark(canvas, prices){
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||canvas.parentElement.offsetWidth||200, H=34;
+  canvas.width=W*dpr; canvas.height=H*dpr; canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  const valid = prices.filter(v=>v!=null);
+  if (valid.length<2){ ctx.fillStyle='#253040'; ctx.fillRect(0,H/2-1,W,2); return; }
+  const mn=Math.min(...valid), mx=Math.max(...valid), range=mx-mn||1;
+  const isUp = valid[valid.length-1]>=valid[0];
+  const lc = isUp? '#26D07C':'#FF5C5C';
+  const pad={t:4,b:4,l:2,r:2}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const xS=(i,arr)=>pad.l+i/(arr.length-1)*cW, yS=v=>pad.t+cH-(v-mn)/range*cH;
+  ctx.beginPath(); let fi=true;
+  prices.forEach((v,i)=>{ if(v==null) return; fi?ctx.moveTo(xS(i,prices),yS(v)):ctx.lineTo(xS(i,prices),yS(v)); fi=false; });
+  ctx.lineTo(xS(prices.length-1,prices),H); ctx.lineTo(xS(0,prices),H); ctx.closePath();
+  ctx.fillStyle=isUp?'rgba(38,208,124,.1)':'rgba(255,92,92,.1)'; ctx.fill();
+  ctx.beginPath(); fi=true;
+  prices.forEach((v,i)=>{ if(v==null) return; fi?ctx.moveTo(xS(i,prices),yS(v)):ctx.lineTo(xS(i,prices),yS(v)); fi=false; });
+  ctx.strokeStyle=lc; ctx.lineWidth=1.6; ctx.stroke();
+}
+
+function factorChip(label, val, isPct=true){
+  const display = isPct ? pct(val) : val.toFixed(2);
+  const cls = isPct ? (val>0?'pos':val<0?'neg':'') : '';
+  return `<span class="factor-chip ${cls}">${label} ${display}</span>`;
+}
+
+function renderPicks(){
+  const market = DATA.markets[MARKET];
+  if (!market){ document.getElementById('picks-list').innerHTML='<div class="empty">No data for this market</div>'; return; }
+  const scen = market.scenarios[SCENARIO];
+  const picks = scen.picks[String(TOPN)] || [];
+  if (!picks.length){ document.getElementById('picks-list').innerHTML='<div class="empty">No picks available</div>'; return; }
+
+  document.getElementById('picks-list').innerHTML = picks.map(p=>{
+    const f = p.factors;
+    return `<div class="pick-card" onclick="openTickerFromPick('${p.ticker}')">
+      <div class="pick-top">
+        <div class="pick-rank">#${p.rank}</div>
+        <div class="pick-id">
+          <div class="pick-tkr">${p.ticker}</div>
+          <div class="pick-name">${p.name}</div>
+        </div>
+        <div class="pick-right">
+          <div class="pick-price">$${p.price.toFixed(2)}</div>
+          <div class="pick-score">score ${p.score.toFixed(1)}</div>
+        </div>
+      </div>
+      <div class="spark-wrap"><canvas id="spark-${p.ticker}"></canvas></div>
+      <div class="factor-row">
+        ${factorChip('12-1', f.r121)}
+        ${factorChip('9-1', f.r91)}
+        ${factorChip('6-1', f.r61)}
+        ${factorChip('3-1', f.r31)}
+        ${factorChip('R²12', f.r2_12, false)}
+        ${factorChip('R²9', f.r2_9, false)}
+        ${factorChip('R²6', f.r2_6, false)}
+        ${factorChip('R²3', f.r2_3, false)}
+      </div>
+    </div>`;
+  }).join('');
+
+  requestAnimationFrame(()=>{
+    picks.forEach(p=>{
+      const c = document.getElementById('spark-'+p.ticker);
+      if (c) drawSpark(c, p.spark);
+    });
+  });
+}
+
+function openTickerFromPick(ticker){
+  showPage('lookup', document.getElementById('nav-lookup'));
+  document.getElementById('ticker-search').value = ticker;
+  onSearch();
+}
+
+function onSearch(){
+  const qRaw = document.getElementById('ticker-search').value.trim().toUpperCase();
+  const result = document.getElementById('lookup-result');
+  if (!qRaw){ result.innerHTML = '<div class="empty">Type a ticker to see its rank across every blend</div>'; return; }
+  if (!DATA){ result.innerHTML = '<div class="empty">Data still loading…</div>'; return; }
+
+  const q = qRaw.replace(/\.AX$/, ''); // normalise away a typed .AX suffix
+  const candidates = [qRaw, q, q+'.AX'];
+
+  let found = null, foundMarket = null;
+  for (const m of ['sp500','asx300']){
+    const market = DATA.markets[m];
+    if (!market) continue;
+    const anyScen = Object.values(market.scenarios)[0];
+    for (const cand of candidates){
+      if (anyScen.fullRanks[cand] != null){ found = cand; foundMarket = m; break; }
+    }
+    if (found) break;
+  }
+
+  if (!found){ result.innerHTML = `<div class="empty">No match for "${qRaw}" in either market's current universe</div>`; return; }
+
+  const market = DATA.markets[foundMarket];
+  // get name + price + factors from any scenario's top picks if present, else just ranks
+  let name = found, price = null, factors = null;
+  for (const scen of Object.values(market.scenarios)){
+    for (const n of [5,10,20]){
+      const hit = (scen.picks[String(n)]||[]).find(p=>p.ticker===found);
+      if (hit){ name=hit.name; price=hit.price; factors=hit.factors; break; }
+    }
+    if (factors) break;
+  }
+
+  const rankRows = Object.entries(market.scenarios).map(([id,scen])=>{
+    const rank = scen.fullRanks[found];
+    const total = Object.keys(scen.fullRanks).length;
+    const pctile = ((total-rank)/total*100).toFixed(0);
+    return `<div class="rank-row">
+      <div class="rank-label">${scen.label}</div>
+      <div class="rank-badge">#${rank}</div>
+      <div class="rank-out">/ ${total} · top ${100-pctile|0}%</div>
+    </div>`;
+  }).join('');
+
+  result.innerHTML = `<div class="ticker-detail">
+    <div class="td-header"><span class="td-tkr">${found}</span><span class="td-name">${name}</span></div>
+    ${price!=null?`<div class="td-price">$${price.toFixed(2)}</div>`:''}
+    ${factors?`<div class="factor-row">${factorChip('12-1',factors.r121)}${factorChip('9-1',factors.r91)}${factorChip('6-1',factors.r61)}${factorChip('3-1',factors.r31)}${factorChip('R²12',factors.r2_12,false)}${factorChip('R²9',factors.r2_9,false)}</div>`:''}
+    <div class="section-hdr" style="margin-top:14px">Rank Across Blends — ${foundMarket==='sp500'?'S&P 500':'ASX 300'}</div>
+    <div class="rank-grid">${rankRows}</div>
+  </div>`;
+}
+
+async function loadHistory(){
+  try{
+    const resp = await fetch(HISTORY_URL, {cache:'no-store'});
+    if (!resp.ok) throw new Error('no history yet');
+    const text = await resp.text();
+    const lines = text.trim().split('\n').filter(Boolean);
+    const snapshots = lines.map(l=>JSON.parse(l)).reverse().slice(0,30);
+    if (!snapshots.length){ return; }
+    document.getElementById('history-list').innerHTML = snapshots.map(s=>{
+      const allTickers = Object.values(s.markets).flatMap(picks=>picks.map(p=>p.ticker));
+      return `<div class="history-row"><span class="history-date">${s.date}</span><span class="history-tickers">${allTickers.join(', ')}</span></div>`;
+    }).join('');
+  }catch(err){
+    // history file may not exist yet on first run -- leave the empty-state message
+  }
+}
+
+function aboutText(){
+  const genTime = DATA ? new Date(DATA.generatedAt).toLocaleString() : '—';
+  return `<b>How this works:</b><br><br>
+  A scheduled job (GitHub Actions, runs automatically — no manual STOCKHISTORY refresh needed) fetches the current S&amp;P 500 and ASX 300 constituent lists, pulls fresh weekly prices via Yahoo Finance, computes all 8 momentum/trend factors, and ranks every stock under each saved blend. This page just reads that output — refresh the page any time to see the latest run.<br><br>
+  <b>Last computed:</b> ${genTime}<br><br>
+  <b>The one manual step:</b> ASX 300 membership has no free machine-readable source, so its constituent list is refreshed by hand roughly 4x/year (matching ASX's actual rebalance schedule) by editing one small JSON file. S&amp;P 500 membership refreshes itself automatically from Wikipedia's maintained table.<br><br>
+  <b>Factors used:</b> 12-1, 9-1, 6-1, 3-1 month skip-adjusted returns, plus R² trend quality at 12, 9, 6, 3 months. Same engine validated against your interactive Scenario Blend tool.`;
+}
+
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  btn.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+window.addEventListener('load', loadData);
+</script>
+</body>
+</html>
