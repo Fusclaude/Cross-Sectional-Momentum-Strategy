@@ -176,6 +176,7 @@ def run_market(market: str, prices_path: Path) -> dict:
         "market": market,
         "asOf": dates[-1].strftime("%Y-%m-%d"),
         "universeSize": len(factors),
+        "universeUsedFallback": raw.get("universeUsedFallback", False),
         "scenarios": {},
     }
 

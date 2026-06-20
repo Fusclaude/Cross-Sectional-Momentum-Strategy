@@ -104,6 +104,7 @@ def main():
     sp_payload = fetch_market(
         universe["sp500"]["tickers"], universe["sp500"]["names"], "S&P 500"
     )
+    sp_payload["universeUsedFallback"] = universe["sp500"].get("usedFallback", False)
     with open(DATA_DIR / "sp500_prices.json", "w") as f:
         json.dump(sp_payload, f, separators=(",", ":"))
 
@@ -111,6 +112,7 @@ def main():
     asx_payload = fetch_market(
         universe["asx300"]["tickers"], universe["asx300"]["names"], "ASX 300"
     )
+    asx_payload["universeUsedFallback"] = universe["asx300"].get("usedFallback", False)
     with open(DATA_DIR / "asx300_prices.json", "w") as f:
         json.dump(asx_payload, f, separators=(",", ":"))
 
