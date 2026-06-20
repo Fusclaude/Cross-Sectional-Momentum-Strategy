@@ -21,7 +21,7 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
-def sp500_tickers() -> tuple[list[str], dict, bool]:
+def sp500_tickers() -> tuple[list[str], dict, dict, bool]:
     """
     Current S&P 500 constituents from Wikipedia's maintained table.
 
@@ -31,9 +31,10 @@ def sp500_tickers() -> tuple[list[str], dict, bool]:
     to the last successfully-fetched list rather than crashing the whole
     pipeline over a transient block.
 
-    Returns (tickers, names, used_fallback) — used_fallback is surfaced
-    all the way through to the dashboard so a silent stale-data situation
-    is never actually silent to you.
+    Returns (tickers, names, sectors, used_fallback) — used_fallback is
+    surfaced all the way through to the dashboard so a silent stale-data
+    situation is never actually silent to you. Sectors come from
+    Wikipedia's "GICS Sector" column.
     """
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
     headers = {
@@ -61,13 +62,15 @@ def sp500_tickers() -> tuple[list[str], dict, bool]:
         df = tables[0]
         tickers = df["Symbol"].astype(str).str.replace(".", "-", regex=False).tolist()
         names = dict(zip(tickers, df["Security"].astype(str)))
+        sector_col = "GICS Sector" if "GICS Sector" in df.columns else None
+        sectors = dict(zip(tickers, df[sector_col].astype(str))) if sector_col else {}
 
         # Cache this successful pull so a future block has something to fall
         # back to instead of failing the whole run.
         with open(fallback_path, "w") as f:
-            json.dump({"tickers": tickers, "names": names}, f)
+            json.dump({"tickers": tickers, "names": names, "sectors": sectors}, f)
 
-        return tickers, names, False
+        return tickers, names, sectors, False
 
     except Exception as e:
         print(f"  WARNING: live S&P 500 fetch failed ({e})")
@@ -75,7 +78,7 @@ def sp500_tickers() -> tuple[list[str], dict, bool]:
             print(f"  Falling back to last cached list: {fallback_path}")
             with open(fallback_path) as f:
                 cached = json.load(f)
-            return cached["tickers"], cached["names"], True
+            return cached["tickers"], cached["names"], cached.get("sectors", {}), True
         raise RuntimeError(
             "S&P 500 fetch failed and no cached fallback exists yet "
             "(this only happens on a clean repo's very first run). "
@@ -85,7 +88,7 @@ def sp500_tickers() -> tuple[list[str], dict, bool]:
         ) from e
 
 
-def asx300_tickers() -> tuple[list[str], dict]:
+def asx300_tickers() -> tuple[list[str], dict, dict]:
     """
     ASX 300 constituents. No free, reliably-updated machine-readable source
     exists, so we maintain a base list (data/asx300_base.json) which you
@@ -104,27 +107,34 @@ def asx300_tickers() -> tuple[list[str], dict]:
         base = json.load(f)
     tickers = [t + ".AX" for t in base["tickers"]]
     names = {t + ".AX": n for t, n in base["names"].items()}
-    return tickers, names
+    sectors = {t + ".AX": s for t, s in base.get("sectors", {}).items()}
+    return tickers, names, sectors
 
 
 def main():
     DATA_DIR.mkdir(exist_ok=True)
 
     print("Fetching S&P 500 constituents...")
-    sp_tickers, sp_names, sp_used_fallback = sp500_tickers()
+    sp_tickers, sp_names, sp_sectors, sp_used_fallback = sp500_tickers()
     print(f"  {len(sp_tickers)} tickers" + ("  [USED CACHED FALLBACK]" if sp_used_fallback else ""))
 
     print("Loading ASX 300 base list...")
-    asx_tickers, asx_names = asx300_tickers()
+    asx_tickers, asx_names, asx_sectors = asx300_tickers()
     print(f"  {len(asx_tickers)} tickers")
 
     universe = {
         "sp500": {
             "tickers": sp_tickers,
             "names": sp_names,
+            "sectors": sp_sectors,
             "usedFallback": sp_used_fallback,
         },
-        "asx300": {"tickers": asx_tickers, "names": asx_names, "usedFallback": False},
+        "asx300": {
+            "tickers": asx_tickers,
+            "names": asx_names,
+            "sectors": asx_sectors,
+            "usedFallback": False,
+        },
     }
     out_path = DATA_DIR / "universe.json"
     with open(out_path, "w") as f:

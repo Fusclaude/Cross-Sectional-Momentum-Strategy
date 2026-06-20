@@ -39,7 +39,7 @@ IPO_DATES = {
 }
 
 
-def fetch_market(tickers: list[str], names: dict, market_label: str) -> dict:
+def fetch_market(tickers: list[str], names: dict, sectors: dict, market_label: str) -> dict:
     print(f"  Downloading {len(tickers)} tickers for {market_label}...")
     end = datetime.today()
     start = end - timedelta(days=LOOKBACK_DAYS)
@@ -84,6 +84,7 @@ def fetch_market(tickers: list[str], names: dict, market_label: str) -> dict:
         for t in keep
     }
     clean_names = {t: names.get(t, t) for t in keep}
+    clean_sectors = {t: sectors.get(t, "—") for t in keep}
 
     print(f"  Kept {len(keep)} / {len(tickers)} tickers after coverage filter")
     return {
@@ -91,6 +92,7 @@ def fetch_market(tickers: list[str], names: dict, market_label: str) -> dict:
         "tickers": keep,
         "prices": prices,
         "names": clean_names,
+        "sectors": clean_sectors,
         "ipoDates": {t: d for t, d in IPO_DATES.items() if t in keep},
         "fetchedAt": datetime.now(timezone.utc).isoformat() + "Z",
     }
@@ -102,7 +104,8 @@ def main():
 
     print("Fetching S&P 500 prices...")
     sp_payload = fetch_market(
-        universe["sp500"]["tickers"], universe["sp500"]["names"], "S&P 500"
+        universe["sp500"]["tickers"], universe["sp500"]["names"],
+        universe["sp500"].get("sectors", {}), "S&P 500",
     )
     sp_payload["universeUsedFallback"] = universe["sp500"].get("usedFallback", False)
     with open(DATA_DIR / "sp500_prices.json", "w") as f:
@@ -110,7 +113,8 @@ def main():
 
     print("Fetching ASX 300 prices...")
     asx_payload = fetch_market(
-        universe["asx300"]["tickers"], universe["asx300"]["names"], "ASX 300"
+        universe["asx300"]["tickers"], universe["asx300"]["names"],
+        universe["asx300"].get("sectors", {}), "ASX 300",
     )
     asx_payload["universeUsedFallback"] = universe["asx300"].get("usedFallback", False)
     with open(DATA_DIR / "asx300_prices.json", "w") as f:

@@ -1,19 +1,20 @@
 """
 run_signals.py
 ──────────────
-Python port of the scenario tool's JS engine — same 8 factors, same
-cross-sectional ranking, same eligibility rules — so the numbers this
-produces match what you'd see if you ran the interactive HTML tool by
-hand. This is what makes the dashboard "current" without you opening
-Excel: this script runs on a schedule, computes the latest rankings,
-and writes a small JSON file the dashboard reads on load.
+Computes, for every eligible ticker in each market:
+  - all 8 raw factors (12-1, 9-1, 6-1, 3-1 skip-adjusted returns,
+    and R² trend quality at 12/9/6/3 months)
+  - current price
+  - 12 months of MONTH-END prices with their actual dates
+  - the full weekly price series (for the stock detail chart)
 
-Produces, per market, per scenario:
-  - current Top-5/10/20 picks with full factor breakdown
-  - each ticker's rank under each scenario (for the "view a ticker's
-    rank across blends" feature)
-  - trailing price series per ticker (for the trend sparkline)
-  - last N months of historical picks (for "did this call work out")
+Unlike earlier versions, this does NOT pre-bake ranked picks for a fixed
+list of scenarios. Instead it exports the raw per-ticker data and lets
+the dashboard rank/score everything client-side — that's what makes the
+weight sliders in the dashboard actually adjustable without re-running
+this script. The Python side's job is just to be the trusted, scheduled
+source of *facts* (factors + prices); the *ranking* is dashboard logic,
+mirrored exactly from the validated JS engine.
 """
 import json
 import numpy as np
@@ -22,37 +23,7 @@ from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
 DATA_DIR = Path(__file__).parent.parent / "data"
-WPM = 4.345  # weeks per month, matches the JS engine exactly
-
-# Scenarios are defined once here, in Python, and mirrored in the
-# dashboard purely for display — the math always happens here so
-# there is exactly one source of truth.
-SCENARIOS = {
-    "pure_momentum": {
-        "label": "Pure Momentum",
-        "weights": {"r121": 0.30, "r91": 0.20, "r61": 0.15, "r31": 0.15,
-                    "r2_12": 0.05, "r2_9": 0.05, "r2_6": 0.05, "r2_3": 0.05},
-    },
-    "trend_quality": {
-        "label": "Trend Quality",
-        "weights": {"r121": 0.12, "r91": 0.08, "r61": 0.08, "r31": 0.05,
-                    "r2_12": 0.25, "r2_9": 0.20, "r2_6": 0.12, "r2_3": 0.10},
-    },
-    "balanced": {
-        "label": "Balanced",
-        "weights": {"r121": 0.14, "r91": 0.13, "r61": 0.12, "r31": 0.11,
-                    "r2_12": 0.13, "r2_9": 0.13, "r2_6": 0.12, "r2_3": 0.12},
-    },
-    "nine_month_pure": {
-        "label": "9-Month Pure (your tested best-Sharpe signal)",
-        "weights": {"r121": 0, "r91": 1.0, "r61": 0, "r31": 0,
-                    "r2_12": 0, "r2_9": 0, "r2_6": 0, "r2_3": 0},
-    },
-}
-
-TOPN_OPTIONS = [5, 10, 20]
-REBAL_DAYS = 28
-TCOST_BPS = 20
+WPM = 4.345  # weeks per month, matches the dashboard engine exactly
 
 
 def wk(months: float) -> int:
@@ -85,7 +56,7 @@ def eligible(ticker: str, date: pd.Timestamp, ipo_dates: dict) -> bool:
 
 
 def compute_factors_at(prices_df: pd.DataFrame, pos: int, ipo_dates: dict) -> dict:
-    """Mirrors the JS computeBacktest's per-rebalance factor computation."""
+    """All 8 factors for every eligible ticker at one point in time."""
     LB = {"r121": wk(12), "r91": wk(9), "r61": wk(6), "r31": wk(3)}
     SKIP = wk(1)
     R2W = {"r2_12": wk(12), "r2_9": wk(9), "r2_6": wk(6), "r2_3": wk(3)}
@@ -135,24 +106,28 @@ def compute_factors_at(prices_df: pd.DataFrame, pos: int, ipo_dates: dict) -> di
     return factors
 
 
-def rank_and_score(factors: dict, weights: dict) -> dict:
-    names = list(factors.keys())
-    ranks = {}
-    for key in weights:
-        vals = np.array([factors[t][key] for t in names])
-        order = vals.argsort()
-        ranks_arr = np.empty_like(order, dtype=float)
-        # average-rank percentile (matches the JS tie handling closely enough)
-        sorted_vals = np.sort(vals)
-        for i, v in enumerate(vals):
-            cnt = np.sum(sorted_vals < v)
-            ranks_arr[i] = (cnt + 0.5) / len(vals)
-        ranks[key] = dict(zip(names, ranks_arr))
-
-    scores = {}
-    for t in names:
-        scores[t] = sum(weights[k] * ranks[k][t] for k in weights) * 100
-    return scores
+def monthly_history(prices_df: pd.DataFrame, ticker: str, months: int = 12) -> list[dict]:
+    """
+    Resample this ticker's weekly series to MONTH-END prices for the
+    trailing `months` months, with real calendar dates attached — this is
+    what feeds the "every stock with monthly price + date + % change" list.
+    """
+    series = prices_df[ticker].dropna()
+    if series.empty:
+        return []
+    monthly = series.resample("ME").last().dropna()
+    monthly = monthly.tail(months + 1)  # +1 so we can compute the first % change
+    out = []
+    prev_val = None
+    for dt, val in monthly.items():
+        chg = None if prev_val is None or prev_val == 0 else (val / prev_val - 1)
+        out.append({
+            "date": dt.strftime("%Y-%m-%d"),
+            "price": round(float(val), 4),
+            "chg": round(float(chg), 4) if chg is not None else None,
+        })
+        prev_val = val
+    return out[-months:] if len(out) > months else out
 
 
 def run_market(market: str, prices_path: Path) -> dict:
@@ -162,6 +137,7 @@ def run_market(market: str, prices_path: Path) -> dict:
     dates = pd.to_datetime(raw["dates"])
     df = pd.DataFrame(raw["prices"], index=dates)
     names = raw["names"]
+    sectors = raw.get("sectors", {})
     ipo_dates = raw.get("ipoDates", {})
 
     latest_pos = len(df) - 1
@@ -172,48 +148,34 @@ def run_market(market: str, prices_path: Path) -> dict:
     factors = compute_factors_at(df, latest_pos, ipo_dates)
     print(f"  {market}: {len(factors)} eligible tickers at {dates[-1].date()}")
 
-    result = {
+    stocks = []
+    for t, f in factors.items():
+        monthly = monthly_history(df, t, months=12)
+        # full weekly series, capped to last ~2 years for chart detail
+        # without bloating the payload indefinitely as history grows
+        weekly_series = df[t].tail(104)
+        chart = [
+            {"date": dt.strftime("%Y-%m-%d"),
+             "price": round(float(v), 4) if not np.isnan(v) else None}
+            for dt, v in weekly_series.items()
+        ]
+        stocks.append({
+            "ticker": t,
+            "name": names.get(t, t),
+            "sector": sectors.get(t, "—"),
+            "price": f["price"],
+            "factors": {k: round(v, 4) for k, v in f.items() if k != "price"},
+            "monthly": monthly,
+            "chart": chart,
+        })
+
+    return {
         "market": market,
         "asOf": dates[-1].strftime("%Y-%m-%d"),
-        "universeSize": len(factors),
+        "universeSize": len(stocks),
         "universeUsedFallback": raw.get("universeUsedFallback", False),
-        "scenarios": {},
+        "stocks": stocks,
     }
-
-    for scen_id, scen in SCENARIOS.items():
-        scores = rank_and_score(factors, scen["weights"])
-        ranked = sorted(scores.items(), key=lambda x: -x[1])
-
-        picks = {}
-        for n in TOPN_OPTIONS:
-            top = ranked[:n]
-            picks[str(n)] = [
-                {
-                    "ticker": t,
-                    "name": names.get(t, t),
-                    "score": round(s, 1),
-                    "rank": i + 1,
-                    "factors": {k: round(v, 4) for k, v in factors[t].items() if k != "price"},
-                    "price": factors[t]["price"],
-                    "spark": [
-                        round(v, 4) if v is not None and not (isinstance(v, float) and np.isnan(v)) else None
-                        for v in df[t].values[-26:]  # last 6 months weekly, for sparkline
-                    ],
-                }
-                for i, (t, s) in enumerate(top)
-            ]
-
-        # full rank table (every eligible ticker, for "view ticker rank across blends")
-        full_ranks = {t: i + 1 for i, (t, s) in enumerate(ranked)}
-
-        result["scenarios"][scen_id] = {
-            "label": scen["label"],
-            "weights": scen["weights"],
-            "picks": picks,
-            "fullRanks": full_ranks,
-        }
-
-    return result
 
 
 def main():
@@ -232,17 +194,18 @@ def main():
         json.dump(out, f, separators=(",", ":"))
     print(f"Saved {out_path}")
 
-    # Append a lightweight history record (just the Top-5 pure-momentum
-    # picks per market) so the dashboard can show "did last month's call
-    # work out" without keeping every scenario's full history forever.
+    # Lightweight history snapshot: top 5 by default pure-12-1 momentum,
+    # just for the "did this call work out" history page. The dashboard
+    # itself can re-rank with any weights on the full stock list above;
+    # this snapshot is only a fixed reference point over time.
     history_path = DATA_DIR / "picks_history.jsonl"
-    snapshot = {
-        "date": out["generatedAt"][:10],
-        "markets": {
-            m: out["markets"][m]["scenarios"]["pure_momentum"]["picks"]["5"]
-            for m in out["markets"]
-        },
-    }
+    snapshot = {"date": out["generatedAt"][:10], "markets": {}}
+    for m, market_data in out["markets"].items():
+        ranked = sorted(market_data["stocks"], key=lambda s: -s["factors"]["r121"])[:5]
+        snapshot["markets"][m] = [
+            {"ticker": s["ticker"], "name": s["name"], "price": s["price"]}
+            for s in ranked
+        ]
     with open(history_path, "a") as f:
         f.write(json.dumps(snapshot, separators=(",", ":")) + "\n")
     print(f"Appended snapshot to {history_path}")
