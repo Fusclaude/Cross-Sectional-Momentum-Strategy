@@ -40,16 +40,38 @@ body{font-family:var(--sans);color:var(--t1);min-height:100vh;padding-bottom:cal
 
 .page{display:none;padding:12px}.page.active{display:block}
 
-.scenario-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch}
-.scenario-tab{flex-shrink:0;font-family:var(--mono);font-size:10px;font-weight:600;padding:7px 12px;border-radius:8px;border:1.5px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;white-space:nowrap}
-.scenario-tab.active{border-color:var(--teal);color:var(--t1);background:var(--p3)}
+.warn{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:10px;color:var(--amber);line-height:1.6}
 
-.topn-tabs{display:flex;gap:4px;margin-bottom:12px}
-.topn-tab{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:6px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
-.topn-tab.active{background:var(--p3);border-color:var(--teal);color:var(--teal)}
+/* WEIGHTS PAGE */
+.run-bar{position:sticky;bottom:calc(58px + var(--safe-b));z-index:150;padding:8px 0;background:linear-gradient(to top, var(--bg) 60%, transparent);margin:0 -12px;padding:8px 12px 4px}
+.run-btn{width:100%;background:var(--teal);color:var(--bg);border:none;border-radius:10px;padding:13px;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.05em;cursor:pointer;box-shadow:0 4px 16px rgba(0,212,170,.25)}
+.run-btn:active{transform:scale(.98)}
+.run-btn.stale{background:var(--amber);box-shadow:0 4px 16px rgba(245,166,35,.25)}
+
+.weight-card{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px}
+.weight-row{margin-bottom:14px}
+.weight-row:last-child{margin-bottom:0}
+.weight-lbl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.weight-name{font-size:11px;font-weight:600;color:var(--t1)}
+.weight-desc{font-size:8px;color:var(--t3);display:block;margin-top:1px}
+.weight-pct{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--teal);min-width:38px;text-align:right}
+input[type=range]{width:100%;height:4px;background:var(--bdr2);border-radius:2px;outline:none;-webkit-appearance:none;accent-color:var(--teal)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--teal);cursor:pointer;box-shadow:0 0 0 3px rgba(0,212,170,.2)}
+.weight-total-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:12px;background:var(--bdr)}
+.wt-seg{height:100%;transition:width .2s}
+.weight-total-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:5px}
+
+.preset-row{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px}
+.preset-btn{font-family:var(--mono);font-size:10px;font-weight:600;padding:9px 6px;border-radius:8px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
+.preset-btn:active{border-color:var(--teal);color:var(--teal)}
 
 .section-hdr{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;margin:14px 0 8px;display:flex;align-items:center;gap:8px}
 .section-hdr::after{content:"";flex:1;height:1px;background:var(--bdr)}
+
+/* TOP PICKS */
+.topn-tabs{display:flex;gap:4px;margin-bottom:12px}
+.topn-tab{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:6px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
+.topn-tab.active{background:var(--p3);border-color:var(--teal);color:var(--teal)}
 
 .pick-card{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:13px 14px;margin-bottom:9px;cursor:pointer;transition:border-color .15s}
 .pick-card:active{border-color:var(--teal)}
@@ -62,32 +84,59 @@ body{font-family:var(--sans);color:var(--t1);min-height:100vh;padding-bottom:cal
 .pick-price{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--t1)}
 .pick-score{font-family:var(--mono);font-size:10px;color:var(--teal);margin-top:2px}
 
-.spark-wrap{height:34px;margin-bottom:8px}
-.spark-wrap canvas{width:100%;height:34px;display:block}
+.spark-wrap{height:40px;margin-bottom:8px}
+.spark-wrap canvas{width:100%;height:40px;display:block}
 
 .factor-row{display:flex;flex-wrap:wrap;gap:5px}
 .factor-chip{font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:5px;background:var(--p3);color:var(--t2)}
 .factor-chip.pos{color:var(--green)}
 .factor-chip.neg{color:var(--red)}
+.factor-chip.active-factor{outline:1.5px solid var(--teal)}
 
-.search-box{width:100%;background:var(--p2);border:1px solid var(--bdr2);border-radius:8px;color:var(--t1);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;margin-bottom:12px}
+/* STOCK LIST PAGE */
+.search-box{width:100%;background:var(--p2);border:1px solid var(--bdr2);border-radius:8px;color:var(--t1);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;margin-bottom:10px}
 .search-box:focus{border-color:var(--teal)}
+.sort-bar{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;-webkit-overflow-scrolling:touch}
+.sort-btn{font-size:10px;font-family:var(--mono);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t3);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.sort-btn.active{color:var(--teal);border-color:var(--teal)}
+.list-count{font-family:var(--mono);font-size:9px;color:var(--t3);margin-bottom:8px}
 
+.stock-row{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:11px 12px;margin-bottom:7px;cursor:pointer}
+.sr-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sr-tkr{font-family:var(--mono);font-weight:700;font-size:13px;width:58px;flex-shrink:0}
+.sr-name{flex:1;font-size:10px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.sr-price{font-family:var(--mono);font-size:13px;font-weight:700;flex-shrink:0}
+
+/* horizontally scrollable monthly price table per stock */
+.month-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:2px}
+.month-table{border-collapse:collapse;font-family:var(--mono);font-size:9px;width:max-content}
+.month-table th{color:var(--t3);padding:3px 7px;font-weight:600;text-align:right;white-space:nowrap;border-bottom:1px solid var(--bdr)}
+.month-table th:first-child{text-align:left}
+.month-table td{padding:3px 7px;text-align:right;white-space:nowrap}
+.month-table td:first-child{text-align:left;color:var(--t3)}
+
+.load-more{width:100%;padding:12px;background:var(--p2);border:1px solid var(--bdr);border-radius:10px;color:var(--t2);font-family:var(--mono);font-size:11px;cursor:pointer;margin-top:4px;margin-bottom:12px}
+
+/* STOCK DETAIL */
 .ticker-detail{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:16px;margin-bottom:14px}
 .td-header{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.back-btn{background:var(--p2);border:1px solid var(--bdr);border-radius:8px;color:var(--t2);font-size:18px;padding:5px 11px;cursor:pointer;flex-shrink:0;margin-right:8px}
 .td-tkr{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--teal)}
 .td-name{font-size:11px;color:var(--t3)}
 .td-price{font-family:var(--mono);font-size:20px;font-weight:700;margin:8px 0}
+.chart-controls{display:flex;gap:6px;margin-bottom:8px}
+.chart-range-btn{font-family:var(--mono);font-size:9px;padding:4px 9px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p3);color:var(--t3);cursor:pointer}
+.chart-range-btn.active{color:var(--teal);border-color:var(--teal)}
+.detail-chart-wrap{height:220px;margin-bottom:8px}
+.detail-chart-wrap canvas{width:100%;height:220px;display:block}
 
 .rank-grid{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .rank-row{display:flex;align-items:center;gap:10px;background:var(--p3);border-radius:8px;padding:10px 12px}
 .rank-label{flex:1;font-size:11px;color:var(--t2)}
 .rank-badge{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--teal);min-width:42px;text-align:right}
-.rank-out{font-family:var(--mono);font-size:9px;color:var(--t3)}
 
+/* LOOKUP */
 .empty{text-align:center;color:var(--t3);font-family:var(--mono);font-size:11px;padding:30px 0}
-.warn{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:10px;color:var(--amber);line-height:1.6}
-.error-box{background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.3);border-radius:8px;padding:14px;font-size:11px;color:var(--red);line-height:1.7}
 .history-row{display:flex;align-items:center;gap:10px;background:var(--p2);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-family:var(--mono);font-size:10px}
 .history-date{color:var(--t3);width:80px;flex-shrink:0}
 .history-tickers{flex:1;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -108,8 +157,65 @@ body{font-family:var(--sans);color:var(--t1);min-height:100vh;padding-bottom:cal
   </div>
 </header>
 
-<div id="page-picks" class="page active">
-  <div class="scenario-tabs" id="scenario-tabs"></div>
+<!-- WEIGHTS -->
+<div id="page-weights" class="page active">
+  <div class="section-hdr">Preset Blends</div>
+  <div class="preset-row">
+    <button class="preset-btn" onclick="applyPreset('momentum')">📈 Pure Momentum</button>
+    <button class="preset-btn" onclick="applyPreset('trend')">📐 Trend Quality</button>
+    <button class="preset-btn" onclick="applyPreset('p121')">12-1 Only</button>
+    <button class="preset-btn" onclick="applyPreset('p91')">9-1 Only</button>
+  </div>
+
+  <div class="section-hdr">Return Signals</div>
+  <div class="weight-card">
+    <div class="weight-row">
+      <div class="weight-lbl"><div><span class="weight-name">12-1 Month Return</span><span class="weight-desc">Skip-adjusted 12-month momentum</span></div><span class="weight-pct" id="wv-r121">30%</span></div>
+      <input type="range" id="w-r121" min="0" max="100" value="30" oninput="onWeightChange()">
+    </div>
+    <div class="weight-row">
+      <div class="weight-lbl"><div><span class="weight-name">9-1 Month Return</span><span class="weight-desc">Skip-adjusted 9-month momentum — your tested best-Sharpe window</span></div><span class="weight-pct" id="wv-r91">25%</span></div>
+      <input type="range" id="w-r91" min="0" max="100" value="25" oninput="onWeightChange()">
+    </div>
+    <div class="weight-row">
+      <div class="weight-lbl"><div><span class="weight-name">6-1 Month Return</span><span class="weight-desc">Skip-adjusted 6-month momentum</span></div><span class="weight-pct" id="wv-r61">15%</span></div>
+      <input type="range" id="w-r61" min="0" max="100" value="15" oninput="onWeightChange()">
+    </div>
+    <div class="weight-row">
+      <div class="weight-lbl"><div><span class="weight-name">3-1 Month Return</span><span class="weight-desc">Skip-adjusted 3-month momentum (fast signal)</span></div><span class="weight-pct" id="wv-r31">10%</span></div>
+      <input type="range" id="w-r31" min="0" max="100" value="10" oninput="onWeightChange()">
+    </div>
+  </div>
+
+  <div class="section-hdr">Trend Quality (R²)</div>
+  <div class="weight-card">
+    <div class="weight-row">
+      <div class="weight-lbl"><div><span class="weight-name">R² @ 12 Month</span><span class="weight-desc">How linear/clean the 12m trend is</span></div><span class="weight-pct" id="wv-r2_12">8%</span></div>
+      <input type="range" id="w-r2_12" min="0" max="100" value="8" oninput="onWeightChange()">
+    </div>
+    <div class="weight-row">
+      <div class="weight-lbl"><div><span class="weight-name">R² @ 9 Month</span><span class="weight-desc">Trend cleanliness over 9 months</span></div><span class="weight-pct" id="wv-r2_9">5%</span></div>
+      <input type="range" id="w-r2_9" min="0" max="100" value="5" oninput="onWeightChange()">
+    </div>
+    <div class="weight-row">
+      <div class="weight-lbl"><div><span class="weight-name">R² @ 6 Month</span><span class="weight-desc">Trend cleanliness over 6 months</span></div><span class="weight-pct" id="wv-r2_6">5%</span></div>
+      <input type="range" id="w-r2_6" min="0" max="100" value="5" oninput="onWeightChange()">
+    </div>
+    <div class="weight-row">
+      <div class="weight-lbl"><div><span class="weight-name">R² @ 3 Month</span><span class="weight-desc">Trend cleanliness over 3 months (fast filter)</span></div><span class="weight-pct" id="wv-r2_3">2%</span></div>
+      <input type="range" id="w-r2_3" min="0" max="100" value="2" oninput="onWeightChange()">
+    </div>
+  </div>
+
+  <div class="weight-total-bar" id="weight-bar"></div>
+  <div class="weight-total-lbl"><span>Raw total: <b id="wt-raw" style="color:var(--t1)">100</b></span><span>Auto-normalised to 100%</span></div>
+
+  <div class="run-bar"><button class="run-btn" id="run-btn" onclick="applyWeights()">▶ APPLY WEIGHTS</button></div>
+  <div class="warn" id="data-note"></div>
+</div>
+
+<!-- TOP PICKS -->
+<div id="page-picks" class="page">
   <div class="topn-tabs">
     <button class="topn-tab active" onclick="setTopN(5,this)">Top 5</button>
     <button class="topn-tab" onclick="setTopN(10,this)">Top 10</button>
@@ -118,26 +224,37 @@ body{font-family:var(--sans);color:var(--t1);min-height:100vh;padding-bottom:cal
   <div id="picks-list"></div>
 </div>
 
-<div id="page-lookup" class="page">
-  <input type="search" class="search-box" id="ticker-search" placeholder="Search any ticker (e.g. NVDA, BHP)…" oninput="onSearch()">
-  <div id="lookup-result"><div class="empty">Type a ticker to see its rank across every blend</div></div>
+<!-- ALL STOCKS LIST -->
+<div id="page-allstocks" class="page">
+  <input type="search" class="search-box" id="list-search" placeholder="Search ticker, name, or sector…" oninput="onListSearch()">
+  <div class="sort-bar">
+    <button class="sort-btn active" data-key="rank" onclick="setListSort('rank',this)">Score Rank</button>
+    <button class="sort-btn" data-key="ticker" onclick="setListSort('ticker',this)">Ticker A-Z</button>
+    <button class="sort-btn" data-key="price" onclick="setListSort('price',this)">Price</button>
+    <button class="sort-btn" data-key="chg12" onclick="setListSort('chg12',this)">12m Change</button>
+  </div>
+  <div class="list-count" id="list-count"></div>
+  <div id="all-stocks-list"></div>
+  <button class="load-more" id="load-more-btn" onclick="loadMoreStocks()">Load more…</button>
 </div>
 
+<!-- STOCK DETAIL -->
+<div id="page-detail" class="page">
+  <div id="detail-content"></div>
+</div>
+
+<!-- HISTORY -->
 <div id="page-history" class="page">
-  <div class="section-hdr">Past Top-5 Calls (Pure Momentum)</div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">One snapshot per scheduled run. This is the record that lets you check whether last month's picks actually worked out.</div>
+  <div class="section-hdr">Past Top-5 Calls (12-1 Momentum Reference)</div>
+  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">One snapshot per scheduled run, using the fixed 12-1 signal as a reference point regardless of whatever weights you're currently viewing above.</div>
   <div id="history-list"><div class="empty">No history yet — accumulates after the first few scheduled runs</div></div>
 </div>
 
-<div id="page-about" class="page">
-  <div class="warn" id="about-text"></div>
-</div>
-
 <nav class="bottom-nav">
-  <button class="nav-item active" id="nav-picks" onclick="showPage('picks',this)"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Top Picks</span></button>
-  <button class="nav-item" id="nav-lookup" onclick="showPage('lookup',this)"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><span>Lookup</span></button>
+  <button class="nav-item active" id="nav-weights" onclick="showPage('weights',this)"><svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg><span>Weights</span></button>
+  <button class="nav-item" id="nav-picks" onclick="showPage('picks',this)"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Top Picks</span></button>
+  <button class="nav-item" id="nav-allstocks" onclick="showPage('allstocks',this)"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span>All Stocks</span></button>
   <button class="nav-item" id="nav-history" onclick="showPage('history',this)"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg><span>History</span></button>
-  <button class="nav-item" id="nav-about" onclick="showPage('about',this)"><svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg><span>About</span></button>
 </nav>
 
 <script>
@@ -145,37 +262,45 @@ const DATA_URL = 'data/signals_latest.json';
 const HISTORY_URL = 'data/picks_history.jsonl';
 let DATA = null;
 let MARKET = 'sp500';
-let SCENARIO = null;
 let TOPN = 5;
+let listSort = 'rank';
+let listSearch = '';
+let listDisplayCount = 30;
+const LIST_BATCH = 30;
+let selectedTicker = null;
+let detailRange = '6m';
+let prevPage = 'allstocks';
+
+const W_IDS = ['r121','r91','r61','r31','r2_12','r2_9','r2_6','r2_3'];
+const FACTOR_LABELS = {r121:'12-1',r91:'9-1',r61:'6-1',r31:'3-1',r2_12:'R²12',r2_9:'R²9',r2_6:'R²6',r2_3:'R²3'};
 
 const pct=(v,d=0)=>v==null?'—':(v>=0?'+':'')+(v*100).toFixed(d)+'%';
+const pct1=(v)=>v==null?'—':(v>=0?'+':'')+(v*100).toFixed(1)+'%';
 const rc=v=>v>0?'var(--green)':v<0?'var(--red)':'var(--t3)';
 
+// ═══════════════════════════════ LOAD
 async function loadData(){
   try{
     const resp = await fetch(DATA_URL, {cache:'no-store'});
     if (!resp.ok) throw new Error('HTTP '+resp.status);
     DATA = await resp.json();
-    const market = DATA.markets[MARKET];
-    SCENARIO = Object.keys(market.scenarios)[0];
     updateStatus();
-    renderScenarioTabs();
-    renderPicks();
-    document.getElementById('about-text').innerHTML = aboutText();
+    computeScoresForMarket();
+    renderAll();
   }catch(err){
     document.getElementById('status-dot').className='status-dot error';
     document.getElementById('status-text').textContent='Failed to load';
-    document.getElementById('picks-list').innerHTML = `<div class="error-box">
+    document.getElementById('picks-list').innerHTML = `<div class="warn">
       Could not load <code>${DATA_URL}</code>.<br><br>
       If you're viewing this file directly (file://), browsers block local fetch() calls —
-      serve it over http instead (e.g. <code>python3 -m http.server</code> in this folder,
-      or via GitHub Pages once deployed).<br><br>Error: ${err.message}</div>`;
+      serve it over http instead, or via GitHub Pages once deployed.<br><br>Error: ${err.message}</div>`;
   }
   loadHistory();
 }
 
 function updateStatus(){
   const market = DATA.markets[MARKET];
+  if (!market) return;
   const genTime = new Date(DATA.generatedAt);
   const ageHours = (Date.now()-genTime)/3600000;
   const dot = document.getElementById('status-dot');
@@ -193,7 +318,7 @@ function updateStatus(){
       banner.style.margin = '0 12px 12px';
       document.querySelector('.page.active').prepend(banner);
     }
-    banner.innerHTML = `⚠ The S&P 500 constituent list for this run came from a <b>cached fallback</b>, not a fresh fetch (the live source was unreachable or blocked that run). Stock prices are still current — only the membership list might be a cycle stale. Check the Actions log if this persists across multiple runs.`;
+    banner.innerHTML = `⚠ The S&P 500 constituent list for this run came from a <b>cached fallback</b>, not a fresh fetch. Prices are still current — only membership might be a cycle stale.`;
     banner.style.display = 'block';
   } else if (banner){
     banner.style.display = 'none';
@@ -205,6 +330,64 @@ function formatAge(h){
   return Math.round(h/24)+'d ago';
 }
 
+// ═══════════════════════════════ WEIGHTS
+function getRawWeights(){ const raw={}; W_IDS.forEach(id=> raw[id]=+document.getElementById('w-'+id).value); return raw; }
+function normWeights(raw){ const total=W_IDS.reduce((a,id)=>a+raw[id],0); const norm={}; W_IDS.forEach(id=> norm[id]= total>0? raw[id]/total : 0); return norm; }
+const COLORS = {r121:'#00D4AA',r91:'#4D9FFF',r61:'#A78BFA',r31:'#F472B6',r2_12:'#F5A623',r2_9:'#26D07C',r2_6:'#FF5C5C',r2_3:'#FB923C'};
+
+function updateWeightUI(){
+  const raw=getRawWeights(); const norm=normWeights(raw);
+  const total=W_IDS.reduce((a,id)=>a+raw[id],0);
+  document.getElementById('wt-raw').textContent = total;
+  W_IDS.forEach(id=> document.getElementById('wv-'+id).textContent = Math.round(norm[id]*100)+'%');
+  document.getElementById('weight-bar').innerHTML = W_IDS.map(id=>`<div class="wt-seg" style="width:${(norm[id]*100).toFixed(1)}%;background:${COLORS[id]}"></div>`).join('');
+}
+function onWeightChange(){ updateWeightUI(); markStale(); }
+function markStale(){ document.getElementById('run-btn').classList.add('stale'); document.getElementById('run-btn').textContent='▶ APPLY WEIGHTS (changed)'; }
+function clearStale(){ document.getElementById('run-btn').classList.remove('stale'); document.getElementById('run-btn').textContent='▶ APPLY WEIGHTS'; }
+
+function applyPreset(name){
+  const presets = {
+    momentum:  {r121:25,r91:25,r61:20,r31:15,r2_12:5, r2_9:4, r2_6:3, r2_3:3},
+    trend:     {r121:10,r91:8, r61:7, r31:5, r2_12:30,r2_9:20,r2_6:12,r2_3:8},
+    p121:      {r121:100,r91:0,r61:0,r31:0,r2_12:0,r2_9:0,r2_6:0,r2_3:0},
+    p91:       {r121:0,r91:100,r61:0,r31:0,r2_12:0,r2_9:0,r2_6:0,r2_3:0},
+  };
+  const p = presets[name];
+  W_IDS.forEach(id=> document.getElementById('w-'+id).value = p[id]);
+  updateWeightUI();
+  applyWeights();
+}
+
+function applyWeights(){
+  clearStale();
+  computeScoresForMarket();
+  renderPicks();
+  renderAllStocksList();
+}
+
+// ═══════════════════════════════ SCORING (per market, cached on DATA object)
+function computeScoresForMarket(){
+  const market = DATA.markets[MARKET];
+  if (!market) return;
+  const norm = normWeights(getRawWeights());
+  const stocks = market.stocks;
+  const ranks = {};
+  W_IDS.forEach(key=>{
+    const vals = stocks.map(s=>s.factors[key]);
+    const sorted = [...vals].sort((a,b)=>a-b);
+    ranks[key] = vals.map(v=>{ const cnt=sorted.filter(x=>x<v).length; return (cnt+0.5)/vals.length; });
+  });
+  stocks.forEach((s,i)=>{
+    let score=0; W_IDS.forEach(key=> score+=norm[key]*ranks[key][i]);
+    s._score = Math.round(score*1000)/10;
+  });
+  stocks.sort((a,b)=>b._score-a._score);
+  stocks.forEach((s,i)=> s._rank = i+1);
+  market._currentWeights = norm;
+}
+
+// ═══════════════════════════════ MARKET / TOPN SWITCHING
 function setMarket(m, btn){
   MARKET = m;
   document.querySelectorAll('.market-tab').forEach(b=>b.classList.remove('active'));
@@ -212,25 +395,10 @@ function setMarket(m, btn){
   if (!DATA) return;
   const market = DATA.markets[MARKET];
   if (!market){ document.getElementById('picks-list').innerHTML='<div class="empty">No data for this market yet</div>'; return; }
-  if (!market.scenarios[SCENARIO]) SCENARIO = Object.keys(market.scenarios)[0];
   updateStatus();
-  renderScenarioTabs();
-  renderPicks();
-}
-
-function renderScenarioTabs(){
-  const market = DATA.markets[MARKET];
-  if (!market) return;
-  const el = document.getElementById('scenario-tabs');
-  el.innerHTML = Object.entries(market.scenarios).map(([id,s])=>
-    `<button class="scenario-tab ${id===SCENARIO?'active':''}" onclick="setScenario('${id}',this)">${s.label}</button>`
-  ).join('');
-}
-function setScenario(id, btn){
-  SCENARIO = id;
-  document.querySelectorAll('.scenario-tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderPicks();
+  computeScoresForMarket();
+  listDisplayCount = LIST_BATCH;
+  renderAll();
 }
 function setTopN(n, btn){
   TOPN = n;
@@ -239,135 +407,239 @@ function setTopN(n, btn){
   renderPicks();
 }
 
-function drawSpark(canvas, prices){
+// ═══════════════════════════════ SPARKLINE / CHART DRAWING
+function drawSpark(canvas, points){
   const dpr=window.devicePixelRatio||1;
-  const W=canvas.offsetWidth||canvas.parentElement.offsetWidth||200, H=34;
+  const W=canvas.offsetWidth||canvas.parentElement.offsetWidth||200, H=40;
   canvas.width=W*dpr; canvas.height=H*dpr; canvas.style.width=W+'px'; canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
-  const valid = prices.filter(v=>v!=null);
+  const valid = points.map(p=>p.price).filter(v=>v!=null);
   if (valid.length<2){ ctx.fillStyle='#253040'; ctx.fillRect(0,H/2-1,W,2); return; }
   const mn=Math.min(...valid), mx=Math.max(...valid), range=mx-mn||1;
   const isUp = valid[valid.length-1]>=valid[0];
   const lc = isUp? '#26D07C':'#FF5C5C';
   const pad={t:4,b:4,l:2,r:2}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
-  const xS=(i,arr)=>pad.l+i/(arr.length-1)*cW, yS=v=>pad.t+cH-(v-mn)/range*cH;
+  const prices = points.map(p=>p.price);
+  const xS=(i)=>pad.l+i/(prices.length-1)*cW, yS=v=>pad.t+cH-(v-mn)/range*cH;
   ctx.beginPath(); let fi=true;
-  prices.forEach((v,i)=>{ if(v==null) return; fi?ctx.moveTo(xS(i,prices),yS(v)):ctx.lineTo(xS(i,prices),yS(v)); fi=false; });
-  ctx.lineTo(xS(prices.length-1,prices),H); ctx.lineTo(xS(0,prices),H); ctx.closePath();
+  prices.forEach((v,i)=>{ if(v==null) return; fi?ctx.moveTo(xS(i),yS(v)):ctx.lineTo(xS(i),yS(v)); fi=false; });
+  ctx.lineTo(xS(prices.length-1),H); ctx.lineTo(xS(0),H); ctx.closePath();
   ctx.fillStyle=isUp?'rgba(38,208,124,.1)':'rgba(255,92,92,.1)'; ctx.fill();
   ctx.beginPath(); fi=true;
-  prices.forEach((v,i)=>{ if(v==null) return; fi?ctx.moveTo(xS(i,prices),yS(v)):ctx.lineTo(xS(i,prices),yS(v)); fi=false; });
+  prices.forEach((v,i)=>{ if(v==null) return; fi?ctx.moveTo(xS(i),yS(v)):ctx.lineTo(xS(i),yS(v)); fi=false; });
   ctx.strokeStyle=lc; ctx.lineWidth=1.6; ctx.stroke();
 }
 
-function factorChip(label, val, isPct=true){
+function drawDetailChart(canvas, points){
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.clientWidth, H=220;
+  canvas.width=W*dpr; canvas.height=H*dpr; canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  const valid = points.filter(p=>p.price!=null);
+  if (valid.length<2) return;
+  const prices = valid.map(p=>p.price);
+  const mn=Math.min(...prices), mx=Math.max(...prices), range=mx-mn||1;
+  const pad={t:10,b:22,l:50,r:10}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const xS=i=>pad.l+i/(valid.length-1)*cW, yS=v=>pad.t+cH-(v-mn)/range*cH;
+  const isUp = prices[prices.length-1]>=prices[0];
+  const lc = isUp?'#26D07C':'#FF5C5C';
+  [0,.25,.5,.75,1].forEach(f=>{
+    const v=mn+f*range; const y=yS(v);
+    ctx.fillStyle='#23304D'; ctx.fillRect(pad.l,y,cW,1);
+    ctx.fillStyle='#8A9CBC'; ctx.font='9px JetBrains Mono'; ctx.textAlign='right';
+    ctx.fillText('$'+v.toFixed(2), pad.l-6, y+3);
+  });
+  ctx.beginPath();
+  valid.forEach((p,i)=> i===0?ctx.moveTo(xS(i),yS(p.price)):ctx.lineTo(xS(i),yS(p.price)));
+  ctx.lineTo(xS(valid.length-1),pad.t+cH); ctx.lineTo(xS(0),pad.t+cH); ctx.closePath();
+  ctx.fillStyle = isUp?'rgba(38,208,124,.08)':'rgba(255,92,92,.08)'; ctx.fill();
+  ctx.beginPath();
+  valid.forEach((p,i)=> i===0?ctx.moveTo(xS(i),yS(p.price)):ctx.lineTo(xS(i),yS(p.price)));
+  ctx.strokeStyle=lc; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(xS(valid.length-1),yS(prices[prices.length-1]),4,0,Math.PI*2); ctx.fillStyle=lc; ctx.fill();
+  // x labels: first, mid, last date
+  ctx.fillStyle='#8A9CBC'; ctx.font='9px JetBrains Mono'; ctx.textAlign='left';
+  ctx.fillText(valid[0].date.slice(0,7), pad.l, H-6);
+  ctx.textAlign='right';
+  ctx.fillText(valid[valid.length-1].date.slice(0,7), pad.l+cW, H-6);
+}
+
+// ═══════════════════════════════ TOP PICKS PAGE
+function factorChip(key, val, active){
+  const isPct = key.startsWith('r') && !key.startsWith('r2');
   const display = isPct ? pct(val) : val.toFixed(2);
   const cls = isPct ? (val>0?'pos':val<0?'neg':'') : '';
-  return `<span class="factor-chip ${cls}">${label} ${display}</span>`;
+  const activeCls = active ? ' active-factor' : '';
+  return `<span class="factor-chip ${cls}${activeCls}">${FACTOR_LABELS[key]} ${display}</span>`;
 }
 
 function renderPicks(){
   const market = DATA.markets[MARKET];
   if (!market){ document.getElementById('picks-list').innerHTML='<div class="empty">No data for this market</div>'; return; }
-  const scen = market.scenarios[SCENARIO];
-  const picks = scen.picks[String(TOPN)] || [];
-  if (!picks.length){ document.getElementById('picks-list').innerHTML='<div class="empty">No picks available</div>'; return; }
+  const norm = market._currentWeights || {};
+  const topActive = Object.entries(norm).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
+  const picks = market.stocks.slice(0, TOPN);
 
   document.getElementById('picks-list').innerHTML = picks.map(p=>{
     const f = p.factors;
-    return `<div class="pick-card" onclick="openTickerFromPick('${p.ticker}')">
+    return `<div class="pick-card" onclick="openTicker('${p.ticker}')">
       <div class="pick-top">
-        <div class="pick-rank">#${p.rank}</div>
+        <div class="pick-rank">#${p._rank}</div>
         <div class="pick-id">
           <div class="pick-tkr">${p.ticker}</div>
-          <div class="pick-name">${p.name}</div>
+          <div class="pick-name">${p.name} · ${p.sector}</div>
         </div>
         <div class="pick-right">
           <div class="pick-price">$${p.price.toFixed(2)}</div>
-          <div class="pick-score">score ${p.score.toFixed(1)}</div>
+          <div class="pick-score">score ${p._score.toFixed(1)}</div>
         </div>
       </div>
-      <div class="spark-wrap"><canvas id="spark-${p.ticker}"></canvas></div>
+      <div class="spark-wrap"><canvas id="spark-${cssSafe(p.ticker)}"></canvas></div>
       <div class="factor-row">
-        ${factorChip('12-1', f.r121)}
-        ${factorChip('9-1', f.r91)}
-        ${factorChip('6-1', f.r61)}
-        ${factorChip('3-1', f.r31)}
-        ${factorChip('R²12', f.r2_12, false)}
-        ${factorChip('R²9', f.r2_9, false)}
-        ${factorChip('R²6', f.r2_6, false)}
-        ${factorChip('R²3', f.r2_3, false)}
+        ${W_IDS.map(k=>factorChip(k, f[k], topActive.includes(k))).join('')}
       </div>
     </div>`;
   }).join('');
 
   requestAnimationFrame(()=>{
     picks.forEach(p=>{
-      const c = document.getElementById('spark-'+p.ticker);
-      if (c) drawSpark(c, p.spark);
+      const c = document.getElementById('spark-'+cssSafe(p.ticker));
+      if (c) drawSpark(c, p.chart.slice(-26));
     });
   });
 }
+function cssSafe(t){ return t.replace(/[^A-Za-z0-9]/g,'_'); }
 
-function openTickerFromPick(ticker){
-  showPage('lookup', document.getElementById('nav-lookup'));
-  document.getElementById('ticker-search').value = ticker;
-  onSearch();
+function openTicker(ticker){
+  selectedTicker = ticker;
+  prevPage = document.querySelector('.page.active').id.replace('page-','');
+  showPageById('detail');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  renderDetail();
+  window.scrollTo(0,0);
 }
 
-function onSearch(){
-  const qRaw = document.getElementById('ticker-search').value.trim().toUpperCase();
-  const result = document.getElementById('lookup-result');
-  if (!qRaw){ result.innerHTML = '<div class="empty">Type a ticker to see its rank across every blend</div>'; return; }
-  if (!DATA){ result.innerHTML = '<div class="empty">Data still loading…</div>'; return; }
-
-  const q = qRaw.replace(/\.AX$/, ''); // normalise away a typed .AX suffix
-  const candidates = [qRaw, q, q+'.AX'];
-
-  let found = null, foundMarket = null;
-  for (const m of ['sp500','asx300']){
-    const market = DATA.markets[m];
-    if (!market) continue;
-    const anyScen = Object.values(market.scenarios)[0];
-    for (const cand of candidates){
-      if (anyScen.fullRanks[cand] != null){ found = cand; foundMarket = m; break; }
-    }
-    if (found) break;
+// ═══════════════════════════════ ALL STOCKS LIST PAGE
+function onListSearch(){ listSearch = document.getElementById('list-search').value.trim().toLowerCase(); listDisplayCount = LIST_BATCH; renderAllStocksList(); }
+function setListSort(key, btn){
+  listSort = key; listDisplayCount = LIST_BATCH;
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAllStocksList();
+}
+function getFilteredSortedStocks(){
+  const market = DATA.markets[MARKET];
+  if (!market) return [];
+  let list = market.stocks;
+  if (listSearch){
+    list = list.filter(s=> s.ticker.toLowerCase().includes(listSearch) || s.name.toLowerCase().includes(listSearch) || s.sector.toLowerCase().includes(listSearch));
   }
+  list = [...list];
+  if (listSort==='rank') list.sort((a,b)=>a._rank-b._rank);
+  else if (listSort==='ticker') list.sort((a,b)=>a.ticker.localeCompare(b.ticker));
+  else if (listSort==='price') list.sort((a,b)=>b.price-a.price);
+  else if (listSort==='chg12') list.sort((a,b)=>(b.factors.r121||0)-(a.factors.r121||0));
+  return list;
+}
 
-  if (!found){ result.innerHTML = `<div class="empty">No match for "${qRaw}" in either market's current universe</div>`; return; }
+function buildMonthRow(s){
+  const months = s.monthly;
+  let head = '<tr><th>Stock</th>'+months.map(m=>`<th>${m.date.slice(0,7)}</th>`).join('')+'</tr>';
+  let priceRow = '<tr><td>Price</td>'+months.map(m=>`<td>$${m.price.toFixed(2)}</td>`).join('')+'</tr>';
+  let chgRow = '<tr><td>% Chg</td>'+months.map(m=>`<td style="color:${rc(m.chg||0)}">${m.chg!=null?pct1(m.chg):'—'}</td>`).join('')+'</tr>';
+  return `<div class="month-table-wrap"><table class="month-table">${head}${priceRow}${chgRow}</table></div>`;
+}
 
-  const market = DATA.markets[foundMarket];
-  // get name + price + factors from any scenario's top picks if present, else just ranks
-  let name = found, price = null, factors = null;
-  for (const scen of Object.values(market.scenarios)){
-    for (const n of [5,10,20]){
-      const hit = (scen.picks[String(n)]||[]).find(p=>p.ticker===found);
-      if (hit){ name=hit.name; price=hit.price; factors=hit.factors; break; }
-    }
-    if (factors) break;
-  }
-
-  const rankRows = Object.entries(market.scenarios).map(([id,scen])=>{
-    const rank = scen.fullRanks[found];
-    const total = Object.keys(scen.fullRanks).length;
-    const pctile = ((total-rank)/total*100).toFixed(0);
-    return `<div class="rank-row">
-      <div class="rank-label">${scen.label}</div>
-      <div class="rank-badge">#${rank}</div>
-      <div class="rank-out">/ ${total} · top ${100-pctile|0}%</div>
+function renderAllStocksList(){
+  const list = getFilteredSortedStocks();
+  document.getElementById('list-count').textContent = `${list.length} stocks`;
+  const show = list.slice(0, listDisplayCount);
+  document.getElementById('all-stocks-list').innerHTML = show.map(s=>{
+    const r12 = s.factors.r121;
+    return `<div class="stock-row" onclick="openTicker('${s.ticker}')">
+      <div class="sr-top">
+        <span class="sr-tkr">${s.ticker}</span>
+        <span class="sr-name">${s.name}</span>
+        <span class="sr-price" style="color:${rc(r12)}">$${s.price.toFixed(2)}</span>
+      </div>
+      ${buildMonthRow(s)}
     </div>`;
-  }).join('');
-
-  result.innerHTML = `<div class="ticker-detail">
-    <div class="td-header"><span class="td-tkr">${found}</span><span class="td-name">${name}</span></div>
-    ${price!=null?`<div class="td-price">$${price.toFixed(2)}</div>`:''}
-    ${factors?`<div class="factor-row">${factorChip('12-1',factors.r121)}${factorChip('9-1',factors.r91)}${factorChip('6-1',factors.r61)}${factorChip('3-1',factors.r31)}${factorChip('R²12',factors.r2_12,false)}${factorChip('R²9',factors.r2_9,false)}</div>`:''}
-    <div class="section-hdr" style="margin-top:14px">Rank Across Blends — ${foundMarket==='sp500'?'S&P 500':'ASX 300'}</div>
-    <div class="rank-grid">${rankRows}</div>
-  </div>`;
+  }).join('') || '<div class="empty">No stocks match</div>';
+  document.getElementById('load-more-btn').style.display = list.length > listDisplayCount ? 'block':'none';
 }
+function loadMoreStocks(){ listDisplayCount += LIST_BATCH; renderAllStocksList(); }
 
+// ═══════════════════════════════ STOCK DETAIL PAGE
+function renderDetail(){
+  const market = DATA.markets[MARKET];
+  const s = market.stocks.find(x=>x.ticker===selectedTicker);
+  if (!s){ document.getElementById('detail-content').innerHTML = '<div class="empty">Stock not found</div>'; return; }
+
+  const rangeOptions = [
+    {key:'3m', label:'3M', weeks:13},
+    {key:'6m', label:'6M', weeks:26},
+    {key:'1y', label:'1Y', weeks:52},
+    {key:'2y', label:'2Y', weeks:104},
+  ];
+
+  const f = s.factors;
+  document.getElementById('detail-content').innerHTML = `
+    <div class="ticker-detail">
+      <div class="td-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div>
+          <div><span class="td-tkr">${s.ticker}</span></div>
+          <div class="td-name">${s.name} · ${s.sector}</div>
+        </div>
+      </div>
+      <div class="td-price">$${s.price.toFixed(2)}</div>
+
+      <div class="chart-controls" id="range-controls">
+        ${rangeOptions.map(r=>`<button class="chart-range-btn ${r.key===detailRange?'active':''}" onclick="setDetailRange('${r.key}')">${r.label}</button>`).join('')}
+      </div>
+      <div class="detail-chart-wrap"><canvas id="detail-chart"></canvas></div>
+
+      <div class="section-hdr">Return Signals</div>
+      <div class="factor-row" style="margin-bottom:14px">
+        ${factorChip('r121',f.r121)} ${factorChip('r91',f.r91)} ${factorChip('r61',f.r61)} ${factorChip('r31',f.r31)}
+      </div>
+      <div class="section-hdr">Trend Quality (R²)</div>
+      <div class="factor-row" style="margin-bottom:14px">
+        ${factorChip('r2_12',f.r2_12)} ${factorChip('r2_9',f.r2_9)} ${factorChip('r2_6',f.r2_6)} ${factorChip('r2_3',f.r2_3)}
+      </div>
+
+      <div class="section-hdr">12-Month Price History</div>
+      ${buildMonthRow(s)}
+
+      <div class="section-hdr">Rank Under Current Weights</div>
+      <div class="rank-grid">
+        <div class="rank-row"><div class="rank-label">Composite Score</div><div class="rank-badge">${s._score.toFixed(1)}</div></div>
+        <div class="rank-row"><div class="rank-label">Rank in Universe</div><div class="rank-badge">#${s._rank} / ${market.stocks.length}</div></div>
+      </div>
+    </div>`;
+
+  drawDetailChartForRange();
+}
+function setDetailRange(key){
+  detailRange = key;
+  document.querySelectorAll('#range-controls .chart-range-btn').forEach(b=>b.classList.toggle('active', b.textContent.toLowerCase()===rangeLabel(key).toLowerCase()));
+  drawDetailChartForRange();
+}
+function rangeLabel(key){ return {'3m':'3M','6m':'6M','1y':'1Y','2y':'2Y'}[key]; }
+function drawDetailChartForRange(){
+  const market = DATA.markets[MARKET];
+  const s = market.stocks.find(x=>x.ticker===selectedTicker);
+  if (!s) return;
+  const weeksMap = {'3m':13,'6m':26,'1y':52,'2y':104};
+  const w = weeksMap[detailRange] || 26;
+  const points = s.chart.slice(-w);
+  const c = document.getElementById('detail-chart');
+  if (c) drawDetailChart(c, points);
+}
+function goBack(){ showPageById(prevPage); document.getElementById('nav-'+prevPage)?.classList.add('active'); }
+
+// ═══════════════════════════════ HISTORY
 async function loadHistory(){
   try{
     const resp = await fetch(HISTORY_URL, {cache:'no-store'});
@@ -375,31 +647,32 @@ async function loadHistory(){
     const text = await resp.text();
     const lines = text.trim().split('\n').filter(Boolean);
     const snapshots = lines.map(l=>JSON.parse(l)).reverse().slice(0,30);
-    if (!snapshots.length){ return; }
-    document.getElementById('history-list').innerHTML = snapshots.map(s=>{
-      const allTickers = Object.values(s.markets).flatMap(picks=>picks.map(p=>p.ticker));
-      return `<div class="history-row"><span class="history-date">${s.date}</span><span class="history-tickers">${allTickers.join(', ')}</span></div>`;
+    if (!snapshots.length) return;
+    document.getElementById('history-list').innerHTML = snapshots.map(snap=>{
+      const allTickers = Object.values(snap.markets).flatMap(picks=>picks.map(p=>p.ticker));
+      return `<div class="history-row"><span class="history-date">${snap.date}</span><span class="history-tickers">${allTickers.join(', ')}</span></div>`;
     }).join('');
-  }catch(err){
-    // history file may not exist yet on first run -- leave the empty-state message
-  }
+  }catch(err){ /* no history yet on first runs */ }
 }
 
-function aboutText(){
-  const genTime = DATA ? new Date(DATA.generatedAt).toLocaleString() : '—';
-  return `<b>How this works:</b><br><br>
-  A scheduled job (GitHub Actions, runs automatically — no manual STOCKHISTORY refresh needed) fetches the current S&amp;P 500 and ASX 300 constituent lists, pulls fresh weekly prices via Yahoo Finance, computes all 8 momentum/trend factors, and ranks every stock under each saved blend. This page just reads that output — refresh the page any time to see the latest run.<br><br>
-  <b>Last computed:</b> ${genTime}<br><br>
-  <b>The one manual step:</b> ASX 300 membership has no free machine-readable source, so its constituent list is refreshed by hand roughly 4x/year (matching ASX's actual rebalance schedule) by editing one small JSON file. S&amp;P 500 membership refreshes itself automatically from Wikipedia's maintained table.<br><br>
-  <b>Factors used:</b> 12-1, 9-1, 6-1, 3-1 month skip-adjusted returns, plus R² trend quality at 12, 9, 6, 3 months. Same engine validated against your interactive Scenario Blend tool.`;
-}
-
-function showPage(id, btn){
+// ═══════════════════════════════ ROUTING
+function showPageById(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
+}
+function showPage(id, btn){
+  showPageById(id);
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   btn.classList.add('active');
   window.scrollTo(0,0);
+}
+
+function renderAll(){
+  updateWeightUI();
+  renderPicks();
+  renderAllStocksList();
+  document.getElementById('data-note').innerHTML =
+    `<b>How this works:</b> a scheduled job pulls fresh weekly prices for the S&amp;P 500 and ASX 300, computes all 8 factors below for every eligible stock, and this page ranks everything client-side using whatever weights you set — adjust and tap Apply, no re-run needed. Generated ${new Date(DATA.generatedAt).toLocaleString()}.`;
 }
 
 window.addEventListener('load', loadData);
