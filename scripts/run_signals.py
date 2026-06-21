@@ -185,7 +185,7 @@ def main():
     # below $1 AUD than the S&P does below $1 USD (where sub-$1 is more
     # often a sign of real distress) -- use a lower screen for ASX so
     # real constituents like A4N ($0.85), MI6, BC8 etc. aren't dropped.
-    MIN_PRICE = {"sp500": 1.0, "asx300": 0.10}
+    MIN_PRICE = {"sp500": 0.10, "asx300": 0.05}
 
     for market, fname in [("sp500", "sp500_prices.json"), ("asx300", "asx300_prices.json")]:
         path = DATA_DIR / fname
