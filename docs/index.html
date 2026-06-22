@@ -176,6 +176,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .ov-btn.active{color:var(--teal);border-color:var(--teal)}
 .ov-legend{display:flex;gap:10px;font-family:var(--mono);font-size:8px;color:var(--t3);margin:-2px 0 8px}
 .ov-legend span{display:flex;align-items:center;gap:4px}
+.ov-n{display:flex;align-items:center;gap:8px;flex:1;min-width:150px}
+.ov-n input[type=number]{width:50px;background:var(--p3);border:1px solid var(--bdr2);border-radius:6px;color:var(--teal);font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;padding:4px 2px;outline:none}
+.ov-n input[type=number]:focus{border-color:var(--teal)}
+.ov-n input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:60px;height:4px;border-radius:3px;background:var(--bdr2);outline:none;margin:0}
+.ov-n input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid var(--bg)}
+.ov-n input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid var(--bg)}
 .ov-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
 
 /* SCORE BREAKDOWN */
@@ -764,10 +770,16 @@ function renderDetail(){
       </div>
       <div class="overlay-bar">
         <span class="overlay-lbl">Strategy</span>
-        ${[0,5,10,20].map(n=>`<button class="ov-btn ${n===overlayN?'active':''}" onclick="setOverlayN(${n})">${n===0?'Off':'Top '+n}</button>`).join('')}
+        <button class="ov-btn ${overlayN?'':'active'}" id="ov-off" onclick="setOverlayN(0)">Off</button>
+        <button class="ov-btn ${overlayN?'active':''}" id="ov-on" onclick="overlayOn()">On</button>
+        <div class="ov-n ${overlayN?'':'hidden'}" id="ov-n-ctrl">
+          <span class="overlay-lbl">Top</span>
+          <input type="number" id="ov-num" min="1" max="100" value="${overlayN||TOPN}" inputmode="numeric" onchange="setOverlayN(this.value)" oninput="setOverlayN(this.value)">
+          <input type="range" id="ov-range" min="1" max="100" step="1" value="${overlayN||TOPN}" oninput="setOverlayN(this.value)">
+        </div>
       </div>
       <div class="ov-legend" id="ov-legend" ${overlayN?'':'style="display:none"'}>
-        <span><i class="ov-dot" style="background:var(--green)"></i>Held (in Top ${overlayN})</span>
+        <span><i class="ov-dot" style="background:var(--green)"></i>Held (in Top ${overlayN||TOPN})</span>
         <span><i class="ov-dot" style="background:var(--blue)"></i>Buy</span>
         <span><i class="ov-dot" style="background:var(--red)"></i>Sell</span>
         <span><i class="ov-dot" style="background:var(--t3)"></i>Out</span>
@@ -1032,8 +1044,11 @@ function r2log(arr){ // closed-form R² of log-price vs time; mirrors r2_trend
   return Math.max(0, 1-ssr/sst);
 }
 
+// Builds each ticker's weekly RANK across the cross-section (independent of N),
+// cached per (market, weights). Top-N membership for any N is then just
+// rank<=N — so changing N never re-runs the backtest.
 function buildBacktest(){
-  const key = MARKET+'|'+weightsKey()+'|'+overlayN;
+  const key = MARKET+'|'+weightsKey();
   if (BACKTEST_CACHE[key]) return BACKTEST_CACHE[key];
   const market = DATA.markets[MARKET];
   const stocks = market.stocks;
@@ -1051,12 +1066,12 @@ function buildBacktest(){
   const minPos = wkB(12)+SKIP; // first week with enough lookback
   const norm = market._currentWeights || {};
 
-  // membership[ticker] = {date: true/false} for computable weeks
-  const membership = {}; stocks.forEach(s=>membership[s.ticker]={});
+  // rankMap[ticker] = {date: rank}  (1-based) for computable weeks
+  const rankMap = {}; stocks.forEach(s=>rankMap[s.ticker]={});
 
   for (let pos=minPos; pos<T; pos++){
     // compute factors for all eligible stocks at this week
-    const fac=[]; // {idx, f:{...}}
+    const fac=[]; // {si, f:{...}}
     for (let si=0; si<stocks.length; si++){
       const arr=aligned[si]; const pNow=arr[pos];
       if (isNaN(pNow)||pNow<minP) continue;
@@ -1075,35 +1090,51 @@ function buildBacktest(){
     W_IDS.forEach(key=>{
       const vals=fac.map(x=>x.f[key]);
       const sorted=[...vals].sort((a,b)=>a-b);
-      for(let i=0;i<fac.length;i++){ const cnt=sorted.filter(x=>x<vals[i]).length; scores[i]+=(norm[key]||0)*((cnt+0.5)/vals.length); }
+      // count strictly-less via lower-bound (identical to filter(x<v).length, but O(log n))
+      for(let i=0;i<fac.length;i++){
+        let lo=0,hi=sorted.length;const v=vals[i];
+        while(lo<hi){const mid=(lo+hi)>>1; if(sorted[mid]<v) lo=mid+1; else hi=mid;}
+        scores[i]+=(norm[key]||0)*((lo+0.5)/vals.length);
+      }
     });
     const order=fac.map((x,i)=>({t:stocks[x.si].ticker,sc:scores[i]})).sort((a,b)=>b.sc-a.sc);
-    const inSet=new Set(order.slice(0,overlayN).map(o=>o.t));
     const d=axis[pos];
-    for (const x of fac){ const t=stocks[x.si].ticker; membership[t][d]=inSet.has(t); }
+    order.forEach((o,i)=>{ rankMap[o.t][d]=i+1; });
   }
 
   // Pin the LATEST week to the live dashboard ranking so the chart's "today"
   // exactly matches your Top Picks tab (avoids tiny port/rounding drift).
   const lastDate=axis[T-1];
-  stocks.forEach(s=>{ membership[s.ticker][lastDate] = (s._rank<=overlayN); });
+  stocks.forEach(s=>{ rankMap[s.ticker][lastDate] = s._rank; });
 
-  BACKTEST_CACHE[key]=membership;
-  return membership;
+  BACKTEST_CACHE[key]=rankMap;
+  return rankMap;
 }
 
+// membership for the CURRENT overlayN — cheap lookups, no recompute on N change
 function membershipFor(ticker, points){
-  const m = buildBacktest()[ticker] || {};
-  const out={}; points.forEach(p=>{ out[p.date]= (p.date in m)? m[p.date] : undefined; });
+  const rm = buildBacktest()[ticker] || {};
+  const out={}; points.forEach(p=>{ const r=rm[p.date]; out[p.date] = (r==null)? undefined : (r<=overlayN); });
   return out;
 }
 
+let lastOverlayN = 20;
+function overlayOn(){ setOverlayN(overlayN>0 ? overlayN : (lastOverlayN || TOPN || 20)); }
 function setOverlayN(n){
+  n = Math.round(Number(n));
+  if (!Number.isFinite(n)) return;
+  n = Math.max(0, Math.min(100, n));
   overlayN = n;
-  document.querySelectorAll('.overlay-bar .ov-btn').forEach(b=>b.classList.remove('active'));
-  const btns=[...document.querySelectorAll('.overlay-bar .ov-btn')];
-  const map={0:'Off',5:'Top 5',10:'Top 10',20:'Top 20'};
-  btns.forEach(b=>{ if(b.textContent===map[n]) b.classList.add('active'); });
+  if (n>0) lastOverlayN = n;
+  const off=document.getElementById('ov-off'), on=document.getElementById('ov-on'), ctrl=document.getElementById('ov-n-ctrl');
+  if (off) off.classList.toggle('active', n===0);
+  if (on)  on.classList.toggle('active', n>0);
+  if (ctrl) ctrl.classList.toggle('hidden', n===0);
+  const range=document.getElementById('ov-range'), num=document.getElementById('ov-num');
+  if (n>0){
+    if (range) range.value=n;
+    if (num && document.activeElement!==num) num.value=n;
+  }
   const legend=document.getElementById('ov-legend');
   if (legend){
     legend.style.display = n?'flex':'none';
