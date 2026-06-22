@@ -73,6 +73,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .topn-tabs{display:flex;gap:4px;margin-bottom:12px}
 .topn-tab{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:6px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
 .topn-tab.active{background:var(--p3);border-color:var(--teal);color:var(--teal)}
+.topn-control{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.topn-head{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.topn-label{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.topn-count{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--t3)}
+#topn-num{width:62px;background:var(--p3);border:1px solid var(--bdr2);border-radius:7px;color:var(--teal);font-family:var(--mono);font-size:16px;font-weight:700;text-align:center;padding:6px 4px;outline:none}
+#topn-num:focus{border-color:var(--teal)}
+#topn-range{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:var(--bdr2);outline:none;margin:0}
+#topn-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid var(--bg);box-shadow:0 0 0 1px var(--teal)}
+#topn-range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid var(--bg)}
+.topn-presets{display:flex;gap:6px;margin-top:11px}
+.topn-preset{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:6px 0;border-radius:6px;border:1px solid var(--bdr2);background:var(--p3);color:var(--t3);cursor:pointer;text-align:center}
+.topn-preset.active{border-color:var(--teal);color:var(--teal)}
 
 .pick-card{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:13px 14px;margin-bottom:9px;cursor:pointer;transition:border-color .15s}
 .pick-card:active{border-color:var(--teal)}
@@ -282,10 +294,23 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 
 <!-- TOP PICKS -->
 <div id="page-picks" class="page">
-  <div class="topn-tabs">
-    <button class="topn-tab active" onclick="setTopN(5,this)">Top 5</button>
-    <button class="topn-tab" onclick="setTopN(10,this)">Top 10</button>
-    <button class="topn-tab" onclick="setTopN(20,this)">Top 20</button>
+  <div class="topn-control">
+    <div class="topn-head">
+      <span class="topn-label">Show top</span>
+      <input type="number" id="topn-num" min="1" max="100" value="5" inputmode="numeric"
+             onchange="setTopN(this.value)" oninput="setTopN(this.value)">
+      <span class="topn-label">picks</span>
+      <span class="topn-count" id="topn-count"></span>
+    </div>
+    <input type="range" id="topn-range" min="1" max="100" value="5" step="1"
+           oninput="setTopN(this.value)">
+    <div class="topn-presets">
+      <button class="topn-preset active" data-n="5" onclick="setTopN(5)">5</button>
+      <button class="topn-preset" data-n="10" onclick="setTopN(10)">10</button>
+      <button class="topn-preset" data-n="20" onclick="setTopN(20)">20</button>
+      <button class="topn-preset" data-n="50" onclick="setTopN(50)">50</button>
+      <button class="topn-preset" data-n="100" onclick="setTopN(100)">100</button>
+    </div>
   </div>
   <div id="picks-list"></div>
 </div>
@@ -505,9 +530,14 @@ function setMarket(m, btn){
   renderAll();
 }
 function setTopN(n, btn){
+  n = Math.round(Number(n));
+  if (!Number.isFinite(n)) return;
+  n = Math.max(1, Math.min(100, n));
   TOPN = n;
-  document.querySelectorAll('.topn-tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  const range=document.getElementById('topn-range'), num=document.getElementById('topn-num');
+  if (range) range.value = n;
+  if (num && document.activeElement!==num) num.value = n; // don't fight mid-typing
+  document.querySelectorAll('.topn-preset').forEach(b=>b.classList.toggle('active', Number(b.dataset.n)===n));
   renderPicks();
 }
 
@@ -584,6 +614,8 @@ function renderPicks(){
   const norm = market._currentWeights || {};
   const topActive = Object.entries(norm).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
   const picks = market.stocks.slice(0, TOPN);
+  const cnt=document.getElementById('topn-count');
+  if (cnt) cnt.textContent = picks.length<TOPN ? `showing ${picks.length} (all available)` : `showing ${picks.length} of ${market.stocks.length}`;
 
   document.getElementById('picks-list').innerHTML = picks.map(p=>{
     const f = p.factors;
