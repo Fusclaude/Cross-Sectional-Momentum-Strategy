@@ -126,6 +126,25 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .rank-delta.down{color:var(--red);background:var(--rd)}
 .rank-delta.flat{color:var(--t3);background:var(--p3)}
 
+/* ALL STOCKS: List / Rank Grid view toggle */
+.view-toggle{display:flex;gap:6px;margin-bottom:10px}
+.view-btn{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:8px;border-radius:7px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
+.view-btn.active{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+
+/* RANK GRID (rank 1..N × every computable week) */
+.rg-note{font-family:var(--mono);font-size:9px;color:var(--t3);margin-bottom:8px;line-height:1.6}
+.rg-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--bdr);border-radius:9px;max-height:65vh;margin-bottom:12px}
+.rg-table{border-collapse:collapse;font-family:var(--mono);font-size:9px;width:max-content}
+.rg-table th,.rg-table td{padding:4px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--bdr);border-right:1px solid var(--bdr);min-width:44px}
+.rg-table thead th{position:sticky;top:0;z-index:3;background:var(--p1);color:var(--t3);font-weight:600}
+.rg-table tbody th{position:sticky;left:0;z-index:2;background:var(--p1);color:var(--teal);font-weight:700;text-align:right}
+.rg-table thead th:first-child{position:sticky;left:0;z-index:4;background:var(--p1);text-align:right}
+.rg-cell{cursor:pointer}
+.rg-up{color:var(--green);background:var(--gd)}
+.rg-down{color:var(--red);background:var(--rd)}
+.rg-flat{color:var(--t2);background:var(--p3)}
+.rg-empty{color:var(--t3)}
+
 .stock-row{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:11px 12px;margin-bottom:7px;cursor:pointer}
 .sr-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .sr-tkr{font-family:var(--mono);font-weight:700;font-size:13px;width:58px;flex-shrink:0}
@@ -335,21 +354,33 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 
 <!-- ALL STOCKS LIST -->
 <div id="page-allstocks" class="page">
-  <input type="search" class="search-box" id="list-search" placeholder="Search ticker, name, or sector…" oninput="onListSearch()">
-  <div class="week-nav" id="week-nav">
-    <button id="week-prev" onclick="stepWeek(1)" title="Previous week">◀</button>
-    <div class="week-nav-lbl" id="week-nav-lbl">This week</div>
-    <button id="week-next" onclick="stepWeek(-1)" disabled title="Next week">▶</button>
+  <div class="view-toggle" id="view-toggle">
+    <button class="view-btn active" data-view="list" onclick="setAllStocksView('list',this)">List</button>
+    <button class="view-btn" data-view="grid" onclick="setAllStocksView('grid',this)">Rank Grid</button>
   </div>
-  <div class="sort-bar">
-    <button class="sort-btn active" data-key="rank" onclick="setListSort('rank',this)">Score Rank</button>
-    <button class="sort-btn" data-key="ticker" onclick="setListSort('ticker',this)">Ticker A-Z</button>
-    <button class="sort-btn" data-key="price" onclick="setListSort('price',this)">Price</button>
-    <button class="sort-btn" data-key="chg12" onclick="setListSort('chg12',this)">12m Change</button>
+
+  <div id="list-view-wrap">
+    <input type="search" class="search-box" id="list-search" placeholder="Search ticker, name, or sector…" oninput="onListSearch()">
+    <div class="week-nav" id="week-nav">
+      <button id="week-prev" onclick="stepWeek(1)" title="Previous week">◀</button>
+      <div class="week-nav-lbl" id="week-nav-lbl">This week</div>
+      <button id="week-next" onclick="stepWeek(-1)" disabled title="Next week">▶</button>
+    </div>
+    <div class="sort-bar">
+      <button class="sort-btn active" data-key="rank" onclick="setListSort('rank',this)">Score Rank</button>
+      <button class="sort-btn" data-key="ticker" onclick="setListSort('ticker',this)">Ticker A-Z</button>
+      <button class="sort-btn" data-key="price" onclick="setListSort('price',this)">Price</button>
+      <button class="sort-btn" data-key="chg12" onclick="setListSort('chg12',this)">12m Change</button>
+    </div>
+    <div class="list-count" id="list-count"></div>
+    <div id="all-stocks-list"></div>
+    <button class="load-more" id="load-more-btn" onclick="loadMoreStocks()">Load more…</button>
   </div>
-  <div class="list-count" id="list-count"></div>
-  <div id="all-stocks-list"></div>
-  <button class="load-more" id="load-more-btn" onclick="loadMoreStocks()">Load more…</button>
+
+  <div id="grid-view-wrap" style="display:none">
+    <div class="rg-note" id="rg-note"></div>
+    <div class="rg-wrap" id="rg-wrap"></div>
+  </div>
 </div>
 
 <!-- STOCK DETAIL -->
@@ -512,8 +543,10 @@ function applyWeights(){
   clearStale();
   computeScoresForMarket();
   invalidateBacktest();
+  invalidateRankGrid();
   renderPicks();
   renderAllStocksList();
+  if (allStocksView==='grid') renderRankGrid();
   if (typeof renderHoldings==='function') renderHoldings();
 }
 
@@ -550,6 +583,7 @@ function setMarket(m, btn){
   updateStatus();
   computeScoresForMarket();
   invalidateBacktest();
+  invalidateRankGrid();
   listDisplayCount = LIST_BATCH;
   weekOffset = 0;
   renderAll();
@@ -792,6 +826,80 @@ function rankDeltaBadge(delta){
   if (delta===0)  return '<span class="rank-delta flat">±0</span>';
   if (delta>0)    return `<span class="rank-delta up">▲${delta}</span>`;
   return `<span class="rank-delta down">▼${Math.abs(delta)}</span>`;
+}
+
+// ─── List / Rank Grid view toggle ───
+let allStocksView = 'list';
+function setAllStocksView(view, btn){
+  allStocksView = view;
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const lw=document.getElementById('list-view-wrap'), gw=document.getElementById('grid-view-wrap');
+  if (lw) lw.style.display = view==='list' ? '' : 'none';
+  if (gw) gw.style.display = view==='grid' ? '' : 'none';
+  if (view==='grid') renderRankGrid();
+}
+
+// ─── Rank Grid: rank 1..N down the rows, every computable week across the columns ───
+// Built once per (market, weights) by inverting buildBacktest()'s rank map; cheap after that.
+let RANKGRID_CACHE = {};
+function invalidateRankGrid(){ RANKGRID_CACHE = {}; }
+function buildRankGrid(){
+  const key = MARKET+'|'+weightsKey();
+  if (RANKGRID_CACHE[key]) return RANKGRID_CACHE[key];
+  const bt = buildBacktest();
+  const grid = {}; // grid[date][rank] = ticker
+  Object.keys(bt.rank).forEach(ticker=>{
+    const m = bt.rank[ticker];
+    Object.keys(m).forEach(date=>{
+      if (!grid[date]) grid[date] = {};
+      grid[date][m[date]] = ticker;
+    });
+  });
+  RANKGRID_CACHE[key] = grid;
+  return grid;
+}
+function fmtWeekShort(d){
+  if (!d) return '';
+  const parts = d.split('-'); // YYYY-MM-DD
+  return parts[2]+'/'+parts[1];
+}
+function renderRankGrid(){
+  const market = DATA.markets[MARKET];
+  const wrap = document.getElementById('rg-wrap');
+  if (!market || !wrap) return;
+  const maxOff = maxWeekOffset();
+  const cols = []; for (let off=maxOff; off>=0; off--) cols.push(weekDateAt(off)); // oldest → newest, left→right
+  const grid = buildRankGrid();
+  const bt = buildBacktest();
+  const N = market.stocks.length;
+
+  const note = document.getElementById('rg-note');
+  if (note) note.innerHTML = `Rank 1–${N} across the ${cols.length} week${cols.length===1?'':'s'} with enough history to score. <span class="green">Green</span> = moved up vs the week before, <span class="red">red</span> = moved down, <span class="t2">grey</span> = held. Tap a ticker to open it.`;
+
+  if (!cols.length){ wrap.innerHTML = '<div class="empty">Not enough history yet to build the grid</div>'; return; }
+
+  const rows = [];
+  rows.push('<table class="rg-table"><thead><tr><th>Rank</th>'+cols.map(d=>`<th>${fmtWeekShort(d)}</th>`).join('')+'</tr></thead><tbody>');
+  for (let r=1; r<=N; r++){
+    const cells = [];
+    for (let ci=0; ci<cols.length; ci++){
+      const d = cols[ci];
+      const ticker = (grid[d]||{})[r];
+      if (!ticker){ cells.push('<td class="rg-empty">—</td>'); continue; }
+      const prevD = ci>0 ? cols[ci-1] : null;
+      const prevRank = prevD!=null ? (bt.rank[ticker]||{})[prevD] : null;
+      let cls = 'rg-flat';
+      if (prevRank!=null){
+        if (prevRank > r) cls = 'rg-up';
+        else if (prevRank < r) cls = 'rg-down';
+      }
+      cells.push(`<td class="rg-cell ${cls}" onclick="openTicker('${ticker}')">${ticker}</td>`);
+    }
+    rows.push(`<tr><th>#${r}</th>${cells.join('')}</tr>`);
+  }
+  rows.push('</tbody></table>');
+  wrap.innerHTML = rows.join('');
 }
 
 function buildMonthRow(s){
@@ -1082,6 +1190,7 @@ function renderAll(){
   updateWeightUI();
   renderPicks();
   renderAllStocksList();
+  if (allStocksView==='grid') renderRankGrid();
   if (typeof renderHoldings==='function') renderHoldings();
   document.getElementById('data-note').innerHTML =
     `<b>How this works:</b> a scheduled job pulls fresh weekly prices for the S&amp;P 500 and ASX 300, computes all 8 factors below for every eligible stock, and this page ranks everything client-side using whatever weights you set — adjust and tap Apply, no re-run needed. Generated ${new Date(DATA.generatedAt).toLocaleString()}.`;
