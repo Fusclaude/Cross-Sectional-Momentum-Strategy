@@ -178,152 +178,6 @@ def run_market(market: str, prices_path: Path, min_price: float = 1.0) -> dict:
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────
-#  REBALANCE STATE MACHINE
-# ─────────────────────────────────────────────────────────────────────────
-#  Your backtests modelled a 28-day (4-week) rebalance cycle, NOT weekly
-#  and NOT calendar-monthly. This job runs weekly so the *prices* on the
-#  dashboard stay fresh, but the *portfolio* only rotates every 28 days --
-#  matching the strategy you actually validated.
-#
-#  Between rebalances the dashboard still shows live signals (so you can
-#  see what's brewing), but it clearly separates "what you hold" from
-#  "what today's signal says", and won't tempt you into weekly trading
-#  that the backtest never tested.
-# ─────────────────────────────────────────────────────────────────────────
-
-REBAL_DAYS = 28
-TOP_N = 5
-
-# Default strategy: pure 9-1 month momentum. Chosen because in the
-# 2-to-15 month lookback sweep this window had the best Sharpe and the
-# smallest drawdown on BOTH the S&P and ASX -- a cleaner risk-adjusted
-# result than the 12-1 academic standard on this data.
-DEFAULT_WEIGHTS = {
-    "r121": 0.0, "r91": 1.0, "r61": 0.0, "r31": 0.0,
-    "r2_12": 0.0, "r2_9": 0.0, "r2_6": 0.0, "r2_3": 0.0,
-}
-
-
-def rank_and_score(stocks: list[dict], weights: dict) -> dict:
-    """Cross-sectional percentile-rank blend. Mirrors the dashboard's JS engine."""
-    keys = [k for k, w in weights.items() if w > 0]
-    n = len(stocks)
-    ranks = {}
-    for key in keys:
-        vals = [s["factors"][key] for s in stocks]
-        srt = sorted(vals)
-        ranks[key] = {
-            s["ticker"]: (sum(1 for x in srt if x < v) + 0.5) / n
-            for s, v in zip(stocks, vals)
-        }
-    scores = {}
-    for s in stocks:
-        t = s["ticker"]
-        scores[t] = sum(weights[k] * ranks[k][t] for k in keys) * 100
-    return scores
-
-
-def load_portfolio_state(path: Path) -> dict:
-    if path.exists():
-        with open(path) as f:
-            return json.load(f)
-    return {"markets": {}}
-
-
-def process_rebalance(market: str, market_data: dict, state: dict, today: datetime) -> dict:
-    """
-    Decide whether a rebalance is DUE for this market, and if so rotate the
-    portfolio. Returns the per-market state block (holdings + cycle info).
-    """
-    stocks = market_data["stocks"]
-    scores = rank_and_score(stocks, DEFAULT_WEIGHTS)
-    ranked = sorted(stocks, key=lambda s: -scores[s["ticker"]])
-    target = ranked[:TOP_N]
-    target_tickers = [s["ticker"] for s in target]
-
-    prev = state.get("markets", {}).get(market)
-
-    # First ever run for this market -> establish the initial portfolio
-    if not prev or not prev.get("holdings"):
-        return {
-            "lastRebalance": today.strftime("%Y-%m-%d"),
-            "nextRebalance": (today + timedelta(days=REBAL_DAYS)).strftime("%Y-%m-%d"),
-            "holdings": [
-                {"ticker": s["ticker"], "name": s["name"],
-                 "entryPrice": s["price"], "entryDate": today.strftime("%Y-%m-%d")}
-                for s in target
-            ],
-            "bought": target_tickers,
-            "kept": [],
-            "sold": [],
-            "rebalancedThisRun": True,
-            "cycleNumber": 1,
-        }
-
-    last_rebal = datetime.strptime(prev["lastRebalance"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    days_since = (today - last_rebal).days
-
-    # Not due yet -> hold. Carry the existing portfolio forward untouched.
-    if days_since < REBAL_DAYS:
-        return {
-            **prev,
-            "rebalancedThisRun": False,
-            "daysSinceRebalance": days_since,
-            "daysUntilRebalance": REBAL_DAYS - days_since,
-        }
-
-    # DUE -> rotate into the new target portfolio
-    held_now = {h["ticker"] for h in prev["holdings"]}
-    bought = [t for t in target_tickers if t not in held_now]
-    kept = [t for t in target_tickers if t in held_now]
-    sold = [t for t in held_now if t not in target_tickers]
-
-    price_of = {s["ticker"]: s["price"] for s in stocks}
-    prev_entry = {h["ticker"]: h for h in prev["holdings"]}
-
-    new_holdings = []
-    for s in target:
-        t = s["ticker"]
-        if t in kept:
-            # carry original entry price/date so P&L is measured from first purchase
-            new_holdings.append(prev_entry[t])
-        else:
-            new_holdings.append({
-                "ticker": t, "name": s["name"],
-                "entryPrice": s["price"], "entryDate": today.strftime("%Y-%m-%d"),
-            })
-
-    # Realised result on the names we just exited
-    closed = []
-    for t in sold:
-        h = prev_entry[t]
-        exit_price = price_of.get(t)
-        pnl = None
-        if exit_price and h.get("entryPrice"):
-            pnl = round(exit_price / h["entryPrice"] - 1, 4)
-        closed.append({
-            "ticker": t, "name": h.get("name", t),
-            "entryPrice": h.get("entryPrice"), "exitPrice": exit_price,
-            "entryDate": h.get("entryDate"), "exitDate": today.strftime("%Y-%m-%d"),
-            "pnl": pnl,
-        })
-
-    return {
-        "lastRebalance": today.strftime("%Y-%m-%d"),
-        "nextRebalance": (today + timedelta(days=REBAL_DAYS)).strftime("%Y-%m-%d"),
-        "holdings": new_holdings,
-        "bought": bought,
-        "kept": kept,
-        "sold": sold,
-        "closed": closed,
-        "rebalancedThisRun": True,
-        "daysSinceRebalance": 0,
-        "daysUntilRebalance": REBAL_DAYS,
-        "cycleNumber": prev.get("cycleNumber", 1) + 1,
-    }
-
-
 def main():
     out = {"generatedAt": datetime.now(timezone.utc).isoformat() + "Z", "markets": {}}
 
@@ -331,7 +185,7 @@ def main():
     # below $1 AUD than the S&P does below $1 USD (where sub-$1 is more
     # often a sign of real distress) -- use a lower screen for ASX so
     # real constituents like A4N ($0.85), MI6, BC8 etc. aren't dropped.
-    MIN_PRICE = {"sp500": 1.0, "asx300": 0.10}
+    MIN_PRICE = {"sp500": 0.10, "asx300": 0.05}
 
     for market, fname in [("sp500", "sp500_prices.json"), ("asx300", "asx300_prices.json")]:
         path = DATA_DIR / fname
@@ -341,62 +195,26 @@ def main():
         print(f"Computing signals for {market}...")
         out["markets"][market] = run_market(market, path, min_price=MIN_PRICE.get(market, 1.0))
 
-    # ── Rebalance state machine ──────────────────────────────────────────
-    state_path = DATA_DIR / "portfolio_state.json"
-    state = load_portfolio_state(state_path)
-    today = datetime.now(timezone.utc)
-
-    print(f"\nRebalance check ({REBAL_DAYS}-day cycle, Top {TOP_N}, 9-1 momentum):")
-    for market, market_data in out["markets"].items():
-        block = process_rebalance(market, market_data, state, today)
-        state.setdefault("markets", {})[market] = block
-        if block["rebalancedThisRun"]:
-            print(f"  {market}: REBALANCED (cycle {block['cycleNumber']}) "
-                  f"-> bought {block['bought']}, sold {block.get('sold', [])}")
-        else:
-            print(f"  {market}: holding ({block['daysSinceRebalance']}d since last, "
-                  f"{block['daysUntilRebalance']}d until next)")
-
-    state["rebalDays"] = REBAL_DAYS
-    state["topN"] = TOP_N
-    state["strategy"] = "9-1 month momentum (pure)"
-    state["updatedAt"] = out["generatedAt"]
-    with open(state_path, "w") as f:
-        json.dump(state, f, indent=2)
-    print(f"Saved {state_path}")
-
-    # Embed portfolio state into the dashboard payload so it only has to
-    # fetch a single file.
-    out["portfolio"] = state
-
     out_path = DATA_DIR / "signals_latest.json"
     with open(out_path, "w") as f:
         json.dump(out, f, separators=(",", ":"))
     print(f"Saved {out_path}")
 
-    # Append a history record ONLY on an actual rebalance -- so the history
-    # page is a true record of trades, not a weekly noise log.
-    if any(state["markets"][m]["rebalancedThisRun"] for m in state.get("markets", {})):
-        history_path = DATA_DIR / "picks_history.jsonl"
-        snapshot = {
-            "date": out["generatedAt"][:10],
-            "strategy": state["strategy"],
-            "markets": {
-                m: {
-                    "holdings": [h["ticker"] for h in state["markets"][m]["holdings"]],
-                    "bought": state["markets"][m].get("bought", []),
-                    "sold": state["markets"][m].get("sold", []),
-                    "closed": state["markets"][m].get("closed", []),
-                }
-                for m in state["markets"]
-                if state["markets"][m]["rebalancedThisRun"]
-            },
-        }
-        with open(history_path, "a") as f:
-            f.write(json.dumps(snapshot, separators=(",", ":")) + "\n")
-        print(f"Appended rebalance record to {history_path}")
-    else:
-        print("No rebalance this run -- history not appended.")
+    # Lightweight history snapshot: top 5 by default pure-12-1 momentum,
+    # just for the "did this call work out" history page. The dashboard
+    # itself can re-rank with any weights on the full stock list above;
+    # this snapshot is only a fixed reference point over time.
+    history_path = DATA_DIR / "picks_history.jsonl"
+    snapshot = {"date": out["generatedAt"][:10], "markets": {}}
+    for m, market_data in out["markets"].items():
+        ranked = sorted(market_data["stocks"], key=lambda s: -s["factors"]["r121"])[:5]
+        snapshot["markets"][m] = [
+            {"ticker": s["ticker"], "name": s["name"], "price": s["price"]}
+            for s in ranked
+        ]
+    with open(history_path, "a") as f:
+        f.write(json.dumps(snapshot, separators=(",", ":")) + "\n")
+    print(f"Appended snapshot to {history_path}")
 
 
 if __name__ == "__main__":

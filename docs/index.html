@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Momentum Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --bg:#0A0E1A;--p1:#0F1525;--p2:#141C30;--p3:#1B2540;
@@ -72,6 +73,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .topn-tabs{display:flex;gap:4px;margin-bottom:12px}
 .topn-tab{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:6px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
 .topn-tab.active{background:var(--p3);border-color:var(--teal);color:var(--teal)}
+.topn-control{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.topn-head{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.topn-label{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.topn-count{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--t3)}
+#topn-num{width:62px;background:var(--p3);border:1px solid var(--bdr2);border-radius:7px;color:var(--teal);font-family:var(--mono);font-size:16px;font-weight:700;text-align:center;padding:6px 4px;outline:none}
+#topn-num:focus{border-color:var(--teal)}
+#topn-range{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:var(--bdr2);outline:none;margin:0}
+#topn-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid var(--bg);box-shadow:0 0 0 1px var(--teal)}
+#topn-range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid var(--bg)}
+.topn-presets{display:flex;gap:6px;margin-top:11px}
+.topn-preset{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:6px 0;border-radius:6px;border:1px solid var(--bdr2);background:var(--p3);color:var(--t3);cursor:pointer;text-align:center}
+.topn-preset.active{border-color:var(--teal);color:var(--teal)}
 
 .pick-card{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:13px 14px;margin-bottom:9px;cursor:pointer;transition:border-color .15s}
 .pick-card:active{border-color:var(--teal)}
@@ -100,6 +113,37 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .sort-btn{font-size:10px;font-family:var(--mono);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t3);cursor:pointer;white-space:nowrap;flex-shrink:0}
 .sort-btn.active{color:var(--teal);border-color:var(--teal)}
 .list-count{font-family:var(--mono);font-size:9px;color:var(--t3);margin-bottom:8px}
+
+/* WEEK NAV (All Stocks rank history) */
+.week-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px;background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:7px 8px}
+.week-nav button{background:var(--p3);border:1px solid var(--bdr2);border-radius:8px;color:var(--t2);font-size:14px;font-weight:700;padding:6px 13px;cursor:pointer;line-height:1;flex-shrink:0}
+.week-nav button:active{border-color:var(--teal);color:var(--teal)}
+.week-nav button:disabled{opacity:.3;cursor:default}
+.week-nav-lbl{flex:1;text-align:center;font-family:var(--mono);font-size:11px;color:var(--t2)}
+.week-nav-lbl b{color:var(--teal)}
+.rank-delta{font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;flex-shrink:0}
+.rank-delta.up{color:var(--green);background:var(--gd)}
+.rank-delta.down{color:var(--red);background:var(--rd)}
+.rank-delta.flat{color:var(--t3);background:var(--p3)}
+
+/* ALL STOCKS: List / Rank Grid view toggle */
+.view-toggle{display:flex;gap:6px;margin-bottom:10px}
+.view-btn{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:8px;border-radius:7px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
+.view-btn.active{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+
+/* RANK GRID (rank 1..N × every computable week) */
+.rg-note{font-family:var(--mono);font-size:9px;color:var(--t3);margin-bottom:8px;line-height:1.6}
+.rg-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--bdr);border-radius:9px;max-height:65vh;margin-bottom:12px}
+.rg-table{border-collapse:collapse;font-family:var(--mono);font-size:9px;width:max-content}
+.rg-table th,.rg-table td{padding:4px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--bdr);border-right:1px solid var(--bdr);min-width:44px}
+.rg-table thead th{position:sticky;top:0;z-index:3;background:var(--p1);color:var(--t3);font-weight:600}
+.rg-table tbody th{position:sticky;left:0;z-index:2;background:var(--p1);color:var(--teal);font-weight:700;text-align:right}
+.rg-table thead th:first-child{position:sticky;left:0;z-index:4;background:var(--p1);text-align:right}
+.rg-cell{cursor:pointer}
+.rg-up{color:var(--green);background:var(--gd)}
+.rg-down{color:var(--red);background:var(--rd)}
+.rg-flat{color:var(--t2);background:var(--p3)}
+.rg-empty{color:var(--t3)}
 
 .stock-row{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:11px 12px;margin-bottom:7px;cursor:pointer}
 .sr-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
@@ -143,36 +187,76 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 
 .green{color:var(--green)}.red{color:var(--red)}.teal{color:var(--teal)}.amber{color:var(--amber)}.t2{color:var(--t2)}.t3{color:var(--t3)}
 
-/* PORTFOLIO PAGE */
-.rebal-card{border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid var(--bdr)}
-.rebal-card.hold{background:var(--p2)}
-.rebal-card.due{background:rgba(0,212,170,.08);border-color:var(--teal)}
-.rebal-status{font-family:var(--mono);font-size:13px;font-weight:700;margin-bottom:4px}
-.rebal-sub{font-size:10px;color:var(--t3);line-height:1.6}
-.rebal-progress{height:5px;background:var(--bdr);border-radius:3px;overflow:hidden;margin:10px 0 6px}
-.rebal-progress-fill{height:100%;background:var(--teal);border-radius:3px;transition:width .3s}
-.rebal-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--t3)}
-.strategy-chip{display:inline-block;font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:5px;background:var(--p3);color:var(--teal);margin-top:8px}
+/* PREV/NEXT STOCK NAV (detail) */
+.stock-nav{display:flex;gap:6px;margin-left:auto;flex-shrink:0}
+.stock-nav button{background:var(--p3);border:1px solid var(--bdr2);border-radius:8px;color:var(--t2);font-size:15px;font-weight:700;padding:5px 11px;cursor:pointer;line-height:1}
+.stock-nav button:active{border-color:var(--teal);color:var(--teal)}
+.stock-nav button:disabled{opacity:.3;cursor:default}
+.nav-pos{font-family:var(--mono);font-size:9px;color:var(--t3);text-align:right;margin:-2px 0 6px}
 
-.hold-row{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:12px;margin-bottom:7px;cursor:pointer}
-.hold-top{display:flex;align-items:center;gap:9px;margin-bottom:6px}
-.hold-tkr{font-family:var(--mono);font-weight:700;font-size:13px;width:58px;flex-shrink:0}
-.hold-name{flex:1;font-size:10px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.hold-pnl{font-family:var(--mono);font-size:13px;font-weight:700;flex-shrink:0}
-.hold-detail{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--t3)}
+/* CHART HOVER TOOLTIP */
+.detail-chart-wrap{position:relative}
+.chart-tip{position:absolute;pointer-events:none;background:var(--p1);border:1px solid var(--bdr2);border-radius:6px;padding:4px 8px;font-family:var(--mono);font-size:9px;color:var(--t1);white-space:nowrap;transform:translate(-50%,-130%);opacity:0;transition:opacity .08s;z-index:5}
+.chart-tip .tip-date{color:var(--t3)}
+.chart-tip .tip-state{font-weight:700;margin-left:6px}
 
-.change-section{margin-top:16px}
-.change-row{display:flex;align-items:center;gap:9px;background:var(--p2);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;margin-bottom:6px}
-.change-row.buy{border-left:3px solid var(--green)}
-.change-row.sell{border-left:3px solid var(--red)}
-.change-tag{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
-.tag-buy{background:var(--gd);color:var(--green)}
-.tag-sell{background:var(--rd);color:var(--red)}
+/* STRATEGY OVERLAY CONTROLS */
+.overlay-bar{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.overlay-lbl{font-family:var(--mono);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
+.ov-btn{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p3);color:var(--t3);cursor:pointer}
+.ov-btn.active{color:var(--teal);border-color:var(--teal)}
+.ov-legend{display:flex;gap:10px;font-family:var(--mono);font-size:8px;color:var(--t3);margin:-2px 0 8px}
+.ov-legend span{display:flex;align-items:center;gap:4px}
+.ov-n{display:flex;align-items:center;gap:8px;flex:1;min-width:150px}
+.ov-n input[type=number]{width:50px;background:var(--p3);border:1px solid var(--bdr2);border-radius:6px;color:var(--teal);font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;padding:4px 2px;outline:none}
+.ov-n input[type=number]:focus{border-color:var(--teal)}
+.ov-n input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:60px;height:4px;border-radius:3px;background:var(--bdr2);outline:none;margin:0}
+.ov-n input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid var(--bg)}
+.ov-n input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid var(--bg)}
+.ov-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
 
-.hist-entry{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:12px;margin-bottom:8px}
-.hist-date{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);margin-bottom:8px}
-.hist-line{font-family:var(--mono);font-size:10px;color:var(--t2);margin-bottom:3px}
-.hist-pnl{font-family:var(--mono);font-size:10px;margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr)}
+/* SCORE BREAKDOWN */
+.score-break{margin-top:8px;border:1px solid var(--bdr);border-radius:8px;overflow:hidden}
+.sb-row{display:grid;grid-template-columns:46px 1fr 44px 52px;gap:6px;align-items:center;padding:6px 10px;font-family:var(--mono);font-size:9px;border-bottom:1px solid var(--bdr)}
+.sb-row:last-child{border-bottom:none}
+.sb-row.head{color:var(--t3);background:var(--p3);font-size:8px;letter-spacing:.04em}
+.sb-row.total{background:var(--p3);color:var(--teal);font-weight:700}
+.sb-name{color:var(--t2)}
+.sb-bar{height:5px;border-radius:3px;background:var(--bdr);overflow:hidden;margin-top:3px}
+.sb-bar>i{display:block;height:100%;background:var(--teal)}
+.sb-num{text-align:right;color:var(--t2)}
+.sb-contrib{text-align:right;color:var(--t1);font-weight:600}
+
+/* ALL STOCKS metadata */
+.sr-rank{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);width:30px;flex-shrink:0}
+.sr-score{font-family:var(--mono);font-size:10px;color:var(--teal);flex-shrink:0;text-align:right}
+.sr-chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
+
+/* HOLDINGS / PORTFOLIO */
+.hold-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.hold-btn{font-family:var(--mono);font-size:10px;font-weight:600;padding:8px 11px;border-radius:8px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer}
+.hold-btn:active{border-color:var(--teal);color:var(--teal)}
+.hold-btn.primary{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+.sync-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;font-family:var(--mono);font-size:9px;color:var(--t3)}
+.sync-status{margin-left:auto;text-align:right}
+.hold-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.hold-table{border-collapse:collapse;width:100%;min-width:560px}
+.hold-table th{font-family:var(--mono);font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:6px 6px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+.hold-table td{padding:5px 6px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.hold-table input,.hold-table select{background:var(--p3);border:1px solid var(--bdr2);border-radius:6px;color:var(--t1);font-family:var(--mono);font-size:11px;padding:6px 7px;outline:none;width:100%}
+.hold-table input:focus,.hold-table select:focus{border-color:var(--teal)}
+.hold-table input[type=number]{text-align:right}
+.h-tkr{width:78px}.h-date{width:130px}.h-num{width:84px}.h-status{width:96px}
+.status-sel.BUY{color:var(--green)}.status-sel.HELD{color:var(--blue)}.status-sel.SOLD{color:var(--red)}
+.h-del{background:transparent;border:none;color:var(--t3);font-size:15px;cursor:pointer;padding:2px 6px}
+.h-del:active{color:var(--red)}
+.h-pl{font-family:var(--mono);font-size:10px;text-align:right;white-space:nowrap}
+.sig-badge{font-family:var(--mono);font-size:8px;padding:2px 5px;border-radius:4px;background:var(--p3);color:var(--t3);white-space:nowrap}
+.sig-badge.in{color:var(--green);background:var(--gd)}
+.sig-badge.out{color:var(--t3)}
+.hold-summary{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--t2);margin:10px 2px 0}
+.hold-summary b{color:var(--t1)}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
@@ -189,7 +273,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 </header>
 
 <!-- WEIGHTS -->
-<div id="page-weights" class="page">
+<div id="page-weights" class="page active">
   <div class="section-hdr">Preset Blends</div>
   <div class="preset-row">
     <button class="preset-btn" onclick="applyPreset('momentum')">📈 Pure Momentum</button>
@@ -201,40 +285,40 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div class="section-hdr">Return Signals</div>
   <div class="weight-card">
     <div class="weight-row">
-      <div class="weight-lbl"><div><span class="weight-name">12-1 Month Return</span><span class="weight-desc">Skip-adjusted 12-month momentum</span></div><span class="weight-pct" id="wv-r121">0%</span></div>
-      <input type="range" id="w-r121" min="0" max="100" value="0" oninput="onWeightChange()">
+      <div class="weight-lbl"><div><span class="weight-name">12-1 Month Return</span><span class="weight-desc">Skip-adjusted 12-month momentum</span></div><span class="weight-pct" id="wv-r121">30%</span></div>
+      <input type="range" id="w-r121" min="0" max="100" value="30" oninput="onWeightChange()">
     </div>
     <div class="weight-row">
-      <div class="weight-lbl"><div><span class="weight-name">9-1 Month Return</span><span class="weight-desc">Skip-adjusted 9-month momentum — your tested best-Sharpe window</span></div><span class="weight-pct" id="wv-r91">100%</span></div>
-      <input type="range" id="w-r91" min="0" max="100" value="100" oninput="onWeightChange()">
+      <div class="weight-lbl"><div><span class="weight-name">9-1 Month Return</span><span class="weight-desc">Skip-adjusted 9-month momentum — your tested best-Sharpe window</span></div><span class="weight-pct" id="wv-r91">25%</span></div>
+      <input type="range" id="w-r91" min="0" max="100" value="25" oninput="onWeightChange()">
     </div>
     <div class="weight-row">
-      <div class="weight-lbl"><div><span class="weight-name">6-1 Month Return</span><span class="weight-desc">Skip-adjusted 6-month momentum</span></div><span class="weight-pct" id="wv-r61">0%</span></div>
-      <input type="range" id="w-r61" min="0" max="100" value="0" oninput="onWeightChange()">
+      <div class="weight-lbl"><div><span class="weight-name">6-1 Month Return</span><span class="weight-desc">Skip-adjusted 6-month momentum</span></div><span class="weight-pct" id="wv-r61">15%</span></div>
+      <input type="range" id="w-r61" min="0" max="100" value="15" oninput="onWeightChange()">
     </div>
     <div class="weight-row">
-      <div class="weight-lbl"><div><span class="weight-name">3-1 Month Return</span><span class="weight-desc">Skip-adjusted 3-month momentum (fast signal)</span></div><span class="weight-pct" id="wv-r31">0%</span></div>
-      <input type="range" id="w-r31" min="0" max="100" value="0" oninput="onWeightChange()">
+      <div class="weight-lbl"><div><span class="weight-name">3-1 Month Return</span><span class="weight-desc">Skip-adjusted 3-month momentum (fast signal)</span></div><span class="weight-pct" id="wv-r31">10%</span></div>
+      <input type="range" id="w-r31" min="0" max="100" value="10" oninput="onWeightChange()">
     </div>
   </div>
 
   <div class="section-hdr">Trend Quality (R²)</div>
   <div class="weight-card">
     <div class="weight-row">
-      <div class="weight-lbl"><div><span class="weight-name">R² @ 12 Month</span><span class="weight-desc">How linear/clean the 12m trend is</span></div><span class="weight-pct" id="wv-r2_12">0%</span></div>
-      <input type="range" id="w-r2_12" min="0" max="100" value="0" oninput="onWeightChange()">
+      <div class="weight-lbl"><div><span class="weight-name">R² @ 12 Month</span><span class="weight-desc">How linear/clean the 12m trend is</span></div><span class="weight-pct" id="wv-r2_12">8%</span></div>
+      <input type="range" id="w-r2_12" min="0" max="100" value="8" oninput="onWeightChange()">
     </div>
     <div class="weight-row">
-      <div class="weight-lbl"><div><span class="weight-name">R² @ 9 Month</span><span class="weight-desc">Trend cleanliness over 9 months</span></div><span class="weight-pct" id="wv-r2_9">0%</span></div>
-      <input type="range" id="w-r2_9" min="0" max="100" value="0" oninput="onWeightChange()">
+      <div class="weight-lbl"><div><span class="weight-name">R² @ 9 Month</span><span class="weight-desc">Trend cleanliness over 9 months</span></div><span class="weight-pct" id="wv-r2_9">5%</span></div>
+      <input type="range" id="w-r2_9" min="0" max="100" value="5" oninput="onWeightChange()">
     </div>
     <div class="weight-row">
-      <div class="weight-lbl"><div><span class="weight-name">R² @ 6 Month</span><span class="weight-desc">Trend cleanliness over 6 months</span></div><span class="weight-pct" id="wv-r2_6">0%</span></div>
-      <input type="range" id="w-r2_6" min="0" max="100" value="0" oninput="onWeightChange()">
+      <div class="weight-lbl"><div><span class="weight-name">R² @ 6 Month</span><span class="weight-desc">Trend cleanliness over 6 months</span></div><span class="weight-pct" id="wv-r2_6">5%</span></div>
+      <input type="range" id="w-r2_6" min="0" max="100" value="5" oninput="onWeightChange()">
     </div>
     <div class="weight-row">
-      <div class="weight-lbl"><div><span class="weight-name">R² @ 3 Month</span><span class="weight-desc">Trend cleanliness over 3 months (fast filter)</span></div><span class="weight-pct" id="wv-r2_3">0%</span></div>
-      <input type="range" id="w-r2_3" min="0" max="100" value="0" oninput="onWeightChange()">
+      <div class="weight-lbl"><div><span class="weight-name">R² @ 3 Month</span><span class="weight-desc">Trend cleanliness over 3 months (fast filter)</span></div><span class="weight-pct" id="wv-r2_3">2%</span></div>
+      <input type="range" id="w-r2_3" min="0" max="100" value="2" oninput="onWeightChange()">
     </div>
   </div>
 
@@ -245,36 +329,58 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div class="warn" id="data-note"></div>
 </div>
 
-<!-- PORTFOLIO (rebalance-aware) -->
-<div id="page-portfolio" class="page active">
-  <div id="rebal-banner"></div>
-  <div class="section-hdr">Current Holdings</div>
-  <div id="holdings-list"></div>
-  <div id="pending-changes"></div>
-</div>
-
 <!-- TOP PICKS -->
 <div id="page-picks" class="page">
-  <div class="topn-tabs">
-    <button class="topn-tab active" onclick="setTopN(5,this)">Top 5</button>
-    <button class="topn-tab" onclick="setTopN(10,this)">Top 10</button>
-    <button class="topn-tab" onclick="setTopN(20,this)">Top 20</button>
+  <div class="topn-control">
+    <div class="topn-head">
+      <span class="topn-label">Show top</span>
+      <input type="number" id="topn-num" min="1" max="100" value="5" inputmode="numeric"
+             onchange="setTopN(this.value)" oninput="setTopN(this.value)">
+      <span class="topn-label">picks</span>
+      <span class="topn-count" id="topn-count"></span>
+    </div>
+    <input type="range" id="topn-range" min="1" max="100" value="5" step="1"
+           oninput="setTopN(this.value)">
+    <div class="topn-presets">
+      <button class="topn-preset active" data-n="5" onclick="setTopN(5)">5</button>
+      <button class="topn-preset" data-n="10" onclick="setTopN(10)">10</button>
+      <button class="topn-preset" data-n="20" onclick="setTopN(20)">20</button>
+      <button class="topn-preset" data-n="50" onclick="setTopN(50)">50</button>
+      <button class="topn-preset" data-n="100" onclick="setTopN(100)">100</button>
+    </div>
   </div>
   <div id="picks-list"></div>
 </div>
 
 <!-- ALL STOCKS LIST -->
 <div id="page-allstocks" class="page">
-  <input type="search" class="search-box" id="list-search" placeholder="Search ticker, name, or sector…" oninput="onListSearch()">
-  <div class="sort-bar">
-    <button class="sort-btn active" data-key="rank" onclick="setListSort('rank',this)">Score Rank</button>
-    <button class="sort-btn" data-key="ticker" onclick="setListSort('ticker',this)">Ticker A-Z</button>
-    <button class="sort-btn" data-key="price" onclick="setListSort('price',this)">Price</button>
-    <button class="sort-btn" data-key="chg12" onclick="setListSort('chg12',this)">12m Change</button>
+  <div class="view-toggle" id="view-toggle">
+    <button class="view-btn active" data-view="list" onclick="setAllStocksView('list',this)">List</button>
+    <button class="view-btn" data-view="grid" onclick="setAllStocksView('grid',this)">Rank Grid</button>
   </div>
-  <div class="list-count" id="list-count"></div>
-  <div id="all-stocks-list"></div>
-  <button class="load-more" id="load-more-btn" onclick="loadMoreStocks()">Load more…</button>
+
+  <div id="list-view-wrap">
+    <input type="search" class="search-box" id="list-search" placeholder="Search ticker, name, or sector…" oninput="onListSearch()">
+    <div class="week-nav" id="week-nav">
+      <button id="week-prev" onclick="stepWeek(1)" title="Previous week">◀</button>
+      <div class="week-nav-lbl" id="week-nav-lbl">This week</div>
+      <button id="week-next" onclick="stepWeek(-1)" disabled title="Next week">▶</button>
+    </div>
+    <div class="sort-bar">
+      <button class="sort-btn active" data-key="rank" onclick="setListSort('rank',this)">Score Rank</button>
+      <button class="sort-btn" data-key="ticker" onclick="setListSort('ticker',this)">Ticker A-Z</button>
+      <button class="sort-btn" data-key="price" onclick="setListSort('price',this)">Price</button>
+      <button class="sort-btn" data-key="chg12" onclick="setListSort('chg12',this)">12m Change</button>
+    </div>
+    <div class="list-count" id="list-count"></div>
+    <div id="all-stocks-list"></div>
+    <button class="load-more" id="load-more-btn" onclick="loadMoreStocks()">Load more…</button>
+  </div>
+
+  <div id="grid-view-wrap" style="display:none">
+    <div class="rg-note" id="rg-note"></div>
+    <div class="rg-wrap" id="rg-wrap"></div>
+  </div>
 </div>
 
 <!-- STOCK DETAIL -->
@@ -282,19 +388,52 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div id="detail-content"></div>
 </div>
 
-<!-- HISTORY -->
+<!-- HISTORY / PORTFOLIO -->
 <div id="page-history" class="page">
-  <div class="section-hdr">Rebalance History</div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">A record of actual portfolio rotations — one entry per completed 28-day cycle, not per weekly data refresh. Shows what was bought, sold, and the realised result on each exit.</div>
-  <div id="history-list"><div class="empty">No rebalances recorded yet — the first appears after your opening cycle completes</div></div>
+  <div class="section-hdr">My Holdings</div>
+  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">Track what you've actually bought. Saved to this device automatically; export a file or sync to Google Drive to load it on any device. The <b>signal</b> column shows whether each ticker is currently inside the strategy's Top-N under your applied weights.</div>
+
+  <div class="sync-row">
+    <span>Strategy ref:</span>
+    <button class="ov-btn active" data-holdn="5" onclick="setHoldSignalN(5,this)">Top 5</button>
+    <button class="ov-btn" data-holdn="10" onclick="setHoldSignalN(10,this)">Top 10</button>
+    <button class="ov-btn" data-holdn="20" onclick="setHoldSignalN(20,this)">Top 20</button>
+  </div>
+
+  <div class="hold-tools">
+    <button class="hold-btn primary" onclick="addHolding()">+ Add holding</button>
+    <button class="hold-btn" onclick="exportHoldings()">⬇ Export file</button>
+    <button class="hold-btn" onclick="document.getElementById('hold-import').click()">⬆ Import file</button>
+    <input type="file" id="hold-import" accept="application/json,.json" class="hidden" onchange="importHoldings(event)">
+  </div>
+
+  <div class="sync-row">
+    <button class="hold-btn" id="drive-signin" onclick="driveSignIn()">🔗 Connect Google Drive</button>
+    <button class="hold-btn hidden" id="drive-save" onclick="driveSave()">☁ Save to Drive</button>
+    <button class="hold-btn hidden" id="drive-load" onclick="driveLoad()">⤵ Load from Drive</button>
+    <span class="sync-status" id="sync-status"></span>
+  </div>
+
+  <div class="hold-table-wrap">
+    <table class="hold-table" id="hold-table">
+      <thead><tr>
+        <th>Ticker</th><th>Status</th><th>Date</th><th>Buy price</th><th>Shares</th><th>Cost</th><th>P/L now</th><th>Signal</th><th></th>
+      </tr></thead>
+      <tbody id="hold-body"></tbody>
+    </table>
+  </div>
+  <div class="hold-summary" id="hold-summary"></div>
+
+  <div class="section-hdr" style="margin-top:22px">Past Top-5 Calls (12-1 Momentum Reference)</div>
+  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">One snapshot per scheduled run, using the fixed 12-1 signal as a reference point regardless of whatever weights you're currently viewing above.</div>
+  <div id="history-list"><div class="empty">No history yet — accumulates after the first few scheduled runs</div></div>
 </div>
 
 <nav class="bottom-nav">
-  <button class="nav-item active" id="nav-portfolio" onclick="showPage('portfolio',this)"><svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg><span>Portfolio</span></button>
-  <button class="nav-item" id="nav-picks" onclick="showPage('picks',this)"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Signal</span></button>
+  <button class="nav-item active" id="nav-weights" onclick="showPage('weights',this)"><svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg><span>Weights</span></button>
+  <button class="nav-item" id="nav-picks" onclick="showPage('picks',this)"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Top Picks</span></button>
   <button class="nav-item" id="nav-allstocks" onclick="showPage('allstocks',this)"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span>All Stocks</span></button>
-  <button class="nav-item" id="nav-weights" onclick="showPage('weights',this)"><svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg><span>Weights</span></button>
-  <button class="nav-item" id="nav-history" onclick="showPage('history',this)"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg><span>History</span></button>
+  <button class="nav-item" id="nav-history" onclick="showPage('history',this)"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg><span>Portfolio</span></button>
 </nav>
 
 <script>
@@ -310,6 +449,7 @@ const LIST_BATCH = 30;
 let selectedTicker = null;
 let detailRange = '6m';
 let prevPage = 'allstocks';
+let weekOffset = 0; // 0 = this week (live); growing = N weeks back, for the All Stocks rank-history nav
 
 const W_IDS = ['r121','r91','r61','r31','r2_12','r2_9','r2_6','r2_3'];
 const FACTOR_LABELS = {r121:'12-1',r91:'9-1',r61:'6-1',r31:'3-1',r2_12:'R²12',r2_9:'R²9',r2_6:'R²6',r2_3:'R²3'};
@@ -402,8 +542,12 @@ function applyPreset(name){
 function applyWeights(){
   clearStale();
   computeScoresForMarket();
+  invalidateBacktest();
+  invalidateRankGrid();
   renderPicks();
   renderAllStocksList();
+  if (allStocksView==='grid') renderRankGrid();
+  if (typeof renderHoldings==='function') renderHoldings();
 }
 
 // ═══════════════════════════════ SCORING (per market, cached on DATA object)
@@ -419,8 +563,9 @@ function computeScoresForMarket(){
     ranks[key] = vals.map(v=>{ const cnt=sorted.filter(x=>x<v).length; return (cnt+0.5)/vals.length; });
   });
   stocks.forEach((s,i)=>{
-    let score=0; W_IDS.forEach(key=> score+=norm[key]*ranks[key][i]);
+    let score=0; const pctl={}; W_IDS.forEach(key=>{ pctl[key]=ranks[key][i]; score+=norm[key]*ranks[key][i]; });
     s._score = Math.round(score*1000)/10;
+    s._pctl = pctl;
   });
   stocks.sort((a,b)=>b._score-a._score);
   stocks.forEach((s,i)=> s._rank = i+1);
@@ -437,14 +582,21 @@ function setMarket(m, btn){
   if (!market){ document.getElementById('picks-list').innerHTML='<div class="empty">No data for this market yet</div>'; return; }
   updateStatus();
   computeScoresForMarket();
+  invalidateBacktest();
+  invalidateRankGrid();
   listDisplayCount = LIST_BATCH;
+  weekOffset = 0;
   renderAll();
-  loadHistory();
 }
 function setTopN(n, btn){
+  n = Math.round(Number(n));
+  if (!Number.isFinite(n)) return;
+  n = Math.max(1, Math.min(100, n));
   TOPN = n;
-  document.querySelectorAll('.topn-tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  const range=document.getElementById('topn-range'), num=document.getElementById('topn-num');
+  if (range) range.value = n;
+  if (num && document.activeElement!==num) num.value = n; // don't fight mid-typing
+  document.querySelectorAll('.topn-preset').forEach(b=>b.classList.toggle('active', Number(b.dataset.n)===n));
   renderPicks();
 }
 
@@ -521,6 +673,8 @@ function renderPicks(){
   const norm = market._currentWeights || {};
   const topActive = Object.entries(norm).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
   const picks = market.stocks.slice(0, TOPN);
+  const cnt=document.getElementById('topn-count');
+  if (cnt) cnt.textContent = picks.length<TOPN ? `showing ${picks.length} (all available)` : `showing ${picks.length} of ${market.stocks.length}`;
 
   document.getElementById('picks-list').innerHTML = picks.map(p=>{
     const f = p.factors;
@@ -552,11 +706,30 @@ function renderPicks(){
 }
 function cssSafe(t){ return t.replace(/[^A-Za-z0-9]/g,'_'); }
 
+let navList = [], navLabel = '';
 function openTicker(ticker){
   selectedTicker = ticker;
   prevPage = document.querySelector('.page.active').id.replace('page-','');
+  // capture the ordered list the user is navigating within
+  if (prevPage==='picks'){ navList = DATA.markets[MARKET].stocks.slice(0,TOPN).map(s=>s.ticker); navLabel='Top '+TOPN; }
+  else if (prevPage==='allstocks'){ navList = getFilteredSortedStocks().map(s=>s.ticker); navLabel = listSearch?'filtered':'all stocks'; }
+  else { navList = DATA.markets[MARKET].stocks.map(s=>s.ticker); navLabel='ranked'; }
   showPageById('detail');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  renderDetail();
+  window.scrollTo(0,0);
+}
+function navContext(){
+  const idx = navList.indexOf(selectedTicker);
+  if (idx<0) return {idx:-1,total:0,prev:false,next:false,label:navLabel};
+  return {idx, total:navList.length, prev:idx>0, next:idx<navList.length-1, label:navLabel};
+}
+function stepStock(dir){
+  const idx = navList.indexOf(selectedTicker);
+  if (idx<0) return;
+  const ni = idx+dir;
+  if (ni<0||ni>=navList.length) return;
+  selectedTicker = navList[ni];
   renderDetail();
   window.scrollTo(0,0);
 }
@@ -572,16 +745,161 @@ function setListSort(key, btn){
 function getFilteredSortedStocks(){
   const market = DATA.markets[MARKET];
   if (!market) return [];
-  let list = market.stocks;
+  const date = weekDateAt(weekOffset);
+  const prevDate = weekDateAt(weekOffset+1);
+  const bt = buildBacktest();
+
+  let list = market.stocks.map(s=>{
+    let wRank, wScore, wFactors, wPrice;
+    if (weekOffset===0){
+      wRank = s._rank; wScore = s._score; wFactors = s.factors; wPrice = s.price;
+    } else {
+      wRank = (bt.rank[s.ticker]||{})[date];
+      if (wRank==null) return null; // not in the ranked universe that far back (e.g. recent listing)
+      const sc = (bt.score[s.ticker]||{})[date];
+      wScore = sc!=null ? Math.round(sc*1000)/10 : null;
+      wFactors = (bt.factor[s.ticker]||{})[date] || s.factors;
+      const pt = s.chart.find(p=>p.date===date);
+      wPrice = pt ? pt.price : null;
+    }
+    const prevRank = (bt.rank[s.ticker]||{})[prevDate];
+    return Object.assign({}, s, {
+      _wRank: wRank, _wScore: wScore, _wFactors: wFactors, _wPrice: wPrice,
+      _wDelta: (prevRank!=null && wRank!=null) ? (prevRank - wRank) : null
+    });
+  }).filter(Boolean);
+
   if (listSearch){
     list = list.filter(s=> s.ticker.toLowerCase().includes(listSearch) || s.name.toLowerCase().includes(listSearch) || s.sector.toLowerCase().includes(listSearch));
   }
-  list = [...list];
-  if (listSort==='rank') list.sort((a,b)=>a._rank-b._rank);
+  if (listSort==='rank') list.sort((a,b)=>a._wRank-b._wRank);
   else if (listSort==='ticker') list.sort((a,b)=>a.ticker.localeCompare(b.ticker));
-  else if (listSort==='price') list.sort((a,b)=>b.price-a.price);
-  else if (listSort==='chg12') list.sort((a,b)=>(b.factors.r121||0)-(a.factors.r121||0));
+  else if (listSort==='price') list.sort((a,b)=>(b._wPrice||0)-(a._wPrice||0));
+  else if (listSort==='chg12') list.sort((a,b)=>((b._wFactors&&b._wFactors.r121)||0)-((a._wFactors&&a._wFactors.r121)||0));
   return list;
+}
+
+// ─── Week navigator (rank history) ───
+function weeklyAxis(){
+  const market = DATA.markets[MARKET];
+  return (market && market.stocks[0]) ? market.stocks[0].chart.map(p=>p.date) : [];
+}
+function maxWeekOffset(){
+  const axis = weeklyAxis(); const T = axis.length;
+  const minPos = wkB(12) + wkB(1); // mirrors buildBacktest's own earliest-computable cutoff
+  return Math.max(0, T - 1 - minPos);
+}
+function weekDateAt(offset){
+  const axis = weeklyAxis(); const idx = axis.length - 1 - offset;
+  return idx>=0 ? axis[idx] : null;
+}
+function fmtWeekDate(d){
+  if (!d) return '—';
+  const dt = new Date(d+'T00:00:00Z');
+  return dt.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+}
+function stepWeek(dir){
+  const next = weekOffset + dir;
+  if (next < 0 || next > maxWeekOffset()) return;
+  weekOffset = next;
+  renderAllStocksList();
+}
+function renderWeekNav(){
+  const bar = document.getElementById('week-nav');
+  if (!bar) return;
+  const maxOff = maxWeekOffset();
+  if (weekOffset > maxOff) weekOffset = maxOff;
+  if (weekOffset < 0) weekOffset = 0;
+  const prevBtn = document.getElementById('week-prev');
+  const nextBtn = document.getElementById('week-next');
+  const lbl = document.getElementById('week-nav-lbl');
+  if (prevBtn) prevBtn.disabled = weekOffset >= maxOff;
+  if (nextBtn) nextBtn.disabled = weekOffset <= 0;
+  if (lbl){
+    lbl.innerHTML = weekOffset===0
+      ? `This week <span class="t3">· ${fmtWeekDate(weekDateAt(0))}</span>`
+      : `<b>${weekOffset} week${weekOffset>1?'s':''} ago</b> <span class="t3">· ${fmtWeekDate(weekDateAt(weekOffset))}</span>`;
+  }
+}
+function rankDeltaBadge(delta){
+  if (delta==null) return '<span class="rank-delta flat">—</span>';
+  if (delta===0)  return '<span class="rank-delta flat">±0</span>';
+  if (delta>0)    return `<span class="rank-delta up">▲${delta}</span>`;
+  return `<span class="rank-delta down">▼${Math.abs(delta)}</span>`;
+}
+
+// ─── List / Rank Grid view toggle ───
+let allStocksView = 'list';
+function setAllStocksView(view, btn){
+  allStocksView = view;
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const lw=document.getElementById('list-view-wrap'), gw=document.getElementById('grid-view-wrap');
+  if (lw) lw.style.display = view==='list' ? '' : 'none';
+  if (gw) gw.style.display = view==='grid' ? '' : 'none';
+  if (view==='grid') renderRankGrid();
+}
+
+// ─── Rank Grid: rank 1..N down the rows, every computable week across the columns ───
+// Built once per (market, weights) by inverting buildBacktest()'s rank map; cheap after that.
+let RANKGRID_CACHE = {};
+function invalidateRankGrid(){ RANKGRID_CACHE = {}; }
+function buildRankGrid(){
+  const key = MARKET+'|'+weightsKey();
+  if (RANKGRID_CACHE[key]) return RANKGRID_CACHE[key];
+  const bt = buildBacktest();
+  const grid = {}; // grid[date][rank] = ticker
+  Object.keys(bt.rank).forEach(ticker=>{
+    const m = bt.rank[ticker];
+    Object.keys(m).forEach(date=>{
+      if (!grid[date]) grid[date] = {};
+      grid[date][m[date]] = ticker;
+    });
+  });
+  RANKGRID_CACHE[key] = grid;
+  return grid;
+}
+function fmtWeekShort(d){
+  if (!d) return '';
+  const parts = d.split('-'); // YYYY-MM-DD
+  return parts[2]+'/'+parts[1];
+}
+function renderRankGrid(){
+  const market = DATA.markets[MARKET];
+  const wrap = document.getElementById('rg-wrap');
+  if (!market || !wrap) return;
+  const maxOff = maxWeekOffset();
+  const cols = []; for (let off=maxOff; off>=0; off--) cols.push(weekDateAt(off)); // oldest → newest, left→right
+  const grid = buildRankGrid();
+  const bt = buildBacktest();
+  const N = market.stocks.length;
+
+  const note = document.getElementById('rg-note');
+  if (note) note.innerHTML = `Rank 1–${N} across the ${cols.length} week${cols.length===1?'':'s'} with enough history to score. <span class="green">Green</span> = moved up vs the week before, <span class="red">red</span> = moved down, <span class="t2">grey</span> = held. Tap a ticker to open it.`;
+
+  if (!cols.length){ wrap.innerHTML = '<div class="empty">Not enough history yet to build the grid</div>'; return; }
+
+  const rows = [];
+  rows.push('<table class="rg-table"><thead><tr><th>Rank</th>'+cols.map(d=>`<th>${fmtWeekShort(d)}</th>`).join('')+'</tr></thead><tbody>');
+  for (let r=1; r<=N; r++){
+    const cells = [];
+    for (let ci=0; ci<cols.length; ci++){
+      const d = cols[ci];
+      const ticker = (grid[d]||{})[r];
+      if (!ticker){ cells.push('<td class="rg-empty">—</td>'); continue; }
+      const prevD = ci>0 ? cols[ci-1] : null;
+      const prevRank = prevD!=null ? (bt.rank[ticker]||{})[prevD] : null;
+      let cls = 'rg-flat';
+      if (prevRank!=null){
+        if (prevRank > r) cls = 'rg-up';
+        else if (prevRank < r) cls = 'rg-down';
+      }
+      cells.push(`<td class="rg-cell ${cls}" onclick="openTicker('${ticker}')">${ticker}</td>`);
+    }
+    rows.push(`<tr><th>#${r}</th>${cells.join('')}</tr>`);
+  }
+  rows.push('</tbody></table>');
+  wrap.innerHTML = rows.join('');
 }
 
 function buildMonthRow(s){
@@ -593,17 +911,23 @@ function buildMonthRow(s){
 }
 
 function renderAllStocksList(){
+  renderWeekNav();
   const list = getFilteredSortedStocks();
   document.getElementById('list-count').textContent = `${list.length} stocks`;
   const show = list.slice(0, listDisplayCount);
   document.getElementById('all-stocks-list').innerHTML = show.map(s=>{
-    const r12 = s.factors.r121;
+    const f = s._wFactors || s.factors;
+    const price = s._wPrice!=null ? s._wPrice : s.price;
     return `<div class="stock-row" onclick="openTicker('${s.ticker}')">
       <div class="sr-top">
+        <span class="sr-rank">#${s._wRank}</span>
+        ${rankDeltaBadge(s._wDelta)}
         <span class="sr-tkr">${s.ticker}</span>
         <span class="sr-name">${s.name}</span>
-        <span class="sr-price" style="color:${rc(r12)}">$${s.price.toFixed(2)}</span>
+        <span class="sr-score">${s._wScore!=null ? s._wScore.toFixed(1) : '—'}</span>
+        <span class="sr-price" style="color:${rc(f.r121)}">${price!=null?'$'+price.toFixed(2):'—'}</span>
       </div>
+      <div class="sr-chips">${W_IDS.map(k=>factorChip(k, f[k])).join('')}</div>
       ${buildMonthRow(s)}
     </div>`;
   }).join('') || '<div class="empty">No stocks match</div>';
@@ -625,6 +949,7 @@ function renderDetail(){
   ];
 
   const f = s.factors;
+  const navInfo = navContext();
   document.getElementById('detail-content').innerHTML = `
     <div class="ticker-detail">
       <div class="td-header">
@@ -633,13 +958,37 @@ function renderDetail(){
           <div><span class="td-tkr">${s.ticker}</span></div>
           <div class="td-name">${s.name} · ${s.sector}</div>
         </div>
+        <div class="stock-nav">
+          <button id="nav-prev" onclick="stepStock(-1)" ${navInfo.prev?'':'disabled'} title="Previous">▲</button>
+          <button id="nav-next" onclick="stepStock(1)" ${navInfo.next?'':'disabled'} title="Next">▼</button>
+        </div>
       </div>
+      ${navInfo.total?`<div class="nav-pos">${navInfo.idx+1} of ${navInfo.total} · ${navInfo.label}</div>`:''}
       <div class="td-price">$${s.price.toFixed(2)}</div>
 
       <div class="chart-controls" id="range-controls">
         ${rangeOptions.map(r=>`<button class="chart-range-btn ${r.key===detailRange?'active':''}" onclick="setDetailRange('${r.key}')">${r.label}</button>`).join('')}
       </div>
-      <div class="detail-chart-wrap"><canvas id="detail-chart"></canvas></div>
+      <div class="overlay-bar">
+        <span class="overlay-lbl">Strategy</span>
+        <button class="ov-btn ${overlayN?'':'active'}" id="ov-off" onclick="setOverlayN(0)">Off</button>
+        <button class="ov-btn ${overlayN?'active':''}" id="ov-on" onclick="overlayOn()">On</button>
+        <div class="ov-n ${overlayN?'':'hidden'}" id="ov-n-ctrl">
+          <span class="overlay-lbl">Top</span>
+          <input type="number" id="ov-num" min="1" max="100" value="${overlayN||TOPN}" inputmode="numeric" onchange="setOverlayN(this.value)" oninput="setOverlayN(this.value)">
+          <input type="range" id="ov-range" min="1" max="100" step="1" value="${overlayN||TOPN}" oninput="setOverlayN(this.value)">
+        </div>
+      </div>
+      <div class="ov-legend" id="ov-legend" ${overlayN?'':'style="display:none"'}>
+        <span><i class="ov-dot" style="background:var(--green)"></i>Held (in Top ${overlayN||TOPN})</span>
+        <span><i class="ov-dot" style="background:var(--blue)"></i>Buy</span>
+        <span><i class="ov-dot" style="background:var(--red)"></i>Sell</span>
+        <span><i class="ov-dot" style="background:var(--t3)"></i>Out</span>
+      </div>
+      <div class="detail-chart-wrap">
+        <canvas id="detail-chart"></canvas>
+        <div class="chart-tip" id="chart-tip"></div>
+      </div>
 
       <div class="section-hdr">Return Signals</div>
       <div class="factor-row" style="margin-bottom:14px">
@@ -652,6 +1001,9 @@ function renderDetail(){
 
       <div class="section-hdr">12-Month Price History</div>
       ${buildMonthRow(s)}
+
+      <div class="section-hdr">Composite Score Breakdown</div>
+      ${scoreBreakdown(s)}
 
       <div class="section-hdr">Rank Under Current Weights</div>
       <div class="rank-grid">
@@ -668,122 +1020,145 @@ function setDetailRange(key){
   drawDetailChartForRange();
 }
 function rangeLabel(key){ return {'3m':'3M','6m':'6M','1y':'1Y','2y':'2Y'}[key]; }
+let DETAIL_POINTS=[], DETAIL_GEO=null, DETAIL_MEMB=null;
 function drawDetailChartForRange(){
   const market = DATA.markets[MARKET];
   const s = market.stocks.find(x=>x.ticker===selectedTicker);
   if (!s) return;
   const weeksMap = {'3m':13,'6m':26,'1y':52,'2y':104};
   const w = weeksMap[detailRange] || 26;
-  const points = s.chart.slice(-w);
+  DETAIL_POINTS = s.chart.slice(-w);
+  // strategy membership aligned to these points (null if overlay off / not computable)
+  DETAIL_MEMB = overlayN ? membershipFor(s.ticker, DETAIL_POINTS) : null;
+  paintDetailChart(null);
+  wireChartHover();
+}
+
+// paint base line + (optional) strategy overlay + (optional) hover crosshair
+function paintDetailChart(hoverIdx){
   const c = document.getElementById('detail-chart');
-  if (c) drawDetailChart(c, points);
+  if (!c) return;
+  const points = DETAIL_POINTS;
+  const dpr=window.devicePixelRatio||1;
+  const W=c.parentElement.clientWidth, H=220;
+  c.width=W*dpr; c.height=H*dpr; c.style.width=W+'px'; c.style.height=H+'px';
+  const ctx=c.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
+  const valid = points.filter(p=>p.price!=null);
+  if (valid.length<2) return;
+  const prices = valid.map(p=>p.price);
+  const mn=Math.min(...prices), mx=Math.max(...prices), range=mx-mn||1;
+  const pad={t:10,b:22,l:50,r:10}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const xS=i=>pad.l+i/(valid.length-1)*cW, yS=v=>pad.t+cH-(v-mn)/range*cH;
+  DETAIL_GEO={valid,xS,yS,pad,cW,cH,W,H,mn,mx,range};
+
+  // gridlines + y labels
+  [0,.25,.5,.75,1].forEach(fr=>{
+    const v=mn+fr*range, y=yS(v);
+    ctx.fillStyle='#23304D'; ctx.fillRect(pad.l,y,cW,1);
+    ctx.fillStyle='#8A9CBC'; ctx.font='9px JetBrains Mono'; ctx.textAlign='right';
+    ctx.fillText('$'+v.toFixed(2), pad.l-6, y+3);
+  });
+
+  // map each valid point to a membership state (true=in TopN, false=out, undefined=no signal)
+  const memb = DETAIL_MEMB; // aligned to `points`, but we drew from `valid`; build valid-aligned states
+  let states=null;
+  if (memb){
+    states=[]; let vi=0;
+    points.forEach(p=>{ if(p.price!=null){ states[vi]=memb[p.date]; vi++; } });
+  }
+
+  const baseUp = prices[prices.length-1]>=prices[0];
+  const baseColor = baseUp?'#26D07C':'#FF5C5C';
+
+  // area fill (subtle, base colour)
+  ctx.beginPath();
+  valid.forEach((p,i)=> i===0?ctx.moveTo(xS(i),yS(p.price)):ctx.lineTo(xS(i),yS(p.price)));
+  ctx.lineTo(xS(valid.length-1),pad.t+cH); ctx.lineTo(xS(0),pad.t+cH); ctx.closePath();
+  ctx.fillStyle = baseUp?'rgba(38,208,124,.07)':'rgba(255,92,92,.07)'; ctx.fill();
+
+  if (states){
+    // shade "held" spans (in Top-N) with a teal band behind the line
+    let spanStart=null;
+    for (let i=0;i<valid.length;i++){
+      const inN = states[i]===true;
+      if (inN && spanStart===null) spanStart=i;
+      if ((!inN || i===valid.length-1) && spanStart!==null){
+        const end = inN? i : i-1;
+        const x0=xS(spanStart), x1=xS(end);
+        ctx.fillStyle='rgba(0,212,170,.10)';
+        ctx.fillRect(x0, pad.t, Math.max(2,x1-x0), cH);
+        spanStart=null;
+      }
+    }
+    // colour each line segment by state
+    ctx.lineWidth=2; ctx.lineJoin='round';
+    for (let i=1;i<valid.length;i++){
+      const st=states[i];
+      ctx.strokeStyle = st===true?'#00D4AA':st===false?'#4A5B7A':baseColor;
+      ctx.beginPath(); ctx.moveTo(xS(i-1),yS(valid[i-1].price)); ctx.lineTo(xS(i),yS(valid[i].price)); ctx.stroke();
+    }
+    // BUY / SELL transition markers
+    for (let i=1;i<valid.length;i++){
+      const prev=states[i-1], cur=states[i];
+      if (prev!==true && cur===true) drawMarker(ctx,xS(i),yS(valid[i].price),'#4D9FFF','B');
+      else if (prev===true && cur!==true) drawMarker(ctx,xS(i),yS(valid[i].price),'#FF5C5C','S');
+    }
+  } else {
+    // plain single-colour line
+    ctx.beginPath();
+    valid.forEach((p,i)=> i===0?ctx.moveTo(xS(i),yS(p.price)):ctx.lineTo(xS(i),yS(p.price)));
+    ctx.strokeStyle=baseColor; ctx.lineWidth=2; ctx.stroke();
+  }
+  // latest dot
+  ctx.beginPath(); ctx.arc(xS(valid.length-1),yS(prices[prices.length-1]),4,0,Math.PI*2);
+  ctx.fillStyle=states?(states[valid.length-1]===true?'#00D4AA':'#4A5B7A'):baseColor; ctx.fill();
+
+  // x labels
+  ctx.fillStyle='#8A9CBC'; ctx.font='9px JetBrains Mono'; ctx.textAlign='left';
+  ctx.fillText(valid[0].date.slice(0,7), pad.l, H-6);
+  ctx.textAlign='right'; ctx.fillText(valid[valid.length-1].date.slice(0,7), pad.l+cW, H-6);
+
+  // hover crosshair
+  if (hoverIdx!=null && hoverIdx>=0 && hoverIdx<valid.length){
+    const x=xS(hoverIdx), y=yS(valid[hoverIdx].price);
+    ctx.strokeStyle='rgba(138,156,188,.5)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+cH); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.fillStyle='#EAF0FB'; ctx.fill();
+    showChartTip(hoverIdx, x, y, states?states[hoverIdx]:undefined);
+  } else { hideChartTip(); }
+}
+
+function drawMarker(ctx,x,y,color,letter){
+  ctx.beginPath(); ctx.arc(x,y,5.5,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+  ctx.fillStyle='#0A0E1A'; ctx.font='700 8px JetBrains Mono'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(letter,x,y+0.5); ctx.textBaseline='alphabetic';
+}
+
+function stateLabel(st){ return st===true?'<span class="tip-state teal">HELD</span>':st===false?'<span class="tip-state t3">OUT</span>':''; }
+function showChartTip(idx, x, y, st){
+  const tip=document.getElementById('chart-tip'); if(!tip) return;
+  const p=DETAIL_GEO.valid[idx];
+  tip.innerHTML=`<span class="tip-date">${p.date}</span> $${p.price.toFixed(2)} ${st!=null?stateLabel(st):''}`;
+  tip.style.left=x+'px'; tip.style.top=y+'px'; tip.style.opacity='1';
+}
+function hideChartTip(){ const t=document.getElementById('chart-tip'); if(t) t.style.opacity='0'; }
+
+function wireChartHover(){
+  const c=document.getElementById('detail-chart'); if(!c||!DETAIL_GEO) return;
+  const toIdx=(clientX)=>{
+    const rect=c.getBoundingClientRect();
+    const {pad,cW,valid}=DETAIL_GEO;
+    const rel=clientX-rect.left-pad.l;
+    let i=Math.round(rel/cW*(valid.length-1));
+    return Math.max(0,Math.min(valid.length-1,i));
+  };
+  const move=e=>{ const cx=e.touches?e.touches[0].clientX:e.clientX; paintDetailChart(toIdx(cx)); };
+  c.onmousemove=move; c.onmouseleave=()=>paintDetailChart(null);
+  c.ontouchstart=e=>{move(e);}; c.ontouchmove=e=>{move(e); e.preventDefault();}; c.ontouchend=()=>paintDetailChart(null);
 }
 function goBack(){ showPageById(prevPage); document.getElementById('nav-'+prevPage)?.classList.add('active'); }
 
-// ═══════════════════════════════ PORTFOLIO (rebalance-aware)
-function renderPortfolio(){
-  const pf = DATA.portfolio;
-  const banner = document.getElementById('rebal-banner');
-  const holdingsEl = document.getElementById('holdings-list');
-  const pendingEl = document.getElementById('pending-changes');
-
-  if (!pf || !pf.markets || !pf.markets[MARKET]){
-    banner.innerHTML = '';
-    holdingsEl.innerHTML = '<div class="empty">No portfolio yet — it will be established on the next scheduled run</div>';
-    pendingEl.innerHTML = '';
-    return;
-  }
-
-  const m = pf.markets[MARKET];
-  const rebalDays = pf.rebalDays || 28;
-  const daysSince = m.daysSinceRebalance != null ? m.daysSinceRebalance : 0;
-  const daysUntil = m.daysUntilRebalance != null ? m.daysUntilRebalance : rebalDays;
-  const pctThrough = Math.min(100, (daysSince / rebalDays) * 100);
-  const isDue = daysUntil <= 0 || m.rebalancedThisRun;
-
-  // ── Cycle status banner ──
-  banner.innerHTML = `
-    <div class="rebal-card ${isDue?'due':'hold'}">
-      <div class="rebal-status ${isDue?'teal':''}">
-        ${m.rebalancedThisRun ? '✓ Rebalanced this cycle' : `⏳ Holding — ${daysUntil} day${daysUntil===1?'':'s'} until rebalance`}
-      </div>
-      <div class="rebal-sub">
-        ${m.rebalancedThisRun
-          ? `Portfolio rotated on ${m.lastRebalance}. Next rebalance due ${m.nextRebalance}.`
-          : `Last rebalanced ${m.lastRebalance}. Do not trade before ${m.nextRebalance} — your backtest assumed a ${rebalDays}-day hold, and trading more often means higher costs than the strategy was validated on.`}
-      </div>
-      <div class="rebal-progress"><div class="rebal-progress-fill" style="width:${pctThrough}%"></div></div>
-      <div class="rebal-meta">
-        <span>Day ${daysSince} of ${rebalDays}</span>
-        <span>Cycle ${m.cycleNumber || 1}</span>
-      </div>
-      <div class="strategy-chip">${pf.strategy || '9-1 momentum'} · Top ${pf.topN || 5}</div>
-    </div>`;
-
-  // ── Current holdings, with live P&L since entry ──
-  const market = DATA.markets[MARKET];
-  const priceOf = {};
-  (market ? market.stocks : []).forEach(s=> priceOf[s.ticker] = s.price);
-
-  holdingsEl.innerHTML = (m.holdings || []).map(h=>{
-    const cur = priceOf[h.ticker];
-    const pnl = (cur && h.entryPrice) ? (cur/h.entryPrice - 1) : null;
-    const isNew = (m.bought||[]).includes(h.ticker) && m.rebalancedThisRun;
-    return `<div class="hold-row" onclick="openTicker('${h.ticker}')">
-      <div class="hold-top">
-        <span class="hold-tkr">${h.ticker}</span>
-        <span class="hold-name">${h.name}${isNew?' <span class="change-tag tag-buy">NEW</span>':''}</span>
-        <span class="hold-pnl" style="color:${pnl==null?'var(--t3)':rc(pnl)}">${pnl==null?'—':pct1(pnl)}</span>
-      </div>
-      <div class="hold-detail">
-        <span>Entry $${h.entryPrice != null ? h.entryPrice.toFixed(2) : '—'} · ${h.entryDate || '—'}</span>
-        <span>Now $${cur != null ? cur.toFixed(2) : '—'}</span>
-      </div>
-    </div>`;
-  }).join('') || '<div class="empty">No holdings</div>';
-
-  // ── What changed at the last rebalance (if it just happened) ──
-  let pending = '';
-  if (m.rebalancedThisRun && ((m.bought||[]).length || (m.sold||[]).length)){
-    pending += '<div class="change-section"><div class="section-hdr">Changes This Rebalance</div>';
-    (m.bought||[]).forEach(t=>{
-      pending += `<div class="change-row buy"><span class="hold-tkr">${t}</span><span class="hold-name">bought</span><span class="change-tag tag-buy">BUY</span></div>`;
-    });
-    (m.closed||[]).forEach(c=>{
-      const p = c.pnl;
-      pending += `<div class="change-row sell">
-        <span class="hold-tkr">${c.ticker}</span>
-        <span class="hold-name">sold — held from ${c.entryDate}</span>
-        <span class="hold-pnl" style="color:${p==null?'var(--t3)':rc(p)}">${p==null?'—':pct1(p)}</span>
-        <span class="change-tag tag-sell">SELL</span>
-      </div>`;
-    });
-    pending += '</div>';
-  } else if (!m.rebalancedThisRun) {
-    // Show what WOULD change if you rebalanced today -- informational only
-    const target = (market ? market.stocks.slice(0, pf.topN || 5) : []).map(s=>s.ticker);
-    const held = (m.holdings||[]).map(h=>h.ticker);
-    const wouldBuy = target.filter(t=>!held.includes(t));
-    const wouldSell = held.filter(t=>!target.includes(t));
-    if (wouldBuy.length || wouldSell.length){
-      pending += `<div class="change-section">
-        <div class="section-hdr">If You Rebalanced Today (not yet due)</div>
-        <div style="font-size:10px;color:var(--t3);margin-bottom:8px;line-height:1.6">
-          Today's signal differs from what you hold. This is <b>informational only</b> — acting on it now would mean trading more often than your ${rebalDays}-day backtest assumed.
-        </div>`;
-      wouldBuy.forEach(t=>{
-        pending += `<div class="change-row buy" style="opacity:.65"><span class="hold-tkr">${t}</span><span class="hold-name">would buy</span><span class="change-tag tag-buy">+</span></div>`;
-      });
-      wouldSell.forEach(t=>{
-        pending += `<div class="change-row sell" style="opacity:.65"><span class="hold-tkr">${t}</span><span class="hold-name">would sell</span><span class="change-tag tag-sell">−</span></div>`;
-      });
-      pending += '</div>';
-    }
-  }
-  pendingEl.innerHTML = pending;
-}
-
-// ═══════════════════════════════ HISTORY (rebalance records)
+// ═══════════════════════════════ HISTORY
 async function loadHistory(){
   try{
     const resp = await fetch(HISTORY_URL, {cache:'no-store'});
@@ -793,25 +1168,9 @@ async function loadHistory(){
     const snapshots = lines.map(l=>JSON.parse(l)).reverse().slice(0,30);
     if (!snapshots.length) return;
     document.getElementById('history-list').innerHTML = snapshots.map(snap=>{
-      const md = snap.markets ? snap.markets[MARKET] : null;
-      if (!md) return '';
-      const bought = (md.bought||[]).join(', ') || '—';
-      const sold = (md.sold||[]).join(', ') || '—';
-      const held = (md.holdings||[]).join(', ');
-      let pnlHtml = '';
-      if ((md.closed||[]).length){
-        pnlHtml = '<div class="hist-pnl">' + md.closed.map(c=>
-          `<span style="color:${c.pnl==null?'var(--t3)':rc(c.pnl)}">${c.ticker} ${c.pnl==null?'—':pct1(c.pnl)}</span>`
-        ).join(' · ') + '</div>';
-      }
-      return `<div class="hist-entry">
-        <div class="hist-date">${snap.date}</div>
-        <div class="hist-line"><span class="green">Bought:</span> ${bought}</div>
-        <div class="hist-line"><span class="red">Sold:</span> ${sold}</div>
-        <div class="hist-line t3">Holding: ${held}</div>
-        ${pnlHtml}
-      </div>`;
-    }).filter(Boolean).join('') || '<div class="empty">No rebalances for this market yet</div>';
+      const allTickers = Object.values(snap.markets).flatMap(picks=>picks.map(p=>p.ticker));
+      return `<div class="history-row"><span class="history-date">${snap.date}</span><span class="history-tickers">${allTickers.join(', ')}</span></div>`;
+    }).join('');
   }catch(err){ /* no history yet on first runs */ }
 }
 
@@ -824,21 +1183,332 @@ function showPage(id, btn){
   showPageById(id);
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   btn.classList.add('active');
-  if (id === 'history') loadHistory();
   window.scrollTo(0,0);
 }
 
 function renderAll(){
   updateWeightUI();
-  renderPortfolio();
   renderPicks();
   renderAllStocksList();
-  const pf = DATA.portfolio;
+  if (allStocksView==='grid') renderRankGrid();
+  if (typeof renderHoldings==='function') renderHoldings();
   document.getElementById('data-note').innerHTML =
-    `<b>Note:</b> changing these weights affects the <b>Signal</b> and <b>All Stocks</b> views only — it does <i>not</i> change your actual portfolio. Your holdings rotate on a fixed ${pf ? (pf.rebalDays||28) : 28}-day cycle using <b>${pf ? pf.strategy : '9-1 momentum'}</b>, matching the strategy your backtests validated. Use these sliders to explore, not to trade off-cycle. Generated ${new Date(DATA.generatedAt).toLocaleString()}.`;
+    `<b>How this works:</b> a scheduled job pulls fresh weekly prices for the S&amp;P 500 and ASX 300, computes all 8 factors below for every eligible stock, and this page ranks everything client-side using whatever weights you set — adjust and tap Apply, no re-run needed. Generated ${new Date(DATA.generatedAt).toLocaleString()}.`;
 }
 
-window.addEventListener('load', loadData);
+// ═══════════════════════════════ COMPOSITE SCORE BREAKDOWN (#3)
+function scoreBreakdown(s){
+  const norm = DATA.markets[MARKET]._currentWeights || {};
+  const pctl = s._pctl || {};
+  const rows = W_IDS
+    .map(k=>({k, w:norm[k]||0, p:pctl[k]||0, c:(norm[k]||0)*(pctl[k]||0)*100}))
+    .sort((a,b)=>b.c-a.c);
+  const body = rows.map(r=>`
+    <div class="sb-row">
+      <span class="sb-name">${FACTOR_LABELS[r.k]}</span>
+      <span>
+        <span class="t3" style="font-size:8px">pctl ${(r.p*100).toFixed(0)} · wt ${(r.w*100).toFixed(0)}%</span>
+        <span class="sb-bar"><i style="width:${(r.p*100).toFixed(0)}%"></i></span>
+      </span>
+      <span class="sb-num">${(r.w*100).toFixed(0)}%</span>
+      <span class="sb-contrib">${r.c.toFixed(1)}</span>
+    </div>`).join('');
+  return `<div class="score-break">
+    <div class="sb-row head"><span>Factor</span><span>Percentile rank in universe</span><span class="sb-num">Weight</span><span class="sb-contrib">Points</span></div>
+    ${body}
+    <div class="sb-row total"><span>SCORE</span><span class="t3" style="font-size:8px">Σ weight × percentile × 100</span><span></span><span class="sb-contrib">${s._score.toFixed(1)}</span></div>
+  </div>`;
+}
+
+// ═══════════════════════════════ STRATEGY OVERLAY ENGINE (#4)
+// Recomputes the 8 factors from price history at each past week — a faithful
+// JS port of run_signals.py's compute_factors_at + r2_trend — then ranks the
+// whole cross-section under the CURRENT applied weights to decide Top-N
+// membership at every week. Cached per (market, weights, N).
+let overlayN = 0;
+let BACKTEST_CACHE = {};
+const MIN_PRICE = {sp500:0.10, asx300:0.05};
+function wkB(months){ return Math.round(months*4.345); }
+function invalidateBacktest(){ BACKTEST_CACHE = {}; }
+function weightsKey(){ const n=DATA.markets[MARKET]._currentWeights||{}; return W_IDS.map(k=>Math.round((n[k]||0)*1000)).join('-'); }
+
+function r2log(arr){ // closed-form R² of log-price vs time; mirrors r2_trend
+  const y=[]; for(const v of arr){ if(v!=null&&!isNaN(v)&&v>0) y.push(Math.log(v)); else y.push(NaN); }
+  const ys=y.filter(v=>!isNaN(v));
+  if (ys.length < arr.length*0.6 || ys.length<6) return null;
+  let n=0,sx=0,sy=0,sxx=0,sxy=0;
+  for(let i=0;i<y.length;i++){ if(isNaN(y[i])) continue; n++; sx+=i; sy+=y[i]; sxx+=i*i; sxy+=i*y[i]; }
+  const denom=n*sxx-sx*sx; if(denom===0) return null;
+  const b=(n*sxy-sx*sy)/denom, a=(sy-b*sx)/n;
+  let ssr=0,sst=0; const ymean=sy/n;
+  for(let i=0;i<y.length;i++){ if(isNaN(y[i])) continue; const yh=a+b*i; ssr+=(y[i]-yh)**2; sst+=(y[i]-ymean)**2; }
+  if (sst===0) return null;
+  return Math.max(0, 1-ssr/sst);
+}
+
+// Builds each ticker's weekly RANK across the cross-section (independent of N),
+// cached per (market, weights). Top-N membership for any N is then just
+// rank<=N — so changing N never re-runs the backtest.
+function buildBacktest(){
+  const key = MARKET+'|'+weightsKey();
+  if (BACKTEST_CACHE[key]) return BACKTEST_CACHE[key];
+  const market = DATA.markets[MARKET];
+  const stocks = market.stocks;
+  const minP = MIN_PRICE[MARKET] ?? 1.0;
+  // shared weekly axis (all stocks share one grid)
+  const axis = stocks[0].chart.map(p=>p.date);
+  const T = axis.length;
+  const dateIdx = {}; axis.forEach((d,i)=>dateIdx[d]=i);
+  // aligned price arrays
+  const aligned = stocks.map(s=>{ const a=new Array(T).fill(NaN); s.chart.forEach(p=>{ const i=dateIdx[p.date]; if(i!=null) a[i]=(p.price==null?NaN:p.price); }); return a; });
+
+  const LB={r121:wkB(12),r91:wkB(9),r61:wkB(6),r31:wkB(3)};
+  const R2W={r2_12:wkB(12),r2_9:wkB(9),r2_6:wkB(6),r2_3:wkB(3)};
+  const SKIP=wkB(1);
+  const minPos = wkB(12)+SKIP; // first week with enough lookback
+  const norm = market._currentWeights || {};
+
+  // rankMap[ticker]={date:rank}, scoreMap[ticker]={date:score 0-1}, factorMap[ticker]={date:{r121,...}}
+  const rankMap = {}, scoreMap = {}, factorMap = {};
+  stocks.forEach(s=>{ rankMap[s.ticker]={}; scoreMap[s.ticker]={}; factorMap[s.ticker]={}; });
+
+  for (let pos=minPos; pos<T; pos++){
+    const d=axis[pos];
+    // compute factors for all eligible stocks at this week
+    const fac=[]; // {si, f:{...}}
+    for (let si=0; si<stocks.length; si++){
+      const arr=aligned[si]; const pNow=arr[pos];
+      if (isNaN(pNow)||pNow<minP) continue;
+      const pSkip=arr[pos-SKIP];
+      const p121=arr[pos-LB.r121],p91=arr[pos-LB.r91],p61=arr[pos-LB.r61],p31=arr[pos-LB.r31];
+      if ([pSkip,p121,p91,p61,p31].some(v=>isNaN(v)||v<=0)) continue;
+      const f={ r121:pSkip/p121-1, r91:pSkip/p91-1, r61:pSkip/p61-1, r31:pSkip/p31-1 };
+      let ok=true;
+      for (const key in R2W){ const w=R2W[key]; if(pos-w<0){ok=false;break;} const r2=r2log(arr.slice(pos-w,pos+1)); if(r2==null){ok=false;break;} f[key]=r2; }
+      if(!ok) continue;
+      fac.push({si,f});
+    }
+    if (!fac.length) continue;
+    // cross-sectional percentile per factor → composite score (same method as live)
+    const scores=new Array(fac.length).fill(0);
+    W_IDS.forEach(key=>{
+      const vals=fac.map(x=>x.f[key]);
+      const sorted=[...vals].sort((a,b)=>a-b);
+      // count strictly-less via lower-bound (identical to filter(x<v).length, but O(log n))
+      for(let i=0;i<fac.length;i++){
+        let lo=0,hi=sorted.length;const v=vals[i];
+        while(lo<hi){const mid=(lo+hi)>>1; if(sorted[mid]<v) lo=mid+1; else hi=mid;}
+        scores[i]+=(norm[key]||0)*((lo+0.5)/vals.length);
+      }
+    });
+    fac.forEach((x,i)=>{ const t=stocks[x.si].ticker; scoreMap[t][d]=scores[i]; factorMap[t][d]=x.f; });
+    const order=fac.map((x,i)=>({t:stocks[x.si].ticker,sc:scores[i]})).sort((a,b)=>b.sc-a.sc);
+    order.forEach((o,i)=>{ rankMap[o.t][d]=i+1; });
+  }
+
+  // Pin the LATEST week to the live dashboard ranking so the chart's "today"
+  // exactly matches your Top Picks tab (avoids tiny port/rounding drift).
+  const lastDate=axis[T-1];
+  stocks.forEach(s=>{
+    rankMap[s.ticker][lastDate] = s._rank;
+    scoreMap[s.ticker][lastDate] = (s._score||0)/100;
+    factorMap[s.ticker][lastDate] = s.factors;
+  });
+
+  const result = {rank:rankMap, score:scoreMap, factor:factorMap};
+  BACKTEST_CACHE[key]=result;
+  return result;
+}
+
+// membership for the CURRENT overlayN — cheap lookups, no recompute on N change
+function membershipFor(ticker, points){
+  const rm = buildBacktest().rank[ticker] || {};
+  const out={}; points.forEach(p=>{ const r=rm[p.date]; out[p.date] = (r==null)? undefined : (r<=overlayN); });
+  return out;
+}
+
+let lastOverlayN = 20;
+function overlayOn(){ setOverlayN(overlayN>0 ? overlayN : (lastOverlayN || TOPN || 20)); }
+function setOverlayN(n){
+  n = Math.round(Number(n));
+  if (!Number.isFinite(n)) return;
+  n = Math.max(0, Math.min(100, n));
+  overlayN = n;
+  if (n>0) lastOverlayN = n;
+  const off=document.getElementById('ov-off'), on=document.getElementById('ov-on'), ctrl=document.getElementById('ov-n-ctrl');
+  if (off) off.classList.toggle('active', n===0);
+  if (on)  on.classList.toggle('active', n>0);
+  if (ctrl) ctrl.classList.toggle('hidden', n===0);
+  const range=document.getElementById('ov-range'), num=document.getElementById('ov-num');
+  if (n>0){
+    if (range) range.value=n;
+    if (num && document.activeElement!==num) num.value=n;
+  }
+  const legend=document.getElementById('ov-legend');
+  if (legend){
+    legend.style.display = n?'flex':'none';
+    if (n) legend.innerHTML=`<span><i class="ov-dot" style="background:var(--green)"></i>Held (in Top ${n})</span>`
+      +`<span><i class="ov-dot" style="background:var(--blue)"></i>Buy</span>`
+      +`<span><i class="ov-dot" style="background:var(--red)"></i>Sell</span>`
+      +`<span><i class="ov-dot" style="background:var(--t3)"></i>Out</span>`;
+  }
+  drawDetailChartForRange();
+}
+
+// ═══════════════════════════════ KEYBOARD NAV (#1)
+document.addEventListener('keydown', e=>{
+  if (document.getElementById('page-detail').classList.contains('active')){
+    if (e.key==='ArrowUp'){ e.preventDefault(); stepStock(-1); }
+    else if (e.key==='ArrowDown'){ e.preventDefault(); stepStock(1); }
+  }
+});
+// ═══════════════════════════════ KEYBOARD NAV — WEEK (All Stocks rank history)
+document.addEventListener('keydown', e=>{
+  if (document.getElementById('page-allstocks').classList.contains('active')){
+    if (e.key==='ArrowLeft'){ e.preventDefault(); stepWeek(1); }
+    else if (e.key==='ArrowRight'){ e.preventDefault(); stepWeek(-1); }
+  }
+});
+
+// ═══════════════════════════════ HOLDINGS TRACKER (#6)
+const HOLD_KEY='momentum_holdings_v1';
+const DRIVE_FILE='momentum-holdings.json';
+// Public OAuth client ID (same Google Cloud project as your Wealth Dashboard;
+// github.io origin is already authorised). Replace if you use a different project.
+const GOOGLE_CLIENT_ID='7436150606-qreksqb7tv3k5dsl38akteg9tm9g11ar.apps.googleusercontent.com';
+const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
+
+let holdings=[];
+let holdSignalN=5;
+
+function loadHoldings(){
+  try{ const raw=localStorage.getItem(HOLD_KEY); holdings = raw?JSON.parse(raw):[]; }catch(e){ holdings=[]; }
+}
+function saveHoldings(){ try{ localStorage.setItem(HOLD_KEY, JSON.stringify(holdings)); }catch(e){} }
+function addHolding(){
+  holdings.push({id:Date.now()+Math.random().toString(36).slice(2,6), ticker:'', status:'BUY', date:new Date().toISOString().slice(0,10), price:'', shares:''});
+  saveHoldings(); renderHoldings();
+}
+function updateHolding(id, field, val){
+  const h=holdings.find(x=>x.id===id); if(!h) return;
+  h[field] = (field==='price'||field==='shares') ? val : (field==='ticker'? val.toUpperCase().trim() : val);
+  saveHoldings();
+  if (field==='ticker'||field==='price'||field==='shares'||field==='status') renderHoldings();
+}
+function deleteHolding(id){ holdings=holdings.filter(x=>x.id!==id); saveHoldings(); renderHoldings(); }
+function setHoldSignalN(n,btn){ holdSignalN=n; document.querySelectorAll('[data-holdn]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderHoldings(); }
+
+function lookupStock(tkr){
+  if (!DATA) return null;
+  for (const mk of ['sp500','asx300']){ const m=DATA.markets[mk]; if(!m) continue; const s=m.stocks.find(x=>x.ticker===tkr); if(s) return {s,mk}; }
+  return null;
+}
+function renderHoldings(){
+  const body=document.getElementById('hold-body'); if(!body) return;
+  if (!holdings.length){ body.innerHTML='<tr><td colspan="9" class="t3" style="text-align:center;padding:18px;font-family:var(--mono);font-size:10px">No holdings yet — tap “+ Add holding”.</td></tr>'; document.getElementById('hold-summary').innerHTML=''; return; }
+  let totCost=0, totVal=0, haveVal=false;
+  body.innerHTML = holdings.map(h=>{
+    const price=parseFloat(h.price)||0, shares=parseFloat(h.shares)||0, cost=price*shares;
+    const look=lookupStock(h.ticker);
+    let plCell='<span class="t3">—</span>', sigCell='<span class="sig-badge">—</span>';
+    if (h.status!=='SOLD') totCost+=cost;
+    if (look && price>0 && shares>0){
+      const cur=look.s.price, val=cur*shares, pl=val-cost, plpc=cost>0?pl/cost:0;
+      if (h.status!=='SOLD'){ totVal+=val; haveVal=true; }
+      plCell=`<span class="h-pl" style="color:${rc(pl)}">${pct1(plpc)}<br><span class="t3" style="font-size:8px">$${pl.toFixed(0)}</span></span>`;
+    }
+    if (look){
+      const inN = look.mk===MARKET ? look.s._rank<=holdSignalN : null;
+      sigCell = inN===null
+        ? `<span class="sig-badge out" title="switch market tab to ${look.mk.toUpperCase()}">${look.mk==='sp500'?'S&P':'ASX'}</span>`
+        : `<span class="sig-badge ${inN?'in':'out'}">${inN?'in T'+holdSignalN:'out'}</span>`;
+    }
+    return `<tr>
+      <td><input class="h-tkr" value="${h.ticker}" placeholder="TICKER" oninput="updateHolding('${h.id}','ticker',this.value)"></td>
+      <td><select class="h-status status-sel ${h.status}" onchange="updateHolding('${h.id}','status',this.value)">
+        ${['BUY','HELD','SOLD'].map(o=>`<option ${o===h.status?'selected':''}>${o}</option>`).join('')}
+      </select></td>
+      <td><input class="h-date" type="date" value="${h.date}" onchange="updateHolding('${h.id}','date',this.value)"></td>
+      <td><input class="h-num" type="number" inputmode="decimal" step="0.01" value="${h.price}" placeholder="0.00" oninput="updateHolding('${h.id}','price',this.value)"></td>
+      <td><input class="h-num" type="number" inputmode="numeric" step="1" value="${h.shares}" placeholder="0" oninput="updateHolding('${h.id}','shares',this.value)"></td>
+      <td class="h-pl">${cost>0?'$'+cost.toFixed(0):'—'}</td>
+      <td>${plCell}</td>
+      <td>${sigCell}</td>
+      <td><button class="h-del" onclick="deleteHolding('${h.id}')" title="Remove">✕</button></td>
+    </tr>`;
+  }).join('');
+  const open = holdings.filter(h=>h.status!=='SOLD');
+  let sum=`<span>Open positions: <b>${open.length}</b></span><span>Cost basis: <b>$${totCost.toLocaleString(undefined,{maximumFractionDigits:0})}</b></span>`;
+  if (haveVal){ const pl=totVal-totCost; sum+=`<span>Market value: <b>$${totVal.toLocaleString(undefined,{maximumFractionDigits:0})}</b></span><span>Unrealised P/L: <b style="color:${rc(pl)}">$${pl.toLocaleString(undefined,{maximumFractionDigits:0})} (${pct1(totCost>0?pl/totCost:0)})</b></span>`; }
+  document.getElementById('hold-summary').innerHTML=sum;
+}
+
+function exportHoldings(){
+  const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),holdings}, null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=DRIVE_FILE; a.click(); URL.revokeObjectURL(url);
+}
+function importHoldings(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); holdings=Array.isArray(d)?d:(d.holdings||[]); saveHoldings(); renderHoldings(); syncMsg('Imported '+holdings.length+' holdings'); }catch(e){ syncMsg('Import failed: bad file'); } };
+  r.readAsText(file); ev.target.value='';
+}
+
+// ── Google Drive sync (Google Identity Services, drive.file scope) ──
+let tokenClient=null, accessToken=null;
+function syncMsg(m){ const el=document.getElementById('sync-status'); if(el) el.textContent=m; }
+function driveReady(){ return typeof google!=='undefined' && google.accounts && google.accounts.oauth2; }
+function driveSignIn(){
+  if (!driveReady()){ syncMsg('Google library still loading — try again'); return; }
+  if (GOOGLE_CLIENT_ID.indexOf('apps.googleusercontent.com')<0){ syncMsg('Set GOOGLE_CLIENT_ID first'); return; }
+  if (!tokenClient){
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id:GOOGLE_CLIENT_ID, scope:DRIVE_SCOPE,
+      callback:(resp)=>{ if(resp.error){ syncMsg('Sign-in failed'); return; } accessToken=resp.access_token; onDriveConnected(); }
+    });
+  }
+  syncMsg('Connecting…'); tokenClient.requestAccessToken({prompt:''});
+}
+function onDriveConnected(){
+  document.getElementById('drive-signin').classList.add('hidden');
+  document.getElementById('drive-save').classList.remove('hidden');
+  document.getElementById('drive-load').classList.remove('hidden');
+  syncMsg('Connected to Drive');
+}
+async function driveFindFile(){
+  const q=encodeURIComponent(`name='${DRIVE_FILE}' and trashed=false`);
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&spaces=drive&fields=files(id,name)`,{headers:{Authorization:'Bearer '+accessToken}});
+  const d=await r.json(); return d.files&&d.files.length?d.files[0].id:null;
+}
+async function driveSave(){
+  if(!accessToken){ driveSignIn(); return; }
+  try{
+    syncMsg('Saving…');
+    const id=await driveFindFile();
+    const meta={name:DRIVE_FILE, mimeType:'application/json'};
+    const content=JSON.stringify({version:1,savedAt:new Date().toISOString(),holdings});
+    const boundary='-------momentum'+Date.now();
+    const body=`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
+    const url=id?`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart`:`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
+    const r=await fetch(url,{method:id?'PATCH':'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'multipart/related; boundary='+boundary},body});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    syncMsg('Saved to Drive · '+new Date().toLocaleTimeString());
+  }catch(e){ syncMsg('Save failed: '+e.message); }
+}
+async function driveLoad(){
+  if(!accessToken){ driveSignIn(); return; }
+  try{
+    syncMsg('Loading…');
+    const id=await driveFindFile();
+    if(!id){ syncMsg('No saved file in Drive yet'); return; }
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
+    const d=await r.json(); holdings=d.holdings||[]; saveHoldings(); renderHoldings();
+    syncMsg('Loaded '+holdings.length+' holdings from Drive');
+  }catch(e){ syncMsg('Load failed: '+e.message); }
+}
+
+window.addEventListener('load', ()=>{ loadHoldings(); renderHoldings(); loadData(); });
 </script>
 </body>
 </html>

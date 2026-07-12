@@ -73,9 +73,9 @@ def fetch_market(tickers: list[str], names: dict, sectors: dict, market_label: s
     df = pd.DataFrame(closes).sort_index()
     weekly = df.resample("W-FRI").last()
 
-    # drop tickers with insufficient history (matches your 50% coverage rule)
+    # drop tickers with insufficient history (matches your 30% coverage rule)
     coverage = weekly.notna().mean()
-    keep = coverage[coverage >= 0.5].index.tolist()
+    keep = coverage[coverage >= 0.3].index.tolist()
     weekly = weekly[keep]
 
     dates = [d.strftime("%Y-%m-%d") for d in weekly.index]
