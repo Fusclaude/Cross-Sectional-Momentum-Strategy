@@ -1,0 +1,102 @@
+{
+  "markets": {
+    "sp500": {
+      "lastRebalance": "2026-07-12",
+      "nextRebalance": "2026-08-09",
+      "holdings": [
+        {
+          "ticker": "LITE",
+          "name": "Lumentum Holdings",
+          "entryPrice": 850.0,
+          "entryDate": "2026-07-12"
+        },
+        {
+          "ticker": "MU",
+          "name": "Micron Technology Inc",
+          "entryPrice": 1133.99,
+          "entryDate": "2026-07-12"
+        },
+        {
+          "ticker": "WDC",
+          "name": "Western Digital Corp",
+          "entryPrice": 746.23,
+          "entryDate": "2026-07-12"
+        },
+        {
+          "ticker": "CIEN",
+          "name": "Ciena",
+          "entryPrice": 428.22,
+          "entryDate": "2026-07-12"
+        },
+        {
+          "ticker": "INTC",
+          "name": "Intel Corp",
+          "entryPrice": 133.99,
+          "entryDate": "2026-07-12"
+        }
+      ],
+      "bought": [
+        "LITE",
+        "MU",
+        "WDC",
+        "CIEN",
+        "INTC"
+      ],
+      "kept": [],
+      "sold": [],
+      "rebalancedThisRun": true,
+      "cycleNumber": 1
+    },
+    "asx300": {
+      "lastRebalance": "2026-07-12",
+      "nextRebalance": "2026-08-09",
+      "holdings": [
+        {
+          "ticker": "4DX",
+          "name": "4DMEDICAL LTD",
+          "entryPrice": 3.68,
+          "entryDate": "2026-07-12"
+        },
+        {
+          "ticker": "PBH",
+          "name": "POINTSBET HOLDINGS",
+          "entryPrice": 1.09,
+          "entryDate": "2026-07-12"
+        },
+        {
+          "ticker": "BRN",
+          "name": "BRAINCHIP HOLDINGS",
+          "entryPrice": 1.105,
+          "entryDate": "2026-07-12"
+        },
+        {
+          "ticker": "KAR",
+          "name": "KAROON ENERGY LT",
+          "entryPrice": 1.95,
+          "entryDate": "2026-07-12"
+        },
+        {
+          "ticker": "NHC",
+          "name": "NEW HOPE CORP LT",
+          "entryPrice": 3.88,
+          "entryDate": "2026-07-12"
+        }
+      ],
+      "bought": [
+        "4DX",
+        "PBH",
+        "BRN",
+        "KAR",
+        "NHC"
+      ],
+      "kept": [],
+      "sold": [],
+      "rebalancedThisRun": true,
+      "cycleNumber": 1
+    }
+  },
+  "rebalDays": 28,
+  "topN": 5,
+  "strategy": "9-1 month momentum (pure)",
+  "updatedAt": "2026-07-12T08:46:43.663955+00:00Z"
+}

@@ -1,6 +1,6 @@
 {
-  "_comment": "S&P/ASX 300 constituent list, sourced from https://fnarena.com/index/ASX300/ on 2026-06-20; SXE (Southern Cross Electrical) added manually 2026-06-21. Refresh ~4x/year when ASX rebalances -- replace tickers/names/sectors with the current list from the same source.",
-  "_last_updated": "2026-06-21",
+  "_comment": "S&P/ASX 300 constituent list, sourced from https://fnarena.com/index/ASX300/ on 2026-06-20. Refresh this file ~4x/year when ASX rebalances the index -- replace tickers/names/sectors below with the current list from the same source.",
+  "_last_updated": "2026-06-20",
   "_source": "https://fnarena.com/index/ASX300/",
   "tickers": [
     "360",
@@ -264,7 +264,6 @@
     "SUL",
     "SUN",
     "SX2",
-    "SXE",
     "TAH",
     "TCG",
     "TCL",
@@ -601,8 +600,7 @@
     "XRO": "XERO LIMITED",
     "XYZ": "BLOCK INC",
     "YAL": "YANCOAL AUSTRALIA LIMITED",
-    "ZIP": "ZIP CO LIMITED",
-    "SXE": "SOUTHERN CROSS ELEC"
+    "ZIP": "ZIP CO LIMITED"
   },
   "sectors": {
     "360": "Information Technology",
@@ -902,7 +900,6 @@
     "XRO": "Industrials",
     "XYZ": "Financials",
     "YAL": "Energy",
-    "ZIP": "Financials",
-    "SXE": "Industrials"
+    "ZIP": "Financials"
   }
 }
