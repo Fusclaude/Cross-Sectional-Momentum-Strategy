@@ -44,8 +44,10 @@
       ],
       "kept": [],
       "sold": [],
-      "rebalancedThisRun": true,
-      "cycleNumber": 1
+      "rebalancedThisRun": false,
+      "cycleNumber": 1,
+      "daysSinceRebalance": 0,
+      "daysUntilRebalance": 28
     },
     "asx300": {
       "lastRebalance": "2026-07-12",
@@ -91,12 +93,14 @@
       ],
       "kept": [],
       "sold": [],
-      "rebalancedThisRun": true,
-      "cycleNumber": 1
+      "rebalancedThisRun": false,
+      "cycleNumber": 1,
+      "daysSinceRebalance": 0,
+      "daysUntilRebalance": 28
     }
   },
   "rebalDays": 28,
   "topN": 5,
   "strategy": "9-1 month momentum (pure)",
-  "updatedAt": "2026-07-12T08:46:43.663955+00:00Z"
+  "updatedAt": "2026-07-12T09:48:13.640097+00:00Z"
 }
