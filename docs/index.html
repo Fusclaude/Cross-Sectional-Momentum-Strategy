@@ -257,6 +257,35 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .hold-summary{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--t2);margin:10px 2px 0}
 .hold-summary b{color:var(--t1)}
 .hidden{display:none!important}
+
+/* REBALANCE / COUNTDOWN */
+.rebal-hero{background:var(--p2);border:1px solid var(--bdr);border-radius:12px;padding:16px;text-align:center}
+.rebal-hero.due{border-color:var(--red);background:var(--rd)}
+.rebal-hero-tkr{font-family:var(--mono);font-size:11px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase}
+.rebal-hero-clock{font-family:var(--mono);font-weight:700;font-size:26px;color:var(--teal);margin:6px 0 4px;letter-spacing:.02em}
+.rebal-hero.due .rebal-hero-clock{color:var(--red)}
+.rebal-hero-date{font-size:10px;color:var(--t3)}
+.rebal-hero-empty{font-family:var(--mono);font-size:11px;color:var(--t3);padding:8px 0}
+
+.action-group{margin-bottom:16px}
+.action-hdr{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.action-hdr.sell{color:var(--red)}
+.action-hdr.hold{color:var(--blue)}
+.action-hdr.buy{color:var(--green)}
+.action-count{font-family:var(--mono);font-size:9px;background:var(--p3);color:var(--t3);padding:1px 6px;border-radius:8px}
+.action-card{background:var(--p2);border:1px solid var(--bdr);border-left:3px solid var(--bdr2);border-radius:9px;padding:11px 12px;margin-bottom:7px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.action-card.sell{border-left-color:var(--red)}
+.action-card.hold{border-left-color:var(--blue)}
+.action-card.buy{border-left-color:var(--green)}
+.action-id{flex:1;min-width:0}
+.action-tkr{font-family:var(--mono);font-weight:700;font-size:13px}
+.action-name{font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.action-meta{text-align:right;flex-shrink:0;font-family:var(--mono);font-size:10px}
+.action-meta .due-badge{font-size:9px;padding:2px 6px;border-radius:4px;margin-top:2px;display:inline-block}
+.due-badge.overdue{color:var(--red);background:var(--rd)}
+.due-badge.soon{color:var(--amber);background:rgba(245,166,35,.12)}
+.due-badge.ok{color:var(--t3);background:var(--p3)}
+.action-empty{font-family:var(--mono);font-size:10px;color:var(--t3);padding:8px 2px}
 </style>
 </head>
 <body>
@@ -429,11 +458,36 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div id="history-list"><div class="empty">No history yet — accumulates after the first few scheduled runs</div></div>
 </div>
 
+<!-- REBALANCE -->
+<div id="page-rebalance" class="page">
+  <div class="section-hdr">Next Repurchase</div>
+  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">
+    Each open holding runs its own 28-day cycle from its entry <b>Date</b> in the Portfolio tab — the cycle rolls forward automatically, so you never need to re-set it. Countdown below is the <b>soonest</b> due date across your open positions.
+  </div>
+  <div class="rebal-hero" id="rebal-hero"></div>
+
+  <div class="section-hdr" style="margin-top:18px">Buy / Sell / Hold</div>
+  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">
+    Compares your open holdings against the current Top-<span id="rebal-n-label">5</span> signal (both markets, current weights). <b>Sell</b> = held but dropped out of Top-N. <b>Hold</b> = held and still in Top-N. <b>Buy</b> = in Top-N but not currently held.
+  </div>
+  <div class="sync-row">
+    <span>Strategy ref:</span>
+    <button class="ov-btn active" data-holdn="5" onclick="setHoldSignalN(5,this)">Top 5</button>
+    <button class="ov-btn" data-holdn="10" onclick="setHoldSignalN(10,this)">Top 10</button>
+    <button class="ov-btn" data-holdn="20" onclick="setHoldSignalN(20,this)">Top 20</button>
+  </div>
+
+  <div class="action-group" id="rebal-sell"></div>
+  <div class="action-group" id="rebal-hold"></div>
+  <div class="action-group" id="rebal-buy"></div>
+</div>
+
 <nav class="bottom-nav">
   <button class="nav-item active" id="nav-weights" onclick="showPage('weights',this)"><svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg><span>Weights</span></button>
   <button class="nav-item" id="nav-picks" onclick="showPage('picks',this)"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Top Picks</span></button>
   <button class="nav-item" id="nav-allstocks" onclick="showPage('allstocks',this)"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span>All Stocks</span></button>
   <button class="nav-item" id="nav-history" onclick="showPage('history',this)"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg><span>Portfolio</span></button>
+  <button class="nav-item" id="nav-rebalance" onclick="showPage('rebalance',this)"><svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0-18a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm.5 5H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg><span>Rebalance</span></button>
 </nav>
 
 <script>
@@ -548,11 +602,16 @@ function applyWeights(){
   renderAllStocksList();
   if (allStocksView==='grid') renderRankGrid();
   if (typeof renderHoldings==='function') renderHoldings();
+  if (typeof renderRebalance==='function') renderRebalance();
 }
 
 // ═══════════════════════════════ SCORING (per market, cached on DATA object)
-function computeScoresForMarket(){
-  const market = DATA.markets[MARKET];
+// computeScoresForAnyMarket takes a market key so the Rebalance tab can score
+// BOTH markets (sp500 + asx300) under the current weights regardless of which
+// market tab is currently active — needed to give buy/sell/hold verdicts for
+// a portfolio that spans both universes.
+function computeScoresForAnyMarket(mk){
+  const market = DATA.markets[mk];
   if (!market) return;
   const norm = normWeights(getRawWeights());
   const stocks = market.stocks;
@@ -571,6 +630,7 @@ function computeScoresForMarket(){
   stocks.forEach((s,i)=> s._rank = i+1);
   market._currentWeights = norm;
 }
+function computeScoresForMarket(){ computeScoresForAnyMarket(MARKET); }
 
 // ═══════════════════════════════ MARKET / TOPN SWITCHING
 function setMarket(m, btn){
@@ -1192,6 +1252,7 @@ function renderAll(){
   renderAllStocksList();
   if (allStocksView==='grid') renderRankGrid();
   if (typeof renderHoldings==='function') renderHoldings();
+  if (typeof renderRebalance==='function') renderRebalance();
   document.getElementById('data-note').innerHTML =
     `<b>How this works:</b> a scheduled job pulls fresh weekly prices for the S&amp;P 500 and ASX 300, computes all 8 factors below for every eligible stock, and this page ranks everything client-side using whatever weights you set — adjust and tap Apply, no re-run needed. Generated ${new Date(DATA.generatedAt).toLocaleString()}.`;
 }
@@ -1387,16 +1448,24 @@ function loadHoldings(){
 function saveHoldings(){ try{ localStorage.setItem(HOLD_KEY, JSON.stringify(holdings)); }catch(e){} }
 function addHolding(){
   holdings.push({id:Date.now()+Math.random().toString(36).slice(2,6), ticker:'', status:'BUY', date:new Date().toISOString().slice(0,10), price:'', shares:''});
-  saveHoldings(); renderHoldings();
+  saveHoldings(); renderHoldings(); if(typeof renderRebalance==='function') renderRebalance();
 }
 function updateHolding(id, field, val){
   const h=holdings.find(x=>x.id===id); if(!h) return;
   h[field] = (field==='price'||field==='shares') ? val : (field==='ticker'? val.toUpperCase().trim() : val);
   saveHoldings();
-  if (field==='ticker'||field==='price'||field==='shares'||field==='status') renderHoldings();
+  if (field==='ticker'||field==='price'||field==='shares'||field==='status'){ renderHoldings(); if(typeof renderRebalance==='function') renderRebalance(); }
+  else if (field==='date' && typeof renderRebalance==='function') renderRebalance();
 }
-function deleteHolding(id){ holdings=holdings.filter(x=>x.id!==id); saveHoldings(); renderHoldings(); }
-function setHoldSignalN(n,btn){ holdSignalN=n; document.querySelectorAll('[data-holdn]').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderHoldings(); }
+function deleteHolding(id){ holdings=holdings.filter(x=>x.id!==id); saveHoldings(); renderHoldings(); if(typeof renderRebalance==='function') renderRebalance(); }
+function setHoldSignalN(n,btn){
+  holdSignalN=n;
+  document.querySelectorAll('[data-holdn]').forEach(b=>b.classList.remove('active'));
+  // both the Portfolio tab's and Rebalance tab's Top-N buttons share this state
+  document.querySelectorAll(`[data-holdn="${n}"]`).forEach(b=>b.classList.add('active'));
+  renderHoldings();
+  if (typeof renderRebalance==='function') renderRebalance();
+}
 
 function lookupStock(tkr){
   if (!DATA) return null;
@@ -1443,6 +1512,129 @@ function renderHoldings(){
   document.getElementById('hold-summary').innerHTML=sum;
 }
 
+// ═══════════════════════════════ REBALANCE (countdown + buy/sell/hold)
+const REBAL_CYCLE_MS = 28 * 86400000; // 28-day cycle, matches your rebalance cadence
+let rebalTimer = null;
+
+// Rolls a holding's entry date forward in 28-day increments until it lands
+// in the future — so a position bought months ago still gets a correct
+// "next due" date without you ever having to touch it again.
+function nextDueDate(dateStr){
+  if (!dateStr) return null;
+  let d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return null;
+  const now = Date.now();
+  while (d.getTime() <= now) d = new Date(d.getTime() + REBAL_CYCLE_MS);
+  return d;
+}
+function fmtCountdown(target){
+  const ms = target.getTime() - Date.now();
+  if (ms <= 0) return 'DUE NOW';
+  const days = Math.floor(ms/86400000);
+  const hrs = Math.floor((ms%86400000)/3600000);
+  const mins = Math.floor((ms%3600000)/60000);
+  if (days > 0) return `${days}d ${hrs}h`;
+  if (hrs > 0) return `${hrs}h ${mins}m`;
+  const secs = Math.floor((ms%60000)/1000);
+  return `${mins}m ${secs}s`;
+}
+function dueBadgeClass(target){
+  const ms = target.getTime() - Date.now();
+  if (ms <= 0) return 'overdue';
+  if (ms <= 3*86400000) return 'soon';
+  return 'ok';
+}
+
+function renderRebalanceHero(openHoldings){
+  const el = document.getElementById('rebal-hero');
+  if (!el) return;
+  const withDue = openHoldings
+    .filter(h=>h.ticker && h.date)
+    .map(h=>({h, due: nextDueDate(h.date)}))
+    .filter(x=>x.due)
+    .sort((a,b)=>a.due-b.due);
+  if (!withDue.length){
+    el.className = 'rebal-hero';
+    el.innerHTML = `<div class="rebal-hero-empty">No open holdings with an entry date yet — add one in the Portfolio tab to start the countdown.</div>`;
+    return;
+  }
+  const next = withDue[0];
+  const overdue = next.due.getTime() <= Date.now();
+  el.className = 'rebal-hero' + (overdue ? ' due' : '');
+  el.innerHTML = `
+    <div class="rebal-hero-tkr">${overdue ? 'Due now' : 'Next due'} · ${next.h.ticker}</div>
+    <div class="rebal-hero-clock">${fmtCountdown(next.due)}</div>
+    <div class="rebal-hero-date">${next.due.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${withDue.length>1?` · +${withDue.length-1} more position${withDue.length>2?'s':''} queued`:''}</div>`;
+}
+
+function renderRebalanceActions(openHoldings){
+  const sellEl = document.getElementById('rebal-sell');
+  const holdEl = document.getElementById('rebal-hold');
+  const buyEl  = document.getElementById('rebal-buy');
+  if (!sellEl || !holdEl || !buyEl || !DATA) return;
+
+  document.getElementById('rebal-n-label').textContent = holdSignalN;
+
+  // Score both markets under current weights so the verdict is correct
+  // regardless of which market tab happens to be active right now.
+  computeScoresForAnyMarket('sp500');
+  computeScoresForAnyMarket('asx300');
+
+  const heldTickers = new Set(openHoldings.map(h=>h.ticker).filter(Boolean));
+  const sells = [], holds = [];
+
+  openHoldings.forEach(h=>{
+    if (!h.ticker) return;
+    const look = lookupStock(h.ticker);
+    const due = nextDueDate(h.date);
+    const row = {h, look, due};
+    if (!look){ holds.push({...row, unknown:true}); return; }
+    if (look.s._rank <= holdSignalN) holds.push(row); else sells.push(row);
+  });
+
+  const buys = [];
+  ['sp500','asx300'].forEach(mk=>{
+    const market = DATA.markets[mk];
+    if (!market) return;
+    market.stocks.filter(s=>s._rank<=holdSignalN && !heldTickers.has(s.ticker))
+      .forEach(s=> buys.push({s, mk}));
+  });
+  buys.sort((a,b)=>a.s._rank-b.s._rank);
+
+  const actionCard = (cls, tkr, name, right, dueTarget)=> `
+    <div class="action-card ${cls}" onclick="${DATA.markets['sp500'].stocks.some(s=>s.ticker===tkr)||DATA.markets['asx300'].stocks.some(s=>s.ticker===tkr)?`openTicker('${tkr}')`:''}">
+      <div class="action-id"><div class="action-tkr">${tkr}</div><div class="action-name">${name||''}</div></div>
+      <div class="action-meta">${right}${dueTarget?`<br><span class="due-badge ${dueBadgeClass(dueTarget)}">${fmtCountdown(dueTarget)}</span>`:''}</div>
+    </div>`;
+
+  sellEl.innerHTML = `<div class="action-hdr sell">⚠ Sell <span class="action-count">${sells.length}</span></div>` +
+    (sells.length ? sells.map(r=>actionCard('sell', r.h.ticker, r.look?r.look.s.name:'Ticker not found in either universe', r.look?`Rank #${r.look.s._rank} (${r.look.mk==='sp500'?'S&P':'ASX'})`:'—', r.due)).join('')
+      : `<div class="action-empty">No open holdings have dropped out of the Top-${holdSignalN}.</div>`);
+
+  holdEl.innerHTML = `<div class="action-hdr hold">✓ Hold <span class="action-count">${holds.length}</span></div>` +
+    (holds.length ? holds.map(r=>r.unknown
+        ? actionCard('hold', r.h.ticker, 'Ticker not found in either universe — check spelling', '—', r.due)
+        : actionCard('hold', r.h.ticker, r.look.s.name, `Rank #${r.look.s._rank} (${r.look.mk==='sp500'?'S&P':'ASX'})`, r.due)).join('')
+      : `<div class="action-empty">No open holdings currently in the Top-${holdSignalN}.</div>`);
+
+  buyEl.innerHTML = `<div class="action-hdr buy">＋ Buy <span class="action-count">${buys.length}</span></div>` +
+    (buys.length ? buys.map(b=>actionCard('buy', b.s.ticker, b.s.name, `Rank #${b.s._rank} (${b.mk==='sp500'?'S&P':'ASX'})`, null)).join('')
+      : `<div class="action-empty">Every Top-${holdSignalN} stock is already held.</div>`);
+}
+
+function renderRebalance(){
+  if (!DATA) return;
+  const openHoldings = holdings.filter(h=>h.status!=='SOLD' && h.ticker);
+  renderRebalanceHero(openHoldings);
+  renderRebalanceActions(openHoldings);
+}
+function startRebalanceClock(){
+  if (rebalTimer) clearInterval(rebalTimer);
+  rebalTimer = setInterval(()=>{
+    if (document.getElementById('page-rebalance')?.classList.contains('active')) renderRebalance();
+  }, 1000);
+}
+
 function exportHoldings(){
   const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),holdings}, null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
@@ -1451,7 +1643,7 @@ function exportHoldings(){
 function importHoldings(ev){
   const file=ev.target.files[0]; if(!file) return;
   const r=new FileReader();
-  r.onload=()=>{ try{ const d=JSON.parse(r.result); holdings=Array.isArray(d)?d:(d.holdings||[]); saveHoldings(); renderHoldings(); syncMsg('Imported '+holdings.length+' holdings'); }catch(e){ syncMsg('Import failed: bad file'); } };
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); holdings=Array.isArray(d)?d:(d.holdings||[]); saveHoldings(); renderHoldings(); if(typeof renderRebalance==='function') renderRebalance(); syncMsg('Imported '+holdings.length+' holdings'); }catch(e){ syncMsg('Import failed: bad file'); } };
   r.readAsText(file); ev.target.value='';
 }
 
@@ -1503,12 +1695,12 @@ async function driveLoad(){
     const id=await driveFindFile();
     if(!id){ syncMsg('No saved file in Drive yet'); return; }
     const r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
-    const d=await r.json(); holdings=d.holdings||[]; saveHoldings(); renderHoldings();
+    const d=await r.json(); holdings=d.holdings||[]; saveHoldings(); renderHoldings(); if(typeof renderRebalance==='function') renderRebalance();
     syncMsg('Loaded '+holdings.length+' holdings from Drive');
   }catch(e){ syncMsg('Load failed: '+e.message); }
 }
 
-window.addEventListener('load', ()=>{ loadHoldings(); renderHoldings(); loadData(); });
+window.addEventListener('load', ()=>{ loadHoldings(); renderHoldings(); loadData(); startRebalanceClock(); });
 </script>
 </body>
 </html>
