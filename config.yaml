@@ -1,0 +1,84 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# config.yaml — single source of truth for the signal engine.
+#
+# Every number that affects a result lives here, not in code. Each run writes
+# a manifest containing the SHA-256 of this file, so any published pick can be
+# traced back to the exact parameter set that produced it.
+# ─────────────────────────────────────────────────────────────────────────────
+schema_version: 2
+
+data:
+  # 760 days (~25mo) only just covers the 12-1 lookback, which leaves ~60
+  # usable cross-sections for evaluation. That is far too few to estimate an
+  # information coefficient with any confidence. 10y is the minimum for
+  # research-grade factor statistics; it costs nothing extra from yfinance.
+  lookback_days: 3650
+  resample: W-FRI          # weekly, Friday close
+  min_coverage: 0.30       # drop tickers with <30% non-null weekly bars
+  benchmark:
+    sp500: "^GSPC"
+    asx300: "^AXJO"
+  risk_free:
+    sp500: "^IRX"          # 13-week T-bill, annualised %
+    asx300: null           # no free AU equivalent; falls back to flat rate
+  risk_free_fallback: 0.0425
+
+universe:
+  min_price:
+    sp500: 0.10
+    asx300: 0.05
+  # Liquidity screen. Requires volume (fetch_prices.py v2 pulls it).
+  # Names below this median 20-day dollar volume are excluded from the
+  # investable set — they are untradeable at any meaningful size and
+  # inflate backtest returns via microcap bias.
+  min_median_dollar_volume:
+    sp500: 5.0e6
+    asx300: 1.0e6
+  ipo_seasoning_days: 365
+
+factors:
+  # weeks-per-month constant, matches the dashboard engine exactly
+  weeks_per_month: 4.345
+  skip_months: 1
+  # Winsorise cross-sectional z-scores at +/- this many sigma before blending.
+  # Raw momentum has fat right tails; without this a single 900% microcap
+  # dominates the composite.
+  winsor_sigma: 3.0
+  # Neutralise scores within GICS sector before ranking. Without this the
+  # composite is mostly a sector bet -- in 2026 it is essentially a
+  # levered long position in semiconductors.
+  sector_neutral: true
+  vol_halflife_weeks: 13   # EWMA halflife for realised vol / beta
+
+evaluation:
+  forward_horizons_weeks: [1, 4, 13, 26]
+  n_buckets: 10            # deciles for spread portfolios
+  newey_west_lags: 4       # autocorrelation-robust t-stats on overlapping returns
+  # Number of distinct configurations tried during research. Feeds the
+  # deflated Sharpe ratio. Be honest here -- understating it is how
+  # backtest overfitting hides.
+  n_trials: 64
+  n_random_trials: 48
+  purge_weeks: 26          # embargo around test folds in walk-forward CV
+  n_folds: 5
+
+portfolio:
+  top_n: 5
+  max_weight: 0.25
+  max_sector_weight: 0.40
+  # Cap each position at this fraction of median daily dollar volume, so
+  # the backtest cannot assume fills it could never get.
+  max_adv_participation: 0.05
+  vol_target_annual: 0.18  # ex-ante portfolio vol target; null disables
+  rebalance_weeks: 4
+
+costs:
+  # Round-trip cost in basis points, applied on turnover.
+  # ASX small/mid caps are materially more expensive than US large caps;
+  # using one blended number flatters the ASX book.
+  spread_bps:
+    sp500: 5.0
+    asx300: 25.0
+  commission_bps: 2.0
+  # Square-root market impact: impact_bps = coef * sqrt(participation)
+  impact_coef_bps: 40.0
