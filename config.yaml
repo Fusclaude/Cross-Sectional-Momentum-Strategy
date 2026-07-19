@@ -14,7 +14,13 @@ data:
   # research-grade factor statistics; it costs nothing extra from yfinance.
   lookback_days: 3650
   resample: W-FRI          # weekly, Friday close
-  min_coverage: 0.30       # drop tickers with <30% non-null weekly bars
+  # Coverage is measured SINCE EACH TICKER'S FIRST BAR, not across the whole
+  # window -- otherwise a 10-year fetch deletes every recent listing.
+  min_coverage: 0.30
+  # Absolute minimum history. 60 weeks clears the 12-month lookback plus the
+  # 1-month skip with a small buffer, which is the real requirement for the
+  # signal to be computable.
+  min_history_weeks: 60
   benchmark:
     sp500: "^GSPC"
     asx300: "^AXJO"
@@ -63,6 +69,9 @@ universe:
   # investable set — they are untradeable at any meaningful size and
   # inflate backtest returns via microcap bias.
   min_median_dollar_volume:
+    # Written as plain integers on purpose. YAML 1.1 requires a signed
+    # exponent, so `5.0e6` silently parses as the STRING "5.0e6" while
+    # `5.0e+6` parses as a float. Plain digits avoid the trap entirely.
     sp500: 5000000
     asx300: 1000000
   ipo_seasoning_days: 365
