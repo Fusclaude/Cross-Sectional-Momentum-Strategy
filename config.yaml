@@ -35,6 +35,14 @@ quality:
   # which are normal on the ASX, and are reported as warnings instead.
   max_dead_ticker_pct: 0.02
   max_staleness_days: 10
+  # Split detection guards. A stock below the universe screen is not in the
+  # investable cross-section, so a data error there cannot affect a ranking.
+  # And near the minimum price increment, tick quantisation manufactures exact
+  # 2:1 ratios -- an ASX name oscillating between $0.005 and $0.010 looks like
+  # a textbook split and is just one tick.
+  split_check_min_price: 0.10
+  tick_size: 0.001
+  split_check_min_ticks: 40
 
 universe:
   min_price:
