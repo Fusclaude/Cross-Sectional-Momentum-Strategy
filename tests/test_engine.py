@@ -327,3 +327,60 @@ def test_impact_cost_is_concave_in_size():
     # 4x the participation must cost less than 4x the impact
     fixed = 10 / 2 + 2
     assert (b - fixed) < 4 * (a - fixed)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Data quality gate
+# ═══════════════════════════════════════════════════════════════════════════
+
+import fetch_prices as fpx  # noqa: E402
+
+
+def _qpayload(cols, n=80):
+    dates = pd.date_range("2018-01-05", periods=n, freq="W-FRI")
+    return {"prices": cols, "dates": [d.strftime("%Y-%m-%d") for d in dates]}
+
+
+def _ok(n=80):
+    return list(np.linspace(20, 30, n))
+
+
+def test_tick_quantisation_is_not_flagged_as_a_split(cfg):
+    """
+    Regression test for a real false positive (LOT.AX, Nov 2018).
+
+    The ASX quotes sub-$0.10 names in $0.001 increments, so a stock
+    oscillating between $0.005 and $0.010 produces an EXACTLY 2:1 ratio from a
+    single tick. The naive clean-ratio check called that an unadjusted split
+    and failed the entire pipeline. Such a stock is also below the universe
+    screen, so the data could not have affected any ranking regardless.
+    """
+    payload = _qpayload({"PENNY.AX": [0.010, 0.005] * 40, "OK.AX": _ok()})
+    fails, _ = fpx.quality_gate(payload, "ASX 300", cfg["quality"], min_price=0.05)
+    assert not [f for f in fails if "split" in f], f"penny stock flagged: {fails}"
+
+
+def test_genuine_unadjusted_split_is_still_caught(cfg):
+    """The guard must not disarm the check for a real split in a real stock."""
+    px = [50.0] * 40 + [25.0] + [50.0] * 39
+    payload = _qpayload({"REAL.AX": px, "OK.AX": _ok()})
+    fails, _ = fpx.quality_gate(payload, "ASX 300", cfg["quality"], min_price=0.05)
+    assert any("split" in f for f in fails), f"real split missed: {fails}"
+
+
+def test_historical_halt_warns_but_does_not_fail(cfg):
+    """A flat run that later resumes is a trading halt, not a dead feed."""
+    px = list(np.linspace(10, 12, 30)) + [12.0] * 8 + list(np.linspace(12, 15, 42))
+    payload = _qpayload({"HALT.AX": px, "OK.AX": _ok()})
+    fails, warns = fpx.quality_gate(payload, "ASX 300", cfg["quality"], min_price=0.05)
+    assert not [f for f in fails if "flat" in f], f"halt failed the gate: {fails}"
+    assert any("resumed" in w for w in warns)
+
+
+def test_dead_feed_at_final_bar_fails(cfg):
+    """Still flat at the last bar corrupts TODAY's ranking. That must fail."""
+    dead = list(np.linspace(10, 12, 60)) + [12.0] * 20
+    cols = {f"DEAD{i}.AX": list(dead) for i in range(6)}
+    cols["OK.AX"] = _ok()
+    fails, _ = fpx.quality_gate(_qpayload(cols), "ASX 300", cfg["quality"], min_price=0.05)
+    assert any("dead feed" in f for f in fails), f"dead feed missed: {fails}"
