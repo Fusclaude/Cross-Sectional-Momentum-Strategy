@@ -23,6 +23,19 @@ data:
     asx300: null           # no free AU equivalent; falls back to flat rate
   risk_free_fallback: 0.0425
 
+quality:
+  # Calibrated for a MULTI-YEAR panel. The previous thresholds were tuned on a
+  # 2-year sample and counted raw occurrences across all history, so they fired
+  # spuriously once history was extended to 10 years.
+  min_weekly_bars: 60
+  max_missing_pct: 0.15
+  stale_weeks: 4
+  # Fail only when tickers are STILL flat at the final bar -- i.e. a live dead
+  # feed corrupting today's ranking. Historical flat runs are trading halts,
+  # which are normal on the ASX, and are reported as warnings instead.
+  max_dead_ticker_pct: 0.02
+  max_staleness_days: 10
+
 universe:
   min_price:
     sp500: 0.10
