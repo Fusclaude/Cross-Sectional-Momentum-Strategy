@@ -42,7 +42,16 @@ LEGACY_WEIGHTS = {k: 1.0 for k in
 # count feeds the Deflated Sharpe deflation term, so it must be honest.
 CANDIDATES = {
     "legacy_8factor": LEGACY_WEIGHTS,
+    # Your dashboard's own default slider positions. Without this the tearsheet
+    # grades a blend you never actually use, which makes the verdict answer a
+    # question you did not ask.
+    "dashboard_default": {"r121": 30, "r91": 25, "r61": 15, "r31": 10,
+                          "r2_12": 8, "r2_9": 5, "r2_6": 5, "r2_3": 2},
     "pure_12_1": {"r121": 1.0},
+    # The dashboard describes 9-1 as the best-Sharpe window, so it needs to be
+    # testable on its own rather than assumed.
+    "pure_9_1": {"r91": 1.0},
+    "pure_3_1": {"r31": 1.0},
     "pure_6_1": {"r61": 1.0},
     "trend_quality_only": {"r2_12": 1.0, "r2_6": 1.0},
     "resid_mom": {"resid_mom": 1.0},
