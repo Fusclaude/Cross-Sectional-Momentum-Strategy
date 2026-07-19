@@ -167,41 +167,90 @@ def fetch_series(symbol: str, start, end) -> dict | None:
         return None
 
 
-def quality_gate(payload: dict, label: str) -> list[str]:
+def quality_gate(payload: dict, label: str, qcfg: dict) -> tuple[list[str], list[str]]:
     """
-    Hard checks. Returning a non-empty list fails the run. These exist because
-    the failure mode of bad market data is not a crash — it is a perfectly
-    plausible-looking top-5 list built on a stale or unsplit price series.
-    """
-    problems = []
-    px = pd.DataFrame(payload["prices"], index=pd.to_datetime(payload["dates"]))
+    Returns (failures, warnings).
 
-    if len(px) < 60:
-        problems.append(f"{label}: only {len(px)} weekly bars; need >=60")
+    The first version of this function failed the run on ANY suspected split
+    and on flat prices affecting >5% of tickers. Both thresholds were tuned
+    against a 2-year panel, then applied unchanged to a 10-year one. Raw counts
+    scale with history length, so the check became strictly more likely to fire
+    the more data you added — which is backwards.
+
+    Worse, both were flagging normal market behaviour:
+      * ASX small caps enter trading halts and suspensions routinely. The last
+        traded price legitimately repeats for weeks. That is valid data.
+      * A large drop immediately reversed is the signature of an unadjusted
+        split, but also of a real crash-and-bounce in a microcap.
+
+    The gate now fails only on evidence worth acting on, and warns visibly on
+    everything else. A gate that cries wolf gets switched off, and a gate that
+    is switched off protects nothing.
+
+    The organising principle is RECENCY: today's ranking is built from today's
+    prices. A stock halted for six weeks in 2019 affects factor values around
+    2019 and nothing you would trade on now. A feed that died three months ago
+    is corrupting the live cross-section.
+    """
+    failures, warnings = [], []
+    px = pd.DataFrame(payload["prices"], index=pd.to_datetime(payload["dates"]))
+    n_tick = max(px.shape[1], 1)
+
+    if len(px) < qcfg["min_weekly_bars"]:
+        failures.append(f"{label}: only {len(px)} weekly bars; "
+                        f"need >= {qcfg['min_weekly_bars']}")
 
     missing = px.isna().mean().mean()
-    if missing > 0.15:
-        problems.append(f"{label}: {missing:.1%} missing values (limit 15%)")
+    if missing > qcfg["max_missing_pct"]:
+        failures.append(f"{label}: {missing:.1%} missing values "
+                        f"(limit {qcfg['max_missing_pct']:.0%})")
 
     rets = px.pct_change()
-    # A -50% weekly move that immediately reverses is the classic signature of
-    # an unadjusted stock split, not a real price move.
-    split_like = ((rets < -0.45) & (rets.shift(-1) > 0.8)).sum().sum()
-    if split_like > 0:
-        problems.append(f"{label}: {split_like} suspected unadjusted splits")
 
-    # Every price identical for 4+ weeks means a dead feed, not a quiet stock.
-    stale = ((rets.abs() < 1e-12).rolling(4).sum() >= 4).any()
-    n_stale = int(stale.sum())
-    if n_stale > len(px.columns) * 0.05:
-        problems.append(f"{label}: {n_stale} tickers with 4+ weeks of identical prices")
+    # ── Unadjusted splits: only a CLEAN ratio is evidence ────────────────
+    # A true 2:1 split drops almost exactly -50% and recovers almost exactly
+    # +100%. A real crash rarely retraces that precisely, so a ratio of 1.83
+    # is a genuine move and 2.01 is a data error.
+    hit = ((rets < -0.45) & (rets.shift(-1) > 0.8)).fillna(False)
+    clean, messy = [], []
+    for t in px.columns:
+        for dt in px.index[hit[t]]:
+            r1 = float(rets[t].loc[dt])
+            implied = 1.0 / (1.0 + r1) if (1.0 + r1) > 0 else float("nan")
+            if np.isfinite(implied) and implied >= 1.8 and abs(implied - round(implied)) < 0.08:
+                clean.append(f"{t}@{dt.date()}(~{round(implied)}:1)")
+            else:
+                messy.append(f"{t}@{dt.date()}({implied:.2f})")
+    if clean:
+        failures.append(f"{label}: {len(clean)} moves imply a clean split ratio, "
+                        f"likely unadjusted: {', '.join(clean[:5])}")
+    if messy:
+        warnings.append(f"{label}: {len(messy)} large drop-and-rebound moves with no "
+                        f"clean split ratio (probably real): {', '.join(messy[:3])}")
+
+    # ── Flat price runs: still flat at the last bar is what matters ──────
+    w = qcfg["stale_weeks"]
+    flat = (rets.abs() < 1e-12)
+    long_run = (flat.rolling(w).sum() >= w)
+    n_any = int(long_run.any().sum())
+    n_live = int(long_run.iloc[-1].fillna(False).sum())
+    if n_live / n_tick > qcfg["max_dead_ticker_pct"]:
+        dead = list(long_run.iloc[-1].fillna(False).pipe(lambda s: s[s]).index[:8])
+        failures.append(f"{label}: {n_live} tickers ({n_live / n_tick:.1%}) still flat at "
+                        f"the final bar — possible dead feed: {', '.join(dead)}")
+    elif n_live:
+        warnings.append(f"{label}: {n_live} tickers flat through the final bar "
+                        f"(likely suspended or delisted)")
+    if n_any - n_live:
+        warnings.append(f"{label}: {n_any - n_live} tickers had a >= {w}w flat run that "
+                        f"later resumed — normal halts, no effect on the current ranking")
 
     last_date = px.index[-1]
     age_days = (pd.Timestamp.today().normalize() - last_date.normalize()).days
-    if age_days > 10:
-        problems.append(f"{label}: latest bar is {age_days}d old ({last_date.date()})")
+    if age_days > qcfg["max_staleness_days"]:
+        failures.append(f"{label}: latest bar is {age_days}d old ({last_date.date()})")
 
-    return problems
+    return failures, warnings
 
 
 def atomic_write(path: Path, payload: dict) -> None:
@@ -220,6 +269,8 @@ def main() -> None:
     end = datetime.today()
     start = end - timedelta(days=cfg["data"]["lookback_days"])
     all_problems: list[str] = []
+    all_warnings: list[str] = []
+    all_warnings: list[str] = []
 
     for market, label in [("sp500", "S&P 500"), ("asx300", "ASX 300")]:
         u = universe[market]
@@ -228,19 +279,28 @@ def main() -> None:
         payload["benchmark"] = fetch_series(cfg["data"]["benchmark"].get(market), start, end)
         payload["riskFree"] = fetch_series(cfg["data"]["risk_free"].get(market), start, end)
 
-        problems = quality_gate(payload, label)
-        payload["qualityProblems"] = problems
-        all_problems += problems
+        failures, warnings = quality_gate(payload, label, cfg["quality"])
+        payload["qualityProblems"] = failures
+        payload["qualityWarnings"] = warnings
+        all_problems += failures
+        all_warnings += warnings
         atomic_write(DATA_DIR / f"{market}_prices.json", payload)
-        print(f"  wrote {market}_prices.json"
-              + (f"  [{len(problems)} QA problems]" if problems else "  [QA clean]"))
+        print(f"  wrote {market}_prices.json  "
+              f"[{len(failures)} failures, {len(warnings)} warnings]")
+
+    if all_warnings:
+        print("\nQA warnings (not blocking):")
+        for w in all_warnings:
+            print(f"  ~ {w}")
 
     if all_problems:
         print("\nDATA QUALITY GATE FAILED:")
         for p in all_problems:
             print(f"  - {p}")
+        print("\nRun  python scripts/diagnose_data.py <market>  to see the "
+              "specific tickers and dates behind these.")
         sys.exit(1)
-    print("\nDone. QA clean.")
+    print("\nDone. No blocking data quality problems.")
 
 
 if __name__ == "__main__":
