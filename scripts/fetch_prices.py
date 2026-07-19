@@ -167,7 +167,8 @@ def fetch_series(symbol: str, start, end) -> dict | None:
         return None
 
 
-def quality_gate(payload: dict, label: str, qcfg: dict) -> tuple[list[str], list[str]]:
+def quality_gate(payload: dict, label: str, qcfg: dict,
+                 min_price: float = 0.0) -> tuple[list[str], list[str]]:
     """
     Returns (failures, warnings).
 
@@ -211,10 +212,32 @@ def quality_gate(payload: dict, label: str, qcfg: dict) -> tuple[list[str], list
     # A true 2:1 split drops almost exactly -50% and recovers almost exactly
     # +100%. A real crash rarely retraces that precisely, so a ratio of 1.83
     # is a genuine move and 2.01 is a data error.
+    #
+    # TWO GUARDS, both learned from a false positive on LOT.AX:
+    #
+    # 1. Only inspect bars where the price clears the universe's min_price
+    #    screen. A stock trading below the screen is not in the investable
+    #    cross-section on that date, so a data error there cannot affect any
+    #    ranking this system produces. Gating on it is noise.
+    #
+    # 2. Tick quantisation manufactures exact integer ratios in cheap stocks.
+    #    The ASX quotes sub-$0.10 names in $0.001 increments, so a stock
+    #    oscillating between $0.005 and $0.010 produces a perfect 2:1 ratio
+    #    from a single tick. Require the price to be far enough above the tick
+    #    that a 50% move cannot be a handful of ticks.
+    floor = max(qcfg.get("split_check_min_price", 0.0), min_price)
+    tick = qcfg.get("tick_size", 0.001)
+    min_ticks = qcfg.get("split_check_min_ticks", 40)
+
     hit = ((rets < -0.45) & (rets.shift(-1) > 0.8)).fillna(False)
-    clean, messy = [], []
+    clean, messy, skipped = [], [], 0
     for t in px.columns:
         for dt in px.index[hit[t]]:
+            i = px.index.get_loc(dt)
+            before = float(px[t].iloc[i - 1]) if i > 0 else float("nan")
+            if not np.isfinite(before) or before < floor or before / tick < min_ticks:
+                skipped += 1
+                continue
             r1 = float(rets[t].loc[dt])
             implied = 1.0 / (1.0 + r1) if (1.0 + r1) > 0 else float("nan")
             if np.isfinite(implied) and implied >= 1.8 and abs(implied - round(implied)) < 0.08:
@@ -227,6 +250,10 @@ def quality_gate(payload: dict, label: str, qcfg: dict) -> tuple[list[str], list
     if messy:
         warnings.append(f"{label}: {len(messy)} large drop-and-rebound moves with no "
                         f"clean split ratio (probably real): {', '.join(messy[:3])}")
+    if skipped:
+        warnings.append(f"{label}: {skipped} large reversals ignored — price below the "
+                        f"${floor:.3f} universe screen or within {min_ticks} ticks of the "
+                        f"minimum increment, where quantisation fakes clean ratios")
 
     # ── Flat price runs: still flat at the last bar is what matters ──────
     w = qcfg["stale_weeks"]
@@ -279,7 +306,9 @@ def main() -> None:
         payload["benchmark"] = fetch_series(cfg["data"]["benchmark"].get(market), start, end)
         payload["riskFree"] = fetch_series(cfg["data"]["risk_free"].get(market), start, end)
 
-        failures, warnings = quality_gate(payload, label, cfg["quality"])
+        failures, warnings = quality_gate(
+            payload, label, cfg["quality"],
+            min_price=cfg["universe"]["min_price"].get(market, 0.0))
         payload["qualityProblems"] = failures
         payload["qualityWarnings"] = warnings
         all_problems += failures
