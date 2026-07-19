@@ -195,6 +195,19 @@ def quality_gate(payload: dict, label: str, qcfg: dict,
     """
     failures, warnings = [], []
     px = pd.DataFrame(payload["prices"], index=pd.to_datetime(payload["dates"]))
+
+    # Tickers with known, reviewed, benign data quirks. Listing one here is an
+    # explicit decision recorded in config with a reason — not the same thing
+    # as turning the check off. The gate still runs on every other name, and
+    # the ignored ones are reported so they stay visible.
+    ignored = set(qcfg.get("ignore_tickers", []) or [])
+    if ignored:
+        present = [t for t in px.columns if t in ignored]
+        if present:
+            warnings.append(f"{label}: ignoring {len(present)} ticker(s) by config: "
+                            f"{', '.join(present)}")
+        px = px.drop(columns=present)
+
     n_tick = max(px.shape[1], 1)
 
     if len(px) < qcfg["min_weekly_bars"]:
@@ -323,6 +336,29 @@ def main() -> None:
             print(f"  ~ {w}")
 
     if all_problems:
+        # Emergency unblock. QA_SOFT_FAIL=1 downgrades every blocking problem to
+        # a loud warning and lets the pipeline continue. It exists so a bad gate
+        # calibration cannot hold your whole pipeline hostage on a Saturday —
+        # NOT as a way to live with unresolved data problems. Anything published
+        # under soft-fail is built on data the gate objected to, so the flag is
+        # recorded in the price file and surfaces on the dashboard.
+        if os.environ.get("QA_SOFT_FAIL") == "1":
+            print("\n" + "!" * 68)
+            print("QA_SOFT_FAIL=1 — the following BLOCKING problems were downgraded:")
+            for p in all_problems:
+                print(f"  ! {p}")
+            print("Results are being published from data the quality gate rejected.")
+            print("This is a temporary unblock. Fix the cause or add an explicit")
+            print("ignore_tickers entry in config.yaml, then remove the flag.")
+            print("!" * 68)
+            for market in ["sp500", "asx300"]:
+                fp = DATA_DIR / f"{market}_prices.json"
+                if fp.exists():
+                    d = json.loads(fp.read_text())
+                    d["qaSoftFailed"] = True
+                    atomic_write(fp, d)
+            return
+
         print("\nDATA QUALITY GATE FAILED:")
         for p in all_problems:
             print(f"  - {p}")
