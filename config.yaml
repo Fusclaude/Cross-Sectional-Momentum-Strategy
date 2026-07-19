@@ -63,8 +63,8 @@ universe:
   # investable set — they are untradeable at any meaningful size and
   # inflate backtest returns via microcap bias.
   min_median_dollar_volume:
-    sp500: 5.0e6
-    asx300: 1.0e6
+    sp500: 5000000
+    asx300: 1000000
   ipo_seasoning_days: 365
 
 factors:
