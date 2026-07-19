@@ -412,3 +412,102 @@ def test_ignore_list_does_not_mask_other_tickers(cfg):
     q = dict(cfg["quality"]); q["ignore_tickers"] = ["BAD.AX"]
     fails, _ = fpx.quality_gate(payload, "ASX 300", q, min_price=0.05)
     assert any("ALSO_BAD.AX" in f for f in fails)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Config integrity
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _walk(node, path=""):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield from _walk(v, f"{path}.{k}" if path else str(k))
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            yield from _walk(v, f"{path}[{i}]")
+    else:
+        yield path, node
+
+
+def test_no_config_value_is_a_stringified_number(cfg):
+    """
+    Catches an entire class of silent config bug.
+
+    YAML 1.1 requires a SIGNED exponent, so `5.0e6` parses as the string
+    "5.0e6" while `5.0e+6` parses as a float. Nothing complains at load time;
+    it surfaces as a TypeError on the first numeric comparison, potentially
+    deep into a run that has already spent ten minutes downloading data.
+
+    Any scalar that can be read as a number but is typed as str is a bug.
+    """
+    offenders = []
+    for path, val in _walk(cfg):
+        if isinstance(val, str):
+            try:
+                float(val)
+            except (TypeError, ValueError):
+                continue
+            offenders.append((path, val))
+    assert not offenders, (
+        "config values parsed as strings but look numeric — YAML 1.1 needs a "
+        f"signed exponent (5.0e+6) or plain digits: {offenders}")
+
+
+def test_numeric_config_keys_have_numeric_types(cfg):
+    """Explicit type check on the values the pipeline does arithmetic with."""
+    expected = [
+        ("universe", "min_price"), ("universe", "min_median_dollar_volume"),
+        ("costs", "spread_bps"),
+    ]
+    bad = []
+    for section, key in expected:
+        for market, val in cfg[section][key].items():
+            if not isinstance(val, (int, float)) or isinstance(val, bool):
+                bad.append(f"{section}.{key}.{market}={val!r} ({type(val).__name__})")
+    assert not bad, f"non-numeric config values: {bad}"
+
+
+def test_coverage_filter_keeps_recent_listings(cfg):
+    """
+    Regression test for a real bug: SNDK vanished from the S&P universe after
+    the lookback was extended to 10 years.
+
+    The old filter measured non-null bars against the FULL window, so a stock
+    listed 18 months into a 10-year window scored 14% coverage and was dropped
+    as if its feed were broken. Extending history made the filter harsher on
+    new listings — biased precisely against the high-momentum names a momentum
+    strategy exists to find.
+
+    Coverage must be measured since each ticker's first observation.
+    """
+    n = 520
+    idx = pd.date_range("2016-07-01", periods=n, freq="W-FRI")
+
+    full = np.linspace(10, 40, n)                       # listed throughout
+    recent = np.concatenate([np.full(n - 73, np.nan),   # listed 73 weeks ago
+                             np.linspace(50, 400, 73)])
+    gappy = full.copy()
+    gappy[np.random.default_rng(0).choice(n, int(n * 0.8), replace=False)] = np.nan
+    tiny = np.concatenate([np.full(n - 20, np.nan), np.linspace(5, 6, 20)])
+
+    weekly = pd.DataFrame({"FULL": full, "RECENT": recent,
+                           "GAPPY": gappy, "TINY": tiny}, index=idx)
+
+    first_obs = weekly.notna().idxmax()
+    n_obs = weekly.notna().sum()
+    bars_since = pd.Series({t: int((weekly.index >= first_obs[t]).sum())
+                            if n_obs[t] > 0 else 0 for t in weekly.columns})
+    coverage = (n_obs / bars_since.replace(0, np.nan)).fillna(0.0)
+    min_bars = cfg["data"]["min_history_weeks"]
+    keep = [t for t in weekly.columns
+            if coverage[t] >= cfg["data"]["min_coverage"] and n_obs[t] >= min_bars]
+
+    assert "RECENT" in keep, "a recent listing with a clean feed was dropped"
+    assert "FULL" in keep
+    assert "GAPPY" not in keep, "a genuinely broken feed was kept"
+    assert "TINY" not in keep, "insufficient history for a 12-1 signal was kept"
+
+    # and the old logic must fail this, or the test proves nothing
+    old_keep = weekly.notna().mean()
+    assert old_keep["RECENT"] < cfg["data"]["min_coverage"], \
+        "test no longer reproduces the original bug"
