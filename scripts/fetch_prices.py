@@ -123,10 +123,44 @@ def fetch_market(tickers: list[str], names: dict, sectors: dict,
     weekly_dv = daily_dv.resample(rule).mean()          # avg daily $ volume in week
     median_dv = daily_dv.tail(60).median()              # 60-trading-day median
 
-    coverage = weekly.notna().mean()
-    keep = coverage[coverage >= dcfg["min_coverage"]].index.tolist()
+    # ── Coverage filter ───────────────────────────────────────────────────
+    # Measured SINCE EACH TICKER'S FIRST OBSERVATION, not against the whole
+    # window. Measuring against the window silently deletes every recent
+    # listing: with a 10-year fetch, Sandisk (spun out of Western Digital in
+    # Feb 2025) has ~14% coverage and looks identical to a broken feed, so it
+    # was dropped — while being the best-performing stock in the index.
+    #
+    # This bug did not exist at the old 760-day window, where the same stock
+    # had 67% coverage. Extending history made the filter strictly harsher on
+    # new listings, which is the opposite of the intent, and it introduced a
+    # bias precisely against the high-momentum names this strategy exists to
+    # find.
+    #
+    # Two separate conditions now, because they ask different questions:
+    #   coverage  — is the feed intact over the period it has been listed?
+    #   min bars  — is there enough history to compute a 12-1 signal at all?
+    first_obs = weekly.notna().idxmax()
+    n_obs = weekly.notna().sum()
+    bars_since_listing = pd.Series(
+        {t: int((weekly.index >= first_obs[t]).sum()) if n_obs[t] > 0 else 0
+         for t in weekly.columns})
+    coverage = (n_obs / bars_since_listing.replace(0, np.nan)).fillna(0.0)
+    min_bars = dcfg.get("min_history_weeks", 60)
+
+    keep = [t for t in weekly.columns
+            if coverage[t] >= dcfg["min_coverage"] and n_obs[t] >= min_bars]
+    dropped_short = [t for t in weekly.columns
+                     if n_obs[t] < min_bars and coverage[t] >= dcfg["min_coverage"]]
+    dropped_gappy = [t for t in weekly.columns if coverage[t] < dcfg["min_coverage"]]
+
     weekly, weekly_dv = weekly[keep], weekly_dv.reindex(columns=keep)
-    print(f"    kept {len(keep)}/{len(tickers)} after coverage filter")
+    print(f"    kept {len(keep)}/{len(tickers)}  "
+          f"(dropped {len(dropped_gappy)} gappy, {len(dropped_short)} too short)")
+    if dropped_short:
+        print(f"      too short (<{min_bars}w, likely recent listings): "
+              f"{', '.join(dropped_short[:10])}")
+    if dropped_gappy:
+        print(f"      gappy feed: {', '.join(dropped_gappy[:10])}")
 
     dates = [d.strftime("%Y-%m-%d") for d in weekly.index]
 
