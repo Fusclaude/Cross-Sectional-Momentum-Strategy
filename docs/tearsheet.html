@@ -67,6 +67,37 @@ body{font-family:var(--sans);color:var(--t1);min-height:100vh;padding-bottom:40p
 .f-fail{color:var(--red);background:var(--rd)}
 
 .card{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:13px;margin-bottom:10px}
+
+/* ── Expandable explanations ── */
+details{border:1px solid var(--bdr);border-radius:10px;background:var(--p2);margin-bottom:10px;overflow:hidden}
+details summary{list-style:none;cursor:pointer;padding:11px 12px;display:flex;align-items:center;gap:8px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"▸";margin-left:auto;color:var(--t3);font-size:11px;flex-shrink:0}
+details[open] > summary::after{content:"▾"}
+.primer > summary{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;
+                  text-transform:uppercase;color:var(--teal)}
+.expl{padding:11px 12px 13px;font-size:10.5px;line-height:1.8;color:var(--t2);border-top:1px solid var(--bdr)}
+.expl b{color:var(--t1)}
+.expl code{font-family:var(--mono);font-size:9.5px;color:var(--teal);background:var(--p3);padding:1px 4px;border-radius:3px}
+.expl p{margin-bottom:9px}
+.expl p:last-child{margin-bottom:0}
+.expl ul{margin:0 0 9px 16px}
+.expl li{margin-bottom:5px}
+
+/* ledger rows become tappable */
+.ldetails{border:none;border-radius:0;margin:0;border-bottom:1px solid var(--bdr);background:transparent}
+.ldetails:last-child{border-bottom:none}
+.ldetails > summary{padding:0;display:block}
+.ldetails > summary::after{display:none}
+.ldetails .expl{background:var(--p3)}
+.lchev{color:var(--t3);font-size:9px;flex-shrink:0;width:9px}
+.ldetails[open] .lchev::before{content:"▾"}
+.ldetails .lchev::before{content:"▸"}
+
+.scale{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:9px;margin:4px 0}
+.scale td{padding:4px 6px;border-bottom:1px solid var(--bdr);color:var(--t2)}
+.scale td:first-child{color:var(--t1);white-space:nowrap;width:78px}
+.scale tr:last-child td{border-bottom:none}
 .note{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;
       padding:11px 12px;font-size:10px;color:var(--amber);line-height:1.7}
 .note b{color:#FFCB6B}
@@ -235,11 +266,92 @@ function verdictBlock(m){
       <div class="verdict-p">${body}</div></div>`;
 }
 
-function ledgerRow(name, thr, valTxt, g){
-  return `<div class="lrow"><div class="ltest">
-      <div class="lname">${name}</div><div class="lthr">${thr}</div></div>
+/* Per-test explanations. Written so the page does not need an external
+   document to be read correctly — a tearsheet that requires a glossary you
+   do not have is a tearsheet that gets misread. */
+const EXPLAIN = {
+  ic: `<p><b>What it measures.</b> Each week, rank every stock by its score, rank
+       them again by what they actually returned over the following 4 weeks, and
+       correlate the two rankings. Average that over every week in the sample.</p>
+       <p><b>Why rank correlation</b> rather than raw returns: it asks whether the
+       ordering was right, which is what a ranking strategy actually needs. One
+       stock going up 900% cannot rescue a signal that ordered everything else wrong.</p>
+       <table class="scale">
+         <tr><td>0.00–0.01</td><td>no relationship</td></tr>
+         <tr><td>0.02–0.04</td><td>a real, tradeable equity signal</td></tr>
+         <tr><td>0.05+</td><td>excellent</td></tr>
+         <tr><td>0.15+</td><td>almost certainly a lookahead bug, not an edge</td></tr>
+       </table>`,
+  tstat: `<p><b>What it measures.</b> Whether the average IC is far enough from zero
+       to not be chance. Roughly: how many standard errors above zero.</p>
+       <p><b>Why 2.5 and not 1.96.</b> The textbook 1.96 assumes one hypothesis tested
+       once. Dozens of factor weightings are being compared here, so the bar has to
+       be higher or something will clear it by luck alone.</p>
+       <p>This uses <b>Newey–West</b> standard errors. Forward returns measured
+       weekly over a 4-week horizon overlap each other, which makes an ordinary
+       t-stat far too generous — often by a factor of two or more. Reporting an
+       uncorrected t-stat on overlapping returns is the most common way an amateur
+       backtest claims significance it has not earned.</p>`,
+  icir: `<p><b>What it measures.</b> <code>mean(IC) / std(IC)</code> — consistency
+       rather than size. A signal with a small but steady IC beats one with a large
+       IC that swings wildly between positive and negative.</p>
+       <p>It maps almost directly to how the strategy will feel to hold, via the
+       fundamental law of active management: <code>IR ≈ IC × √breadth</code>.
+       Consistency is what lets you stay invested through a bad patch.</p>`,
+  mono: `<p><b>What it measures.</b> Sort into ten buckets by score each week and
+       track the average forward return of each. Monotonicity is the rank
+       correlation between bucket number and bucket return.</p>
+       <p><b>Why it is the honesty check.</b> A genuine factor produces a staircase:
+       decile 2 beats decile 1, decile 3 beats decile 2, all the way up. If the
+       entire spread comes from the top decile while deciles 1–9 are flat, you do
+       not have a factor — you have a handful of stocks, usually one sector or a
+       few microcaps, and it will not repeat.</p>`,
+  dsr: `<p><b>What it measures.</b> The probability the Sharpe ratio is real, after
+       accounting for how many configurations were tried.</p>
+       <p><b>The problem it solves.</b> Try 64 factor weightings on pure noise and
+       the best one still looks impressive. That is arithmetic, not skill. The
+       Deflated Sharpe asks whether the observed Sharpe beats what the <i>maximum
+       of N random trials</i> would produce anyway, and also corrects for the fat
+       tails and negative skew that momentum returns actually have.</p>
+       <p>Below 0.95, the strategy has not cleared the bar. Bailey &amp; López de
+       Prado (2014).</p>`,
+  pbo: `<p><b>What it measures.</b> Split the history into blocks, take every way of
+       dividing them into in-sample and out-of-sample halves, pick the best config
+       on the in-sample half, and see where it lands out of sample. PBO is the
+       fraction of splits where the winner landed in the bottom half.</p>
+       <p><b>Lower is better.</b> 0.5 means selection is a coin flip. <b>Above 0.5
+       means choosing a configuration by backtest performance is actively worse
+       than choosing at random.</b></p>
+       <p>This is the most important number on the page for anyone using weight
+       sliders, because it directly measures the risk in adjusting them until the
+       backtest looks good.</p>`,
+  periods: `<p><b>What it measures.</b> How many weekly cross-sections were available.</p>
+       <p><b>Why it gates everything else.</b> The standard error on an IC estimate
+       is roughly <code>1/√n</code>. At 53 periods that is 0.14 — wider than any
+       real equity factor's IC, meaning the sample cannot distinguish a good signal
+       from a worthless one. At 450 it falls to about 0.05, which is usable.</p>
+       <p>If this row fails, every other row on this page is provisional, including
+       the ones that pass.</p>`,
+  costs: `<p><b>What it measures.</b> The round-trip transaction cost at which the
+       strategy's gross alpha is exactly consumed — gross return divided by annual
+       turnover.</p>
+       <p><b>Reading it.</b> Compare against realistic costs: roughly 5–10bp for US
+       large caps, 25–50bp+ for ASX small and mid caps. A breakeven comfortably
+       above your actual cost means the edge survives being traded.</p>
+       <p>An implausibly large figure is a warning, not a pass. It usually means the
+       gross return is inflated by a short or overfit sample, so the ratio is
+       measuring an unrealistic numerator.</p>`,
+};
+
+function ledgerRow(name, thr, valTxt, g, key){
+  const body = EXPLAIN[key] ? `<div class="expl">${EXPLAIN[key]}</div>` : "";
+  return `<details class="ldetails"><summary>
+      <div class="lrow"><div class="ltest">
+        <div class="lname"><span class="lchev"></span> ${name}</div>
+        <div class="lthr">${thr}</div></div>
       <div class="lval ${g==="pass"?"pos":g==="fail"?"neg":"mut"}">${valTxt}</div>
-      <div class="lflag f-${g}">${FLAG[g]}</div></div>`;
+      <div class="lflag f-${g}">${FLAG[g]}</div></div>
+    </summary>${body}</details>`;
 }
 
 function ledgerBlock(m){
@@ -248,26 +360,26 @@ function ledgerBlock(m){
   let h = '<div class="ledger">';
   h += ledgerRow("Information coefficient",
         "rank IC vs 4-week forward return · pass ≥ 0.030",
-        fmt(ic.ic_mean,4), grade(Math.abs(ic.ic_mean), GATES.ic));
+        fmt(ic.ic_mean,4), grade(Math.abs(ic.ic_mean), GATES.ic), "ic");
   h += ledgerRow("IC significance",
         "Newey–West t-stat, 4 lags · pass ≥ 2.5",
-        fmt(ic.t_stat,2), grade(Math.abs(ic.t_stat), GATES.tstat));
+        fmt(ic.t_stat,2), grade(Math.abs(ic.t_stat), GATES.tstat), "tstat");
   h += ledgerRow("IC consistency (ICIR)",
         "mean IC / std IC · pass ≥ 0.50",
-        fmt(ic.ic_ir,3), grade(Math.abs(ic.ic_ir), GATES.icir));
+        fmt(ic.ic_ir,3), grade(Math.abs(ic.ic_ir), GATES.icir), "icir");
   h += ledgerRow("Decile monotonicity",
         "rank corr of decile means vs decile · pass ≥ 0.70",
-        fmt(bk.monotonicity_rho,2), grade(bk.monotonicity_rho, GATES.mono));
+        fmt(bk.monotonicity_rho,2), grade(bk.monotonicity_rho, GATES.mono), "mono");
   h += ledgerRow("Deflated Sharpe ratio",
         `deflated for ${ds.n_trials||"—"} trials · pass ≥ 0.95`,
-        fmt(ds.dsr,3), grade(ds.dsr, GATES.dsr));
+        fmt(ds.dsr,3), grade(ds.dsr, GATES.dsr), "dsr");
   h += ledgerRow("Backtest overfitting (PBO)",
         "CSCV · LOWER is better · pass ≤ 0.30",
-        fmt(pbo.pbo,2), grade(pbo.pbo, GATES.pbo));
+        fmt(pbo.pbo,2), grade(pbo.pbo, GATES.pbo), "pbo");
   h += ledgerRow("Sample adequacy",
         "usable weekly cross-sections · pass ≥ 250",
         ic.n_periods!=null ? String(ic.n_periods) : "—",
-        grade(ic.n_periods, GATES.periods));
+        grade(ic.n_periods, GATES.periods), "periods");
   // Breakeven cost is gross alpha divided by turnover. On a short, likely
   // overfit sample the gross alpha is inflated, so an enormous breakeven is
   // evidence the backtest is unrealistic — not evidence the strategy is
@@ -279,7 +391,8 @@ function ledgerBlock(m){
           ? "gross alpha implausible for this sample — figure not meaningful"
           : "breakeven round-trip cost · pass ≥ 60bp",
         be!=null ? fmt(be,0)+"bp" : "—",
-        be==null ? "fail" : be>300 ? "weak" : be>60 ? "pass" : be>25 ? "weak" : "fail");
+        be==null ? "fail" : be>300 ? "weak" : be>60 ? "pass" : be>25 ? "weak" : "fail",
+        "costs");
   return h + "</div>";
 }
 
@@ -435,6 +548,85 @@ function equityChart(m){
     </div></div>`;
 }
 
+/* ── Year-by-year ────────────────────────────────────────────────────── */
+function annualBlock(m){
+  const bt = baseline(m).backtest;
+  if(!bt || !bt.annual_returns || !bt.annual_returns.length) return "";
+  const A = bt.annual_returns;
+  const hasBm = A.some(r=>r.benchmark_return!=null);
+
+  // grouped bars: strategy vs benchmark per calendar year
+  const W=340, H=150, pad={l:34,r:8,t:14,b:26};
+  const vals = A.flatMap(r=>[r.return, r.benchmark_return].filter(v=>v!=null));
+  const lo = Math.min(0,...vals), hi = Math.max(0,...vals), rng=(hi-lo)||1;
+  const cw = (W-pad.l-pad.r)/A.length;
+  const Y = v => pad.t+(H-pad.t-pad.b)*(1-(v-lo)/rng);
+  const zero = Y(0);
+  const bars = A.map((r,i)=>{
+    const bw = hasBm ? cw*0.30 : cw*0.5, x0 = pad.l+i*cw+cw/2-(hasBm?bw:bw/2);
+    const mk=(v,x,c)=>{ if(v==null) return "";
+      const y=Y(v), top=Math.min(y,zero), h=Math.max(Math.abs(y-zero),1);
+      return `<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${c}" rx="1.5"/>`; };
+    return mk(r.return, x0, r.return>=0?"var(--teal)":"var(--red)")
+         + (hasBm ? mk(r.benchmark_return, x0+bw+1.5, "var(--t3)") : "");
+  }).join("");
+  const labs = A.map((r,i)=>`<text class="axlbl" x="${(pad.l+i*cw+cw/2).toFixed(1)}" y="${H-9}" text-anchor="middle">${r.year}${r.partial?"*":""}</text>`).join("");
+
+  const rows = A.map(r=>`<tr>
+      <td class="tname">${r.year}${r.partial?' <span class="dim">part</span>':''}</td>
+      <td class="${r.return>=0?"pos":"neg"}">${pct(r.return,1)}</td>
+      ${hasBm?`<td class="mut">${pct(r.benchmark_return,1)}</td>
+      <td class="${(r.active_return||0)>=0?"pos":"neg"}">${pct(r.active_return,1)}</td>`:""}
+      <td class="neg">${pct(r.max_drawdown,1)}</td>
+      <td class="mut">${pct(r.hit_rate,0)}</td>
+      <td class="mut">${fmt(r.sharpe,2)}</td></tr>`).join("");
+
+  const dd = bt.drawdown_detail||{};
+  return `<div class="card">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="calendar year returns">
+      <line class="axis" x1="${pad.l}" y1="${zero.toFixed(1)}" x2="${W-pad.r}" y2="${zero.toFixed(1)}"/>
+      <text class="axlbl" x="${pad.l-4}" y="${Y(hi).toFixed(1)}" text-anchor="end">${pct(hi,0)}</text>
+      <text class="axlbl" x="${pad.l-4}" y="${(zero+3).toFixed(1)}" text-anchor="end">0%</text>
+      ${lo<0?`<text class="axlbl" x="${pad.l-4}" y="${Y(lo).toFixed(1)}" text-anchor="end">${pct(lo,0)}</text>`:""}
+      ${bars}${labs}
+    </svg>
+    ${hasBm?`<div class="legend"><span><i class="sw" style="background:var(--teal)"></i>strategy</span>
+      <span><i class="sw" style="background:var(--t3)"></i>benchmark</span>
+      <span>* partial year</span></div>`:""}
+    <div class="scroll" style="margin-top:10px"><table>
+      <thead><tr><th>Year</th><th>Return</th>${hasBm?"<th>Bench</th><th>Active</th>":""}
+        <th>Max DD</th><th>Hit</th><th>Sharpe</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    ${dd.trough_date?`<div style="font-size:9.5px;color:var(--t2);line-height:1.7;margin-top:9px">
+      Worst drawdown ${pct(dd.max_drawdown,1)}, trough ${esc(dd.trough_date)},
+      ${dd.still_underwater?"<b class='red'>still underwater</b>"
+        :`recovered in ${dd.weeks_to_recover} week${dd.weeks_to_recover===1?"":"s"}`}.
+      Spent ${pct(dd.pct_weeks_in_drawdown,0)} of all weeks below a prior peak.</div>`:""}
+  </div>`;
+}
+
+/* ── Underwater curve ────────────────────────────────────────────────── */
+function underwaterChart(m){
+  const bt = baseline(m).backtest;
+  if(!bt || !bt.drawdown_curve || bt.drawdown_curve.length<4) return "";
+  const p = bt.drawdown_curve, W=340,H=90,pad={l:34,r:8,t:10,b:18};
+  const lo = Math.min(...p.map(d=>d.dd), -0.01);
+  const X = i => pad.l + i/(p.length-1)*(W-pad.l-pad.r);
+  const Y = v => pad.t + (H-pad.t-pad.b)*(v/lo);
+  const line = p.map((d,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(d.dd).toFixed(1)}`).join("");
+  const area = line+`L${X(p.length-1).toFixed(1)},${pad.t}L${X(0).toFixed(1)},${pad.t}Z`;
+  return `<div class="card">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="drawdown from running peak">
+      <path d="${area}" fill="rgba(255,92,92,.14)"/>
+      <path d="${line}" fill="none" stroke="var(--red)" stroke-width="1.3"/>
+      <line class="axis" x1="${pad.l}" y1="${pad.t}" x2="${W-pad.r}" y2="${pad.t}"/>
+      <text class="axlbl" x="${pad.l-4}" y="${pad.t+3}" text-anchor="end">0%</text>
+      <text class="axlbl" x="${pad.l-4}" y="${(H-pad.b).toFixed(1)}" text-anchor="end">${pct(lo,0)}</text>
+      <text class="axlbl" x="${pad.l}" y="${H-5}">${esc(p[0].date.slice(0,7))}</text>
+      <text class="axlbl" x="${W-pad.r}" y="${H-5}" text-anchor="end">${esc(p[p.length-1].date.slice(0,7))}</text>
+    </svg></div>`;
+}
+
 /* ── Render ──────────────────────────────────────────────────────────── */
 function sec(title, n, desc, body){
   if(!body) return "";
@@ -447,7 +639,30 @@ function render(){
   const dq = m.data_quality||{};
   document.getElementById("root").innerHTML =
     verdictBlock(m) +
-    sec("Evidence ledger","8 tests",
+    `<details class="primer"><summary>How to read this page</summary>
+      <div class="expl">
+        <p>This page answers one question: <b>is there evidence the ranking
+        predicts anything?</b> It is not a forecast and not a recommendation.</p>
+        <p>Work top to bottom. The <b>evidence ledger</b> is the summary — every
+        row is tappable for what it measures and why the threshold is what it is.
+        Each threshold was written down <i>before</i> the results were looked at,
+        which is the only way a threshold means anything.</p>
+        <p>Two rows dominate everything else. <b>Sample adequacy</b>: if there is
+        not enough history, no other number is conclusive, including the good
+        ones. <b>PBO</b>: if it exceeds 0.5, picking a configuration by backtest
+        performance is worse than picking at random — which is the exact risk in
+        adjusting weight sliders until the numbers improve.</p>
+        <p>The sections below are the working. Factor diagnostics shows which
+        individual signals carry weight; factor overlap shows which ones are
+        secretly the same bet; the decile chart shows whether an effect holds
+        across the whole universe or comes from a handful of names; and the
+        backtest shows what it would have felt like to hold.</p>
+        <p><b>Everything here is measured on past data with survivorship bias
+        present.</b> The universe is today's index membership applied to all
+        history, so companies that failed or were demoted are missing. That
+        inflates every statistic on this page to some degree.</p>
+      </div></details>` +
+    sec("Evidence ledger","8 tests · tap any row",
       "Each test was given a threshold before the results were looked at. A signal is only as good as the "+
       "test it was most likely to fail.", ledgerBlock(m)) +
     sec("Read this first","caveats",
@@ -466,7 +681,19 @@ function render(){
       decileChart(m)) +
     sec("Backtest","net of costs",
       "Equal-weight top-N, rebalanced on schedule, costs charged on realised turnover. Positions are formed "+
-      "on week t and earn from t+1, so there is no same-bar lookahead.", equityChart(m)) +
+      "on week t and earn from t+1, so there is no same-bar lookahead. The warm-up period, where no factor "+
+      "is computable yet and the book holds nothing, is excluded rather than counted as flat weeks.",
+      equityChart(m)) +
+    sec("Year by year","calendar years",
+      "A single CAGR hides how a strategy is actually experienced. Momentum in particular tends to make its "+
+      "money in a few enormous years and give some back in the rest, so the spread across years matters more "+
+      "than the average of them. Partial years are marked.",
+      annualBlock(m)) +
+    sec("Underwater","drawdown from peak",
+      "Every point is the loss from the highest value reached so far. Depth is only half the story — how long "+
+      "you spend below the line is what actually causes people to abandon a strategy, usually at the worst "+
+      "possible moment.",
+      underwaterChart(m)) +
     `<div class="foot">
       Universe ${dq.n_tickers||"—"} names · ${dq.n_dates||"—"} weekly bars ·
       ${esc(dq.first_date||"")} → ${esc(dq.last_date||"")} · ${fmt(dq.missing_pct,2)}% missing.<br>
