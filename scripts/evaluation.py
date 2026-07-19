@@ -348,6 +348,20 @@ def backtest_top_n(scores: pd.DataFrame, prices: pd.DataFrame, top_n: int = 5,
     """
     rets = prices.pct_change()
     idx = list(scores.index)
+
+    # Skip the leading warm-up period. The first ~57 weeks of any panel cannot
+    # produce a 12-1 signal, so the score row is empty and the book holds
+    # nothing. Including those weeks as flat 0.00% returns is not neutral: it
+    # dilutes the hit rate, understates volatility and drags the Sharpe toward
+    # zero, all while looking like a legitimate track record. Start where the
+    # strategy could actually have traded.
+    first = next((i for i, dt in enumerate(idx)
+                  if scores.loc[dt].notna().sum() >= max(top_n, 20)), None)
+    if first is None:
+        return {"error": "no week has enough scored names to form a book",
+                "n_periods": 0}
+    idx = idx[first:]
+
     weights = pd.Series(dtype=float)
     port, turn, dates, held = [], [], [], []
 
@@ -416,6 +430,64 @@ def backtest_top_n(scores: pd.DataFrame, prices: pd.DataFrame, top_n: int = 5,
     ann_turn = out["annual_turnover"]
     if ann_turn and ann_turn > 0:
         out["breakeven_cost_bps"] = float(gross_ann / ann_turn * 10000.0)
+
+    # ── Calendar-year breakdown ──────────────────────────────────────────
+    # A single CAGR hides everything that matters about how a strategy is
+    # actually experienced. Two books with identical 10-year CAGRs, one
+    # grinding out 12% a year and the other making 300% in one year and losing
+    # money in six, are completely different products. The annual table is
+    # where momentum's real character shows up: a few enormous years carrying
+    # a lot of mediocre ones, plus the occasional crash.
+    ser = pd.Series(pr, index=pd.DatetimeIndex(dates))
+    bm_ser = None
+    if benchmark is not None:
+        bm_vals = benchmark.reindex(dates).pct_change().fillna(0.0)
+        bm_ser = pd.Series(np.asarray(bm_vals).ravel(), index=pd.DatetimeIndex(dates))
+
+    annual = []
+    for year, grp in ser.groupby(ser.index.year):
+        # A stub year of one or two weeks at the edge of the sample is noise
+        # dressed up as an annual return. Drop it rather than print "0.0%".
+        if len(grp) < 4:
+            continue
+        curve_y = (1.0 + grp).cumprod()
+        peak_y = curve_y.cummax()
+        rec = {
+            "year": int(year),
+            "weeks": int(len(grp)),
+            "partial": bool(len(grp) < 45),      # incomplete first/last year
+            "return": float(curve_y.iloc[-1] - 1.0),
+            "vol": float(grp.std(ddof=1) * math.sqrt(PPY)) if len(grp) > 2 else None,
+            "max_drawdown": float((curve_y / peak_y - 1.0).min()),
+            "best_week": float(grp.max()),
+            "worst_week": float(grp.min()),
+            "hit_rate": float((grp > 0).mean()),
+        }
+        if len(grp) > 2 and grp.std(ddof=1) > 1e-12:
+            rec["sharpe"] = float(grp.mean() / grp.std(ddof=1) * math.sqrt(PPY))
+        if bm_ser is not None:
+            bg = bm_ser.reindex(grp.index).fillna(0.0)
+            rec["benchmark_return"] = float((1.0 + bg).prod() - 1.0)
+            rec["active_return"] = rec["return"] - rec["benchmark_return"]
+        annual.append(rec)
+    out["annual_returns"] = annual
+
+    # Underwater curve: drawdown from running peak at every point. Reading
+    # only the single max-drawdown number tells you the depth but not how long
+    # you spent down there, which is what actually causes people to abandon a
+    # strategy at the worst moment.
+    dd = curve / peak - 1.0
+    out["drawdown_curve"] = [{"date": str(d.date()), "dd": round(float(v), 4)}
+                             for d, v in zip(dates, dd)]
+    worst_i = int(np.argmin(dd))
+    rec_i = next((j for j in range(worst_i, len(curve)) if curve[j] >= peak[worst_i]), None)
+    out["drawdown_detail"] = {
+        "max_drawdown": mdd,
+        "trough_date": str(dates[worst_i].date()),
+        "weeks_to_recover": (rec_i - worst_i) if rec_i is not None else None,
+        "still_underwater": rec_i is None,
+        "pct_weeks_in_drawdown": float((dd < -0.01).mean()),
+    }
 
     if benchmark is not None:
         bm = benchmark.reindex(dates).pct_change().fillna(0.0).values
