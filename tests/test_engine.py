@@ -384,3 +384,31 @@ def test_dead_feed_at_final_bar_fails(cfg):
     cols["OK.AX"] = _ok()
     fails, _ = fpx.quality_gate(_qpayload(cols), "ASX 300", cfg["quality"], min_price=0.05)
     assert any("dead feed" in f for f in fails), f"dead feed missed: {fails}"
+
+
+def test_ignore_list_suppresses_failure_but_reports_it(cfg):
+    """
+    An ignored ticker must stop failing the gate AND stay visible. A silently
+    ignored ticker is indistinguishable from a check that was never written.
+    """
+    px = [50.0] * 40 + [25.0] + [50.0] * 39          # genuine 2:1
+    payload = _qpayload({"BAD.AX": px, "OK.AX": _ok()})
+    q = dict(cfg["quality"])
+
+    q["ignore_tickers"] = []
+    fails, _ = fpx.quality_gate(payload, "ASX 300", q, min_price=0.05)
+    assert any("split" in f for f in fails)
+
+    q["ignore_tickers"] = ["BAD.AX"]
+    fails, warns = fpx.quality_gate(payload, "ASX 300", q, min_price=0.05)
+    assert not [f for f in fails if "split" in f], "ignore list did not suppress"
+    assert any("ignoring" in w and "BAD.AX" in w for w in warns), "ignore not reported"
+
+
+def test_ignore_list_does_not_mask_other_tickers(cfg):
+    """Ignoring one name must not weaken the gate for anything else."""
+    px = [50.0] * 40 + [25.0] + [50.0] * 39
+    payload = _qpayload({"BAD.AX": px, "ALSO_BAD.AX": list(px), "OK.AX": _ok()})
+    q = dict(cfg["quality"]); q["ignore_tickers"] = ["BAD.AX"]
+    fails, _ = fpx.quality_gate(payload, "ASX 300", q, min_price=0.05)
+    assert any("ALSO_BAD.AX" in f for f in fails)
