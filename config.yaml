@@ -43,6 +43,16 @@ quality:
   split_check_min_price: 0.10
   tick_size: 0.001
   split_check_min_ticks: 40
+  # Reviewed, known-benign data quirks. Each entry is a decision with a reason,
+  # not a silenced check — the gate still runs on every other ticker and the
+  # ignored ones are reported as warnings on every run.
+  ignore_tickers:
+    # LOT.AX (Lotus Resources): two apparent 2:1 splits a fortnight apart in
+    # Nov 2018, while trading sub-cent. Splits happen once, not twice; ASX
+    # quotes sub-$0.10 names in $0.001 steps, so $0.010 -> $0.005 is one tick
+    # and an exact 2:1 ratio. Also far below the $0.02 universe screen at the
+    # time, so it was never in the investable cross-section. Reviewed 2026-07.
+    - LOT.AX
 
 universe:
   min_price:
