@@ -59,6 +59,12 @@ jobs:
       # missing data, or a latest bar more than 10 days old.
       - name: Fetch latest prices (data quality gate)
         run: python scripts/fetch_prices.py
+        # Emergency unblock only. Uncommenting this publishes rankings built on
+        # data the gate rejected, so treat it as a temporary measure with a
+        # deadline, not a setting. Prefer quality.ignore_tickers in config.yaml,
+        # which records WHICH ticker and WHY.
+        # env:
+        #   QA_SOFT_FAIL: "1"
 
       - name: Compute signals and rankings
         run: python scripts/run_signals.py
