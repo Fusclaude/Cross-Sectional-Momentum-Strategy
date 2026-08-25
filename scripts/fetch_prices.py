@@ -334,6 +334,24 @@ def atomic_write(path: Path, payload: dict) -> None:
         json.dump(payload, f, separators=(",", ":"))
     os.replace(tmp, path)
 
+def drop_tickers(payload: dict, drop: set[str]) -> list[str]:
+    """Remove tickers from the payload entirely, not just from the QA view.
+
+    quality_gate drops ignored tickers from its own local frame, so the gate
+    stops complaining — but the prices still reach run_signals.py and still
+    rank. That is fine for a name below the universe screen (LOT.AX) and
+    wrong for a liquid one. This makes the exclusion real.
+    """
+    present = [t for t in payload["tickers"] if t in drop]
+    if not present:
+        return []
+    payload["tickers"] = [t for t in payload["tickers"] if t not in drop]
+    for key in ("prices", "dollarVolume", "medianDollarVolume60d",
+                "names", "sectors", "ipoDates"):
+        if key in payload:
+            payload[key] = {t: v for t, v in payload[key].items() if t not in drop}
+    return present
+
 
 def main() -> None:
     cfg = load_config()
