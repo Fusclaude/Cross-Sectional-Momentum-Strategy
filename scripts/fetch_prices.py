@@ -244,6 +244,16 @@ def quality_gate(payload: dict, label: str, qcfg: dict,
 
     n_tick = max(px.shape[1], 1)
 
+    # Bail before any positional access. If a yfinance schema change makes
+    # _extract return nothing, every check below that touches .iloc[-1] or
+    # .index[-1] raises IndexError and the run dies with a traceback instead
+    # of the reason. Report the reason.
+    if px.empty or px.shape[1] == 0:
+        failures.append(f"{label}: price frame is empty after filtering "
+                        f"({len(px)} bars, {px.shape[1]} tickers) — "
+                        f"upstream fetch or extraction returned nothing")
+        return failures, warnings
+
     if len(px) < qcfg["min_weekly_bars"]:
         failures.append(f"{label}: only {len(px)} weekly bars; "
                         f"need >= {qcfg['min_weekly_bars']}")
@@ -334,6 +344,7 @@ def atomic_write(path: Path, payload: dict) -> None:
         json.dump(payload, f, separators=(",", ":"))
     os.replace(tmp, path)
 
+
 def drop_tickers(payload: dict, drop: set[str]) -> list[str]:
     """Remove tickers from the payload entirely, not just from the QA view.
 
@@ -362,7 +373,6 @@ def main() -> None:
     start = end - timedelta(days=cfg["data"]["lookback_days"])
     all_problems: list[str] = []
     all_warnings: list[str] = []
- 
 
     for market, label in [("sp500", "S&P 500"), ("asx300", "ASX 300")]:
         u = universe[market]
@@ -371,7 +381,7 @@ def main() -> None:
         payload["benchmark"] = fetch_series(cfg["data"]["benchmark"].get(market), start, end)
         payload["riskFree"] = fetch_series(cfg["data"]["risk_free"].get(market), start, end)
 
-               failures, warnings = quality_gate(
+        failures, warnings = quality_gate(
             payload, label, cfg["quality"],
             min_price=cfg["universe"]["min_price"].get(market, 0.0))
         payload["qualityProblems"] = failures
