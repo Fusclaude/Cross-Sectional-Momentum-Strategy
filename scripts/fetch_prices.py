@@ -371,14 +371,15 @@ def main() -> None:
         payload["benchmark"] = fetch_series(cfg["data"]["benchmark"].get(market), start, end)
         payload["riskFree"] = fetch_series(cfg["data"]["risk_free"].get(market), start, end)
 
-        failures, warnings = quality_gate(
+               failures, warnings = quality_gate(
             payload, label, cfg["quality"],
             min_price=cfg["universe"]["min_price"].get(market, 0.0))
         payload["qualityProblems"] = failures
         payload["qualityWarnings"] = warnings
         all_problems += failures
         all_warnings += warnings
-         removed = drop_tickers(payload, set(cfg["quality"].get("ignore_tickers") or []))
+
+        removed = drop_tickers(payload, set(cfg["quality"].get("ignore_tickers") or []))
         if removed:
             msg = f"{label}: removed from investable universe: {', '.join(removed)}"
             payload["qualityWarnings"].append(msg)
