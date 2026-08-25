@@ -362,7 +362,7 @@ def main() -> None:
     start = end - timedelta(days=cfg["data"]["lookback_days"])
     all_problems: list[str] = []
     all_warnings: list[str] = []
-    all_warnings: list[str] = []
+ 
 
     for market, label in [("sp500", "S&P 500"), ("asx300", "ASX 300")]:
         u = universe[market]
@@ -378,6 +378,13 @@ def main() -> None:
         payload["qualityWarnings"] = warnings
         all_problems += failures
         all_warnings += warnings
+         removed = drop_tickers(payload, set(cfg["quality"].get("ignore_tickers") or []))
+        if removed:
+            msg = f"{label}: removed from investable universe: {', '.join(removed)}"
+            payload["qualityWarnings"].append(msg)
+            all_warnings.append(msg)
+            print(f"    {msg}")
+
         atomic_write(DATA_DIR / f"{market}_prices.json", payload)
         print(f"  wrote {market}_prices.json  "
               f"[{len(failures)} failures, {len(warnings)} warnings]")
