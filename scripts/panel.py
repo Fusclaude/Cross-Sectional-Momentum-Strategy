@@ -49,11 +49,8 @@ def rolling_trend_r2(log_prices: pd.DataFrame, window: int) -> pd.DataFrame:
     r = log_prices.rolling(window)
     y_sum = r.sum()
     y2_sum = (log_prices ** 2).rolling(window).sum()
-    # sum(x_k * y_k) over the window, via a convolution with the ramp
-    weighted = log_prices.rolling(window).apply(
-        lambda v: float(np.dot(x, v)), raw=True, engine="numpy"
-    ) if False else None
-    # convolution is far faster than rolling.apply:
+    # sum(x_k * y_k) over the window, via a convolution with the ramp —
+    # far faster than rolling.apply:
     arr = log_prices.to_numpy(dtype=float)
     T, N = arr.shape
     xy = np.full((T, N), np.nan)
