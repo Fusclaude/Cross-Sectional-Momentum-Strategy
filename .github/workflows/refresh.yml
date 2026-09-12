@@ -14,7 +14,12 @@ name: Refresh Momentum Signals
 on:
   schedule:
     - cron: "0 6 * * 6"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      run_analytics:
+        description: "Also rebuild research analytics (tearsheet) -- adds several minutes"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -33,6 +38,14 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      # The scheduled run never rebuilds analytics -- it backtests ~62 factor
+      # configurations per market and is the slowest step by far, and the
+      # weekly signals/dashboard refresh does not depend on it. A manual
+      # workflow_dispatch run still builds it by default (toggle the
+      # run_analytics input to skip), so the tearsheet stays regenerable
+      # on demand without slowing down every automatic refresh.
+      RUN_ANALYTICS: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_analytics) && 'true' || 'false' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -70,15 +83,15 @@ jobs:
         run: python scripts/run_signals.py
 
       - name: Build research analytics
+        if: env.RUN_ANALYTICS == 'true'
         run: python scripts/build_analytics.py
 
       - name: Sanity-check outputs
         run: |
           python - <<'PY'
-          import json, sys
+          import json, os, sys
           from pathlib import Path
           sig = json.loads(Path("data/signals_latest.json").read_text())
-          ana = json.loads(Path("data/analytics.json").read_text())
           problems = []
           for mk, m in sig["markets"].items():
               if m["universeSize"] < 50:
@@ -86,8 +99,14 @@ jobs:
               if not m.get("book"):
                   problems.append(f"{mk}: empty portfolio book")
               problems += [f"{mk}: {p}" for p in m.get("qualityProblems", [])]
-          if sig["manifest"]["configHash"] != ana["configHash"]:
-              problems.append("signals and analytics built from different configs")
+          # analytics.json is only rebuilt when RUN_ANALYTICS is set (see the
+          # job env above), so only cross-check it against signals then --
+          # otherwise it's a stale file left over from a previous manual run
+          # and comparing config hashes would fail for a reason that isn't a bug.
+          if os.environ.get("RUN_ANALYTICS") == "true":
+              ana = json.loads(Path("data/analytics.json").read_text())
+              if sig["manifest"]["configHash"] != ana["configHash"]:
+                  problems.append("signals and analytics built from different configs")
           if problems:
               print("SANITY CHECK FAILED:")
               for p in problems:
