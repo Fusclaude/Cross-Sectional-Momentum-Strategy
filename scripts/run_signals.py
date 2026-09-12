@@ -69,6 +69,11 @@ def file_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:12] if path.exists() else "missing"
 
 
+def clean(d: dict) -> dict:
+    return {k: (round(float(v), 4) if v is not None and np.isfinite(v) else None)
+            for k, v in d.items()}
+
+
 def monthly_history(series: pd.Series, months: int = 12) -> list[dict]:
     s = series.dropna()
     if s.empty:
@@ -149,10 +154,6 @@ def run_market(market: str, cfg: dict) -> dict:
         })
         sk, ku = mx.skew_kurt(r.tail(104).to_numpy())
         risk["skew"], risk["excess_kurtosis"] = sk, ku
-
-        def clean(d: dict) -> dict:
-            return {k: (round(float(v), 4) if v is not None and np.isfinite(v) else None)
-                    for k, v in d.items()}
 
         stocks.append({
             "ticker": t,
@@ -244,10 +245,11 @@ def main() -> None:
     # rather than duplicates and the file is safe to merge.
     snapshot = {"date": out["generatedAt"][:10], "configHash": cfg_hash, "markets": {}}
     for m, md in out["markets"].items():
+        by_ticker = {s["ticker"]: s for s in md["stocks"]}
         snapshot["markets"][m] = [
-            {"ticker": r["ticker"], "name": next(
-                (s["name"] for s in md["stocks"] if s["ticker"] == r["ticker"]), r["ticker"]),
-             "price": next((s["price"] for s in md["stocks"] if s["ticker"] == r["ticker"]), None),
+            {"ticker": r["ticker"],
+             "name": by_ticker[r["ticker"]]["name"] if r["ticker"] in by_ticker else r["ticker"],
+             "price": by_ticker.get(r["ticker"], {}).get("price"),
              "weight": r.get("weight"), "sector": r.get("sector")}
             for r in md["book"]
         ]
