@@ -177,6 +177,9 @@ def backtest(state: dict[str, pd.DataFrame], prices: pd.DataFrame, bcfg: dict,
       enter candidates (highest RS first) until max_positions are held.
     Holdings are equal-weighted and earn the NEXT week's return, so there is
     no same-bar lookahead. Costs are charged on entries and exits.
+
+    Every round trip is recorded in `tradeLog` (fills at the weekly close,
+    before costs); positions still held at the last bar have exit None.
     """
     rets = prices.pct_change()
     cand = state["candidate"].fillna(0.0).astype(bool)
@@ -185,11 +188,13 @@ def backtest(state: dict[str, pd.DataFrame], prices: pd.DataFrame, bcfg: dict,
     max_pos = int(bcfg["max_positions"])
     idx = prices.index
 
-    held: dict[str, dict] = {}   # ticker -> {"pivot": x, "peak": y}
-    port, bench, n_held, trades = [], [], [], 0
+    held: dict[str, dict] = {}   # ticker -> {"pivot", "peak", "entry_date", "entry_px"}
+    port, bench, n_held, trades, log, dates = [], [], [], 0, [], []
     started = False
-    for i in range(len(idx) - 1):
-        dt, nxt = idx[i], idx[i + 1]
+    # The last bar is traded too (so this week's buys and sells appear in the
+    # log) but earns no return: there is no next week yet.
+    for i in range(len(idx)):
+        dt = idx[i]
         row = prices.iloc[i]
         before = set(held)
         for t in list(held):
@@ -198,18 +203,22 @@ def backtest(state: dict[str, pd.DataFrame], prices: pd.DataFrame, bcfg: dict,
                 continue
             h = held[t]
             h["peak"] = max(h["peak"], p)
-            if p < h["pivot"] * (1.0 - stop) or p < h["peak"] * (1.0 - trail):
-                del held[t]
+            reason = ("stop" if p < h["pivot"] * (1.0 - stop) else
+                      "trailing_stop" if p < h["peak"] * (1.0 - trail) else None)
+            if reason:
+                log.append(_trade(t, held.pop(t), dt, float(p), reason))
         if len(held) < max_pos:
             new = [t for t in cand.columns[cand.iloc[i].to_numpy()] if t not in held]
             new.sort(key=lambda t: -(rs.at[dt, t] if np.isfinite(rs.at[dt, t]) else -1))
             for t in new[:max_pos - len(held)]:
-                held[t] = {"pivot": float(level.at[dt, t]), "peak": float(row[t])}
+                held[t] = {"pivot": float(level.at[dt, t]), "peak": float(row[t]),
+                           "entry_date": dt, "entry_px": float(row[t])}
         turnover = len(before ^ set(held))
         trades += turnover
-        if not held and not started:
+        if i == len(idx) - 1 or (not held and not started):
             continue
         started = True
+        nxt = idx[i + 1]
         w = 1.0 / len(held) if held else 0.0
         r = float(rets.loc[nxt].reindex(list(held)).fillna(0.0).sum() * w)
         # Turnover in weight terms: each name entered or exited is ~1/n of book.
@@ -217,19 +226,33 @@ def backtest(state: dict[str, pd.DataFrame], prices: pd.DataFrame, bcfg: dict,
         port.append(r)
         bench.append(float(rets.loc[nxt].mean()))
         n_held.append(len(held))
+        dates.append(nxt)
+
+    for t, h in held.items():
+        log.append(_trade(t, h, None, float(prices[t].dropna().iloc[-1]), "open"))
 
     if len(port) < 26:
         return {"error": "insufficient history for backtest", "n_periods": len(port)}
     return {
-        "strategy": _perf(np.array(port)),
-        "equal_weight_universe": _perf(np.array(bench)),
+        "strategy": perf(np.array(port)),
+        "equal_weight_universe": perf(np.array(bench)),
         "avg_positions": float(np.mean(n_held)),
         "pct_weeks_in_cash": float(np.mean(np.array(n_held) == 0)),
         "trades": int(trades),
+        "tradeLog": log,
+        # weekly returns, dated by the week they were earned
+        "series": pd.DataFrame({"strategy": port, "universe": bench,
+                                "positions": n_held}, index=pd.DatetimeIndex(dates)),
     }
 
 
-def _perf(pr: np.ndarray) -> dict:
+def _trade(t: str, h: dict, exit_date, exit_px: float, reason: str) -> dict:
+    return {"ticker": t, "entry_date": h["entry_date"], "entry_px": h["entry_px"],
+            "pivot": h["pivot"], "exit_date": exit_date, "exit_px": exit_px,
+            "return": exit_px / h["entry_px"] - 1.0, "reason": reason}
+
+
+def perf(pr: np.ndarray) -> dict:
     curve = np.cumprod(1.0 + pr)
     years = len(pr) / PPY
     cagr = float(curve[-1] ** (1.0 / years) - 1.0) if curve[-1] > 0 else -1.0

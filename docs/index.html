@@ -286,6 +286,39 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .due-badge.soon{color:var(--amber);background:rgba(245,166,35,.12)}
 .due-badge.ok{color:var(--t3);background:var(--p3)}
 .action-empty{font-family:var(--mono);font-size:10px;color:var(--t3);padding:8px 2px}
+
+/* BREAKOUTS (all-time-high scanner) */
+.bo-intro{font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6}
+.bo-card{background:var(--p2);border:1px solid var(--bdr);border-left:3px solid var(--green);border-radius:9px;padding:11px 12px;margin-bottom:7px;cursor:pointer}
+.bo-card:active{border-color:var(--teal)}
+.bo-card.watch{border-left-color:var(--amber)}
+.bo-top{display:flex;align-items:center;gap:8px}
+.bo-id{flex:1;min-width:0}
+.bo-tkr{font-family:var(--mono);font-weight:700;font-size:13px}
+.bo-name{font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bo-right{text-align:right;flex-shrink:0;font-family:var(--mono)}
+.bo-price{font-size:13px;font-weight:700}
+.bo-sub{font-size:9px;color:var(--t3);margin-top:2px}
+.bo-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.bo-badge{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--gd);color:var(--green);white-space:nowrap}
+.bo-badge.muted{background:var(--p3);color:var(--t3)}
+.bo-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px;margin-bottom:10px}
+.bo-stat{background:var(--p2);border:1px solid var(--bdr);border-radius:8px;padding:8px 10px}
+.bo-stat-lbl{font-family:var(--mono);font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.bo-stat-val{font-family:var(--mono);font-size:14px;font-weight:700;margin-top:3px}
+.bo-stat-sub{font-family:var(--mono);font-size:8px;color:var(--t3);margin-top:2px}
+.bo-eq-wrap{position:relative;height:170px;background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:6px;margin-bottom:10px}
+.bo-eq-wrap canvas{width:100%;height:100%;display:block}
+.bo-filter{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.bo-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--bdr);border-radius:9px;margin-bottom:14px}
+.bo-table{border-collapse:collapse;width:100%;min-width:520px;font-family:var(--mono);font-size:10px}
+.bo-table th{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:7px 8px;border-bottom:1px solid var(--bdr);background:var(--p1);white-space:nowrap}
+.bo-table td{padding:7px 8px;border-bottom:1px solid var(--bdr);text-align:right;white-space:nowrap;color:var(--t2)}
+.bo-table th:first-child,.bo-table td:first-child{text-align:left}
+.bo-table tr{cursor:pointer}
+.bo-table tbody tr:hover td{background:var(--p3)}
+.bo-table td.tkr{color:var(--t1);font-weight:700}
+.bo-note{font-family:var(--mono);font-size:9px;color:var(--t3);line-height:1.6;margin:-4px 0 12px}
 </style>
 </head>
 <body>
@@ -482,12 +515,46 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div class="action-group" id="rebal-buy"></div>
 </div>
 
+<!-- BREAKOUTS -->
+<div id="page-breakouts" class="page">
+  <div id="bo-list-view">
+    <div class="bo-intro">Stocks whose weekly close just cleared their <b>all-time high</b> (over the ~10 years of price history) after at least 8 weeks below it. A name drops off the list 4 weeks after the breakout, if it closes 8% below the old high, or if it runs more than 15% above it. Rules live under <code>breakout:</code> in <code>config.yaml</code>.</div>
+    <div class="section-hdr">Buy signals this week</div>
+    <div id="bo-candidates"><div class="empty">Loading…</div></div>
+
+    <div class="section-hdr">Last 2 years: what the rule would have bought</div>
+    <div class="bo-note" id="bo-hist-note"></div>
+    <div class="bo-stats" id="bo-stats"></div>
+    <div class="bo-eq-wrap"><canvas id="bo-equity"></canvas></div>
+    <div class="bo-filter">
+      <button class="ov-btn active" data-bof="all" onclick="setBoFilter('all')">All</button>
+      <button class="ov-btn" data-bof="open" onclick="setBoFilter('open')">Still held</button>
+      <button class="ov-btn" data-bof="win" onclick="setBoFilter('win')">Winners</button>
+      <button class="ov-btn" data-bof="loss" onclick="setBoFilter('loss')">Losers</button>
+    </div>
+    <div class="bo-table-wrap">
+      <table class="bo-table">
+        <thead><tr><th>Ticker</th><th>Bought</th><th>Buy $</th><th>Sold</th><th>Sold / now $</th><th>Return</th><th>Weeks</th><th>Why sold</th></tr></thead>
+        <tbody id="bo-trades"></tbody>
+      </table>
+    </div>
+
+    <div class="section-hdr">Within 5% of all-time high (not broken out yet)</div>
+    <div id="bo-watch"></div>
+  </div>
+
+  <div id="bo-detail-view" class="hidden">
+    <div class="ticker-detail" id="bo-detail"></div>
+  </div>
+</div>
+
 <nav class="bottom-nav">
   <button class="nav-item active" id="nav-weights" onclick="showPage('weights',this)"><svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg><span>Weights</span></button>
   <button class="nav-item" id="nav-picks" onclick="showPage('picks',this)"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Top Picks</span></button>
   <button class="nav-item" id="nav-allstocks" onclick="showPage('allstocks',this)"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span>All Stocks</span></button>
   <button class="nav-item" id="nav-history" onclick="showPage('history',this)"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg><span>Portfolio</span></button>
   <button class="nav-item" id="nav-rebalance" onclick="showPage('rebalance',this)"><svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0-18a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm.5 5H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg><span>Rebalance</span></button>
+  <button class="nav-item" id="nav-breakouts" onclick="showPage('breakouts',this)"><svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z"/></svg><span>Breakouts</span></button>
 </nav>
 
 <script>
@@ -530,6 +597,7 @@ async function loadData(){
       serve it over http instead, or via GitHub Pages once deployed.<br><br>Error: ${err.message}</div>`;
   }
   loadHistory();
+  loadBreakouts();
 }
 
 function updateStatus(){
@@ -637,6 +705,8 @@ function setMarket(m, btn){
   MARKET = m;
   document.querySelectorAll('.market-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  boBack();
+  renderBreakouts();
   if (!DATA) return;
   const market = DATA.markets[MARKET];
   if (!market){ document.getElementById('picks-list').innerHTML='<div class="empty">No data for this market yet</div>'; return; }
@@ -1243,6 +1313,8 @@ function showPage(id, btn){
   showPageById(id);
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   btn.classList.add('active');
+  // Charts can't be sized while their page is hidden, so draw on arrival.
+  if (id==='breakouts'){ boBack(); renderBreakouts(); }
   window.scrollTo(0,0);
 }
 
@@ -1253,6 +1325,7 @@ function renderAll(){
   if (allStocksView==='grid') renderRankGrid();
   if (typeof renderHoldings==='function') renderHoldings();
   if (typeof renderRebalance==='function') renderRebalance();
+  renderBreakouts();
   document.getElementById('data-note').innerHTML =
     `<b>How this works:</b> a scheduled job pulls fresh weekly prices for the S&amp;P 500 and ASX 300, computes all 8 factors below for every eligible stock, and this page ranks everything client-side using whatever weights you set — adjust and tap Apply, no re-run needed. Generated ${new Date(DATA.generatedAt).toLocaleString()}.`;
 }
@@ -1414,6 +1487,268 @@ function setOverlayN(n){
       +`<span><i class="ov-dot" style="background:var(--t3)"></i>Out</span>`;
   }
   drawDetailChartForRange();
+}
+
+// ═══════════════════════════════ BREAKOUTS (all-time-high scanner)
+// Reads data/breakout_latest.json from scripts/run_breakout.py. Nothing is
+// recomputed here: the candidates, and every trade the rule made in the last
+// two years, come straight from the Python backtest.
+const BREAKOUT_URL = 'data/breakout_latest.json';
+const BO_REASON = {stop:'closed below stop', trailing_stop:'trailing stop', open:'—'};
+let BO = null, boFilter = 'all', boTicker = null, BO_GEO = null;
+
+const money = v => v==null ? '—' : '$'+v.toFixed(v<1?3:2);
+
+async function loadBreakouts(){
+  try{
+    const r = await fetch(BREAKOUT_URL, {cache:'no-store'});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    BO = await r.json();
+  }catch(e){ BO = {error:e.message}; }
+  renderBreakouts();
+}
+function boMarket(){ return BO && BO.markets ? BO.markets[MARKET] : null; }
+function boInfo(t){ const m=boMarket(); return m ? (m.candidates.find(c=>c.ticker===t) || m.watchlist.find(c=>c.ticker===t)) : null; }
+
+function renderBreakouts(){
+  const el = document.getElementById('bo-candidates');
+  if (!el || !BO) return;
+  const m = boMarket();
+  if (!m){
+    el.innerHTML = `<div class="empty">${BO.error ? 'Could not load '+BREAKOUT_URL+' ('+BO.error+')' : 'No breakout data for this market yet'}</div>`;
+    ['bo-stats','bo-trades','bo-watch','bo-hist-note'].forEach(id=>document.getElementById(id).innerHTML='');
+    return;
+  }
+  const trades = (m.history && m.history.trades) || [];
+  const openSet = new Set(trades.filter(t=>!t.exitDate).map(t=>t.ticker));
+  el.innerHTML = m.candidates.length
+    ? m.candidates.map(c=>boCard(c, false, openSet.has(c.ticker))).join('')
+    : '<div class="empty">No fresh all-time-high breakouts this week</div>';
+  document.getElementById('bo-watch').innerHTML = m.watchlist.length
+    ? m.watchlist.slice(0,20).map(c=>boCard(c, true)).join('')
+    : '<div class="empty">Nothing within 5% of its high</div>';
+  renderBoHistory(m);
+  if (boTicker) renderBoDetail();
+}
+
+function boCard(c, watch, held){
+  const chips = watch
+    ? [`ATH ${money(c.ath)}`, `${pct1(c.pctFromAth)} from ATH`]
+    : [`broke out ${c.breakoutDate}`, `${c.baseWeeks}w base`, `old high ${money(c.breakoutLevel)}`,
+       `stop ${money(c.stopPrice)}`, c.breakoutVolumeRatio!=null ? `vol ×${c.breakoutVolumeRatio.toFixed(1)}` : null];
+  const badge = watch ? '' : held
+    ? '<span class="bo-badge">BOUGHT</span>'
+    : '<span class="bo-badge muted" title="The backtest already held the maximum number of positions">BOOK FULL</span>';
+  return `<div class="bo-card ${watch?'watch':''}" onclick="openBoTicker('${c.ticker}')">
+    <div class="bo-top">
+      <div class="bo-id"><div class="bo-tkr">${c.ticker} ${badge}</div><div class="bo-name">${c.name} · ${c.sector}</div></div>
+      <div class="bo-right"><div class="bo-price">${money(c.price)}</div>
+        <div class="bo-sub">${watch ? '' : pct1(c.extension)+' vs old high · '}RS ${c.rsRating ?? '—'}</div></div>
+    </div>
+    <div class="bo-chips">${chips.filter(Boolean).map(x=>`<span class="factor-chip">${x}</span>`).join('')}</div>
+  </div>`;
+}
+
+function boTile(lbl, val, sub, color){
+  return `<div class="bo-stat"><div class="bo-stat-lbl">${lbl}</div><div class="bo-stat-val" style="color:${color||'var(--t1)'}">${val}</div>${sub?`<div class="bo-stat-sub">${sub}</div>`:''}</div>`;
+}
+
+function renderBoHistory(m){
+  const h = m.history, s = h && h.summary;
+  const note = document.getElementById('bo-hist-note');
+  if (!s){
+    note.textContent = 'Not enough history to backtest this market.';
+    document.getElementById('bo-stats').innerHTML = ''; document.getElementById('bo-trades').innerHTML = '';
+    return;
+  }
+  const P = BO.params || {};
+  note.innerHTML = `Simulated from ${h.windowStart}. Each week it buys new breakouts (highest RS first) until it holds ${P.max_positions ?? 20} stocks, and sells on a close ${Math.round((P.stop_pct ?? .08)*100)}% below the old high or ${Math.round((P.trailing_stop ?? .25)*100)}% below the best close since buying. Trades at the weekly close. Uses today's index members, so results are flattered by survivorship bias.`;
+  const st = s.strategy || {}, un = s.universe || {};
+  document.getElementById('bo-stats').innerHTML = [
+    boTile('Trades', s.trades, `${s.open} still held`),
+    boTile('Win rate', s.winRate==null ? '—' : Math.round(s.winRate*100)+'%', `${s.closed} closed trades`),
+    boTile('Avg / median', `${pct(s.avgReturn)}`, `median ${pct1(s.medianReturn)}`, rc(s.avgReturn)),
+    boTile('Return p.a.', pct1(st.cagr), `all stocks ${pct1(un.cagr)}`, rc((st.cagr??0)-(un.cagr??0))),
+    boTile('Max drawdown', pct1(st.max_drawdown), `all stocks ${pct1(un.max_drawdown)}`, 'var(--red)'),
+    boTile('Sharpe', st.sharpe==null ? '—' : st.sharpe.toFixed(2), `all stocks ${un.sharpe==null?'—':un.sharpe.toFixed(2)}`),
+  ].join('');
+  drawBoEquity(h.equity);
+  renderBoTrades(h.trades);
+}
+
+function setBoFilter(f){
+  boFilter = f;
+  document.querySelectorAll('[data-bof]').forEach(b=>b.classList.toggle('active', b.dataset.bof===f));
+  const m = boMarket(); if (m && m.history) renderBoTrades(m.history.trades);
+}
+function boTradeRows(trades){
+  return trades.map(t=>`<tr onclick="openBoTicker('${t.ticker}')">
+    <td class="tkr">${t.ticker}</td><td>${t.entryDate}</td><td>${money(t.entryPrice)}</td>
+    <td>${t.exitDate || '<span class="teal">still held</span>'}</td><td>${money(t.exitPrice)}</td>
+    <td style="color:${rc(t.return)}">${pct1(t.return)}</td><td>${t.weeksHeld}</td><td>${BO_REASON[t.reason] || t.reason}</td></tr>`).join('');
+}
+function renderBoTrades(trades){
+  const rows = trades.filter(t=> boFilter==='all' || (boFilter==='open' && !t.exitDate)
+    || (boFilter==='win' && t.exitDate && t.return>0) || (boFilter==='loss' && t.exitDate && t.return<=0));
+  document.getElementById('bo-trades').innerHTML = rows.length ? boTradeRows(rows)
+    : '<tr><td colspan="8" style="text-align:center">No trades</td></tr>';
+}
+
+function canvasCtx(c, H){
+  const dpr = window.devicePixelRatio||1, W = c.parentElement.clientWidth;
+  c.width = W*dpr; c.height = H*dpr; c.style.width = W+'px'; c.style.height = H+'px';
+  const ctx = c.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
+  return {ctx, W};
+}
+
+// Equity curve: strategy vs equal-weight universe, as % gain since the window start.
+function drawBoEquity(eq){
+  const c = document.getElementById('bo-equity');
+  if (!c || !eq || eq.dates.length<2 || !c.parentElement.clientWidth) return;
+  const H = c.parentElement.clientHeight - 12;
+  const {ctx, W} = canvasCtx(c, H);
+  const all = eq.strategy.concat(eq.universe).filter(v=>v!=null);
+  const mn = Math.min(1, ...all), mx = Math.max(1, ...all), range = mx-mn || 1;
+  const pad = {t:22,b:18,l:44,r:8}, cW = W-pad.l-pad.r, cH = H-pad.t-pad.b, n = eq.dates.length;
+  const xS = i=>pad.l+i/(n-1)*cW, yS = v=>pad.t+cH-(v-mn)/range*cH;
+  ctx.font = '9px JetBrains Mono';
+  [0,.5,1].forEach(fr=>{ const v=mn+fr*range, y=yS(v);
+    ctx.fillStyle='#23304D'; ctx.fillRect(pad.l,y,cW,1);
+    ctx.fillStyle='#8A9CBC'; ctx.textAlign='right'; ctx.fillText(pct(v-1), pad.l-6, y+3); });
+  [[eq.universe,'#8A9CBC',1.5],[eq.strategy,'#00D4AA',2]].forEach(([ser,col,lw])=>{
+    ctx.beginPath(); let started=false;
+    ser.forEach((v,i)=>{ if(v==null) return; started ? ctx.lineTo(xS(i),yS(v)) : ctx.moveTo(xS(i),yS(v)); started=true; });
+    ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.stroke();
+  });
+  ctx.textAlign='left';
+  ctx.fillStyle='#00D4AA'; ctx.fillText('● Breakout rule '+pct1(eq.strategy[n-1]-1), pad.l, 11);
+  ctx.fillStyle='#8A9CBC'; ctx.fillText('● All stocks (equal weight) '+pct1(eq.universe[n-1]-1), pad.l+150, 11);
+  ctx.fillText(eq.dates[0].slice(0,7), pad.l, H-4);
+  ctx.textAlign='right'; ctx.fillText(eq.dates[n-1].slice(0,7), pad.l+cW, H-4);
+}
+
+// ── Per-stock view: 2y chart with the rule's buys and sells ──
+function openBoTicker(t){
+  boTicker = t;
+  document.getElementById('bo-list-view').classList.add('hidden');
+  document.getElementById('bo-detail-view').classList.remove('hidden');
+  renderBoDetail();
+  window.scrollTo(0,0);
+}
+function boBack(){
+  boTicker = null;
+  const l = document.getElementById('bo-list-view'), d = document.getElementById('bo-detail-view');
+  if (l) l.classList.remove('hidden');
+  if (d) d.classList.add('hidden');
+}
+
+function renderBoDetail(){
+  const m = boMarket(), h = m && m.history, t = boTicker;
+  if (!h || !h.charts[t]){ boBack(); return; }
+  const info = boInfo(t);
+  const trades = h.trades.filter(x=>x.ticker===t).sort((a,b)=>a.entryDate<b.entryDate?1:-1);
+  const meta = info || trades[0] || {};
+  const lastPx = h.charts[t].filter(v=>v!=null).pop();
+  let status = '';
+  if (info && info.breakoutLevel!=null && m.candidates.includes(info))
+    status = `<span class="bo-badge">BUY SIGNAL</span> Broke above its old high of ${money(info.breakoutLevel)} on ${info.breakoutDate} after a ${info.baseWeeks}-week base. Stop ${money(info.stopPrice)}.`;
+  else if (info)
+    status = `<span class="bo-badge muted">WATCH</span> ${pct1(info.pctFromAth)} below its all-time high of ${money(info.ath)}.`;
+  else if (trades.some(x=>!x.exitDate))
+    status = `<span class="bo-badge">HELD</span> Bought ${trades.find(x=>!x.exitDate).entryDate}; still held by the rule.`;
+  document.getElementById('bo-detail').innerHTML = `
+    <div class="td-header">
+      <button class="back-btn" onclick="boBack()">←</button>
+      <div><div><span class="td-tkr">${t}</span></div><div class="td-name">${meta.name||t} · ${meta.sector||'—'}</div></div>
+    </div>
+    <div class="td-price">${money(lastPx)}</div>
+    ${status?`<div style="font-size:10px;color:var(--t2);line-height:1.7;margin-bottom:8px">${status}</div>`:''}
+    <div class="ov-legend">
+      <span><i class="ov-dot" style="background:var(--teal)"></i>Held by the rule</span>
+      <span><i class="ov-dot" style="background:var(--blue)"></i>Buy</span>
+      <span><i class="ov-dot" style="background:var(--red)"></i>Sell</span>
+      ${info?'<span><i class="ov-dot" style="background:var(--amber)"></i>Old high</span>':''}
+    </div>
+    <div class="detail-chart-wrap"><canvas id="bo-chart"></canvas><div class="chart-tip" id="bo-tip"></div></div>
+    <div class="section-hdr">Trades in the last 2 years</div>
+    ${trades.length ? `<div class="bo-table-wrap"><table class="bo-table">
+        <thead><tr><th>Ticker</th><th>Bought</th><th>Buy $</th><th>Sold</th><th>Sold / now $</th><th>Return</th><th>Weeks</th><th>Why sold</th></tr></thead>
+        <tbody>${boTradeRows(trades)}</tbody></table></div>`
+      : `<div class="empty">The rule didn't buy ${t} in the last 2 years${info && m.candidates.includes(info) ? ' (its book was full this week)' : ''}.</div>`}`;
+  requestAnimationFrame(()=>{ paintBoChart(null); wireBoHover(); });
+}
+
+function paintBoChart(hover){
+  const c = document.getElementById('bo-chart'), m = boMarket();
+  if (!c || !m || !boTicker) return;
+  const h = m.history, t = boTicker, H = 220;
+  const pts = h.chartDates.map((d,i)=>({date:d, price:h.charts[t][i]})).filter(p=>p.price!=null);
+  if (pts.length<2) return;
+  const trades = h.trades.filter(x=>x.ticker===t);
+  const held = pts.map(p=>trades.some(x=>p.date>=x.entryDate && (!x.exitDate || p.date<=x.exitDate)));
+  const info = boInfo(t);
+  const level = info ? (m.candidates.includes(info) ? info.breakoutLevel : info.ath) : null;
+  const {ctx, W} = canvasCtx(c, H);
+  const vals = pts.map(p=>p.price).concat(level!=null?[level]:[]);
+  const mn = Math.min(...vals), mx = Math.max(...vals), range = mx-mn || 1;
+  const pad = {t:10,b:22,l:50,r:10}, cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+  const xS = i=>pad.l+i/(pts.length-1)*cW, yS = v=>pad.t+cH-(v-mn)/range*cH;
+  BO_GEO = {pts, held, pad, cW, xS, yS};
+
+  ctx.font = '9px JetBrains Mono';
+  [0,.25,.5,.75,1].forEach(fr=>{ const v=mn+fr*range, y=yS(v);
+    ctx.fillStyle='#23304D'; ctx.fillRect(pad.l,y,cW,1);
+    ctx.fillStyle='#8A9CBC'; ctx.textAlign='right'; ctx.fillText(money(v), pad.l-6, y+3); });
+
+  // held spans
+  let s0 = null;
+  for (let i=0;i<pts.length;i++){
+    if (held[i] && s0===null) s0 = i;
+    if ((!held[i] || i===pts.length-1) && s0!==null){
+      const e = held[i] ? i : i-1;
+      ctx.fillStyle='rgba(0,212,170,.10)'; ctx.fillRect(xS(s0), pad.t, Math.max(2, xS(e)-xS(s0)), cH);
+      s0 = null;
+    }
+  }
+  // old-high / all-time-high reference line
+  if (level!=null){
+    ctx.setLineDash([4,4]); ctx.strokeStyle='#F5A623'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l, yS(level)); ctx.lineTo(pad.l+cW, yS(level)); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // price line, teal while held
+  const idle = trades.length ? '#4A5B7A' : '#8A9CBC';
+  ctx.lineWidth=2; ctx.lineJoin='round';
+  for (let i=1;i<pts.length;i++){
+    ctx.strokeStyle = held[i] && held[i-1] ? '#00D4AA' : idle;
+    ctx.beginPath(); ctx.moveTo(xS(i-1),yS(pts[i-1].price)); ctx.lineTo(xS(i),yS(pts[i].price)); ctx.stroke();
+  }
+  // buy / sell markers
+  const at = d=>pts.findIndex(p=>p.date===d);
+  trades.forEach(x=>{
+    const bi = at(x.entryDate); if (bi>=0) drawMarker(ctx, xS(bi), yS(pts[bi].price), '#4D9FFF', 'B');
+    const si = x.exitDate ? at(x.exitDate) : -1; if (si>=0) drawMarker(ctx, xS(si), yS(pts[si].price), '#FF5C5C', 'S');
+  });
+  ctx.fillStyle='#8A9CBC'; ctx.font='9px JetBrains Mono'; ctx.textAlign='left';
+  ctx.fillText(pts[0].date.slice(0,7), pad.l, H-6);
+  ctx.textAlign='right'; ctx.fillText(pts[pts.length-1].date.slice(0,7), pad.l+cW, H-6);
+
+  const tip = document.getElementById('bo-tip');
+  if (hover!=null){
+    const x = xS(hover), y = yS(pts[hover].price);
+    ctx.strokeStyle='rgba(138,156,188,.5)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+cH); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.fillStyle='#EAF0FB'; ctx.fill();
+    tip.innerHTML = `<span class="tip-date">${pts[hover].date}</span> ${money(pts[hover].price)} ${stateLabel(held[hover])}`;
+    tip.style.left=x+'px'; tip.style.top=y+'px'; tip.style.opacity='1';
+  } else if (tip) tip.style.opacity='0';
+}
+function wireBoHover(){
+  const c = document.getElementById('bo-chart'); if (!c || !BO_GEO) return;
+  const toIdx = cx=>{ const r=c.getBoundingClientRect(), {pad,cW,pts}=BO_GEO;
+    return Math.max(0, Math.min(pts.length-1, Math.round((cx-r.left-pad.l)/cW*(pts.length-1)))); };
+  const move = e=>{ paintBoChart(toIdx(e.touches ? e.touches[0].clientX : e.clientX)); };
+  c.onmousemove = move; c.onmouseleave = ()=>paintBoChart(null);
+  c.ontouchstart = move; c.ontouchmove = e=>{ move(e); e.preventDefault(); }; c.ontouchend = ()=>paintBoChart(null);
 }
 
 // ═══════════════════════════════ KEYBOARD NAV (#1)
