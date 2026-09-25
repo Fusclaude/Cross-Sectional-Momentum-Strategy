@@ -13,6 +13,9 @@ extra download. Writes data/breakout_latest.json with, per market:
   watchlist    names within 5% of their ATH that have not broken out yet
   eventStudy   what historically happened after breakouts in this universe
   backtest     the rule traded with stops, vs the equal-weight universe
+  history      every trade the backtest held in the last history_weeks,
+               the strategy's equity curve over that window, and weekly
+               price charts for each name, for the dashboard's Breakouts tab
 
 Usage:  python scripts/run_breakout.py
 """
@@ -33,6 +36,7 @@ import breakout as bo  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 WATCH_WITHIN = 0.05
+HISTORY_WEEKS = 104
 
 
 def _r(v, nd=4):
@@ -92,6 +96,10 @@ def run_market(market: str, cfg: dict) -> dict:
     watch.sort(key=lambda r: -(r["pctFromAth"] or -1))
 
     cost = cfg["costs"]["spread_bps"].get(market, 10.0) + cfg["costs"]["commission_bps"]
+    bt = bo.backtest(state, prices, bcfg, rs, cost_bps=cost)
+    history = recent_history(bt, prices, raw, [c["ticker"] for c in candidates + watch[:40]])
+    bt.pop("tradeLog", None)
+    bt.pop("series", None)
     return {
         "market": market,
         "asOf": asof.strftime("%Y-%m-%d"),
@@ -101,7 +109,61 @@ def run_market(market: str, cfg: dict) -> dict:
         "candidates": candidates,
         "watchlist": watch[:40],
         "eventStudy": bo.event_study(state, prices, bcfg["event_horizons_weeks"]),
-        "backtest": bo.backtest(state, prices, bcfg, rs, cost_bps=cost),
+        "backtest": bt,
+        "history": history,
+    }
+
+
+def recent_history(bt: dict, prices: pd.DataFrame, raw: dict, extra: list[str]) -> dict:
+    """
+    The last HISTORY_WEEKS of the traded rule: every position held at any
+    point in the window (including ones bought before it), the equity curve
+    against the equal-weight universe, and a weekly price chart for each name
+    traded or currently listed, so the dashboard can mark buys and sells.
+    """
+    start = prices.index[max(0, len(prices) - HISTORY_WEEKS)]
+    if "error" in bt:
+        return {"windowStart": start.strftime("%Y-%m-%d"), "trades": [], "charts": {}}
+    ds = lambda d: None if d is None else d.strftime("%Y-%m-%d")  # noqa: E731
+    trades = [{
+        "ticker": t["ticker"],
+        "name": raw["names"].get(t["ticker"], t["ticker"]),
+        "sector": raw.get("sectors", {}).get(t["ticker"], "—"),
+        "entryDate": ds(t["entry_date"]), "entryPrice": _r(t["entry_px"]),
+        "pivot": _r(t["pivot"]),
+        "exitDate": ds(t["exit_date"]), "exitPrice": _r(t["exit_px"]),
+        "return": _r(t["return"]), "reason": t["reason"],
+        "weeksHeld": int(((t["exit_date"] or prices.index[-1]) - t["entry_date"]).days // 7),
+    } for t in bt["tradeLog"] if t["exit_date"] is None or t["exit_date"] >= start]
+    trades.sort(key=lambda t: t["entryDate"], reverse=True)
+
+    closed = [t["return"] for t in trades if t["exitDate"] and t["return"] is not None]
+    ser = bt["series"].loc[bt["series"].index > start]
+    curve = (1.0 + ser[["strategy", "universe"]]).cumprod()
+    tail = prices.iloc[-HISTORY_WEEKS:]
+    names = sorted({t["ticker"] for t in trades} | set(extra))
+    return {
+        "windowStart": start.strftime("%Y-%m-%d"),
+        "weeks": len(ser),
+        "summary": {
+            "trades": len(trades),
+            "open": sum(1 for t in trades if t["exitDate"] is None),
+            "closed": len(closed),
+            "winRate": _r(float(np.mean([r > 0 for r in closed]))) if closed else None,
+            "avgReturn": _r(float(np.mean(closed))) if closed else None,
+            "medianReturn": _r(float(np.median(closed))) if closed else None,
+            "strategy": {k: _r(v) for k, v in bo.perf(ser["strategy"].to_numpy()).items()}
+            if len(ser) > 2 else None,
+            "universe": {k: _r(v) for k, v in bo.perf(ser["universe"].to_numpy()).items()}
+            if len(ser) > 2 else None,
+            "avgPositions": _r(float(ser["positions"].mean()), 1) if len(ser) else None,
+        },
+        "equity": {"dates": [d.strftime("%Y-%m-%d") for d in curve.index],
+                   "strategy": [_r(v) for v in curve["strategy"]],
+                   "universe": [_r(v) for v in curve["universe"]]},
+        "trades": trades,
+        "chartDates": [d.strftime("%Y-%m-%d") for d in tail.index],
+        "charts": {t: [_r(v) for v in tail[t]] for t in names if t in tail.columns},
     }
 
 
