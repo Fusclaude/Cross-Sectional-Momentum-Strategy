@@ -82,6 +82,11 @@ jobs:
       - name: Compute signals and rankings
         run: python scripts/run_signals.py
 
+      # All-time-high breakout scanner. Reads the same price files, no extra
+      # download, runs in seconds.
+      - name: Scan for all-time-high breakouts
+        run: python scripts/run_breakout.py
+
       - name: Build research analytics
         if: env.RUN_ANALYTICS == 'true'
         run: python scripts/build_analytics.py
@@ -123,6 +128,7 @@ jobs:
           mkdir -p docs/data
           cp data/signals_latest.json docs/data/
           cp data/analytics.json      docs/data/
+          cp data/breakout_latest.json docs/data/
           cp data/picks_history.jsonl docs/data/ 2>/dev/null || true
 
       - name: Commit updated data

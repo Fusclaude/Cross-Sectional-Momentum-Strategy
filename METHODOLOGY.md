@@ -184,6 +184,7 @@ pip install -r requirements.txt
 python scripts/fetch_universe.py
 python scripts/fetch_prices.py       # exits non-zero if the QA gate fails
 python scripts/run_signals.py
+python scripts/run_breakout.py       # all-time-high breakout scanner
 python scripts/build_analytics.py
 python -m pytest tests/ -q
 
@@ -195,7 +196,65 @@ opening it via `file://` will be blocked by the browser.
 
 ---
 
-## 8. What this is not
+## 8. All-time-high breakout scanner
+
+`scripts/breakout.py` + `scripts/run_breakout.py` → `data/breakout_latest.json`.
+It uses the same price files and runs weekly after `run_signals.py`.
+
+**What it is.** It's an event rule, not a ranking: buy a stock when its weekly
+close clears the highest close it has ever made. It's known as an
+**all-time-high (ATH) breakout** or **new-high breakout** strategy, a form of
+trend following / time-series momentum. Practitioner versions are Darvas's
+box theory, the "N" (new highs out of a base) in O'Neil's CAN SLIM, and a
+Donchian channel breakout with an unbounded lookback. The nearest academic
+work is George & Hwang (2004) on 52-week highs (already a factor here as
+`pct_52w_high`) and Li & Yu (2012) on nearness to the historical high.
+
+**The rule** (every parameter is under `breakout:` in `config.yaml`):
+
+| Condition | Default | Why |
+|---|---|---|
+| Close > every prior close | — | The breakout itself. Weekly closes, not intraday highs. |
+| Prior high set ≥ `min_base_weeks` ago | 8w | A stock that makes a new high every week is continuing a move, not breaking out of a base. |
+| ≥ `min_history_weeks` of history | 104w | A 30-week-old listing makes an "ATH" most weeks, and that tells you nothing. |
+| Breakout within `recent_weeks` | 4w | This is what "recently" means here. |
+| Never closed > `stop_pct` below the pivot | 8% | A failed breakout stays dead until a new one forms. |
+| ≤ `max_extension` above the pivot | 15% | Don't chase a move that has already happened. |
+| Universe price and liquidity screens | — | Same screens as the momentum book. |
+
+Candidates are ordered by a 1–99 relative-strength rating (26-week return
+percentile). The breakout-week volume ratio and a stop price are also
+reported.
+
+**"All-time" means within the price file** (~10y). If a stock's real peak is
+older than that, a "breakout" here is only a 10-year high.
+
+**What the history says (run of 2026-09-25, 2016–2026):**
+
+| | S&P 500 | ASX 300 |
+|---|---|---|
+| Breakout events | 3,457 | 1,424 |
+| 26w excess vs equal-weight universe (mean) | −0.6% | −1.1% |
+| Share beating the universe over 26w | 43% | 38% |
+| Backtest CAGR vs universe | 15.0% vs 16.3% | 13.8% vs 23.9% |
+| Backtest Sharpe vs universe | 0.84 vs 0.85 | 0.80 vs 1.18 |
+
+On this data, stocks that break out to all-time highs keep going up in
+absolute terms but do **not** beat the average stock in the same index. The
+rule's drawdown is shallower on the S&P 500. Nothing else suggests an edge.
+
+Two reasons to discount even these results:
+
+- **Survivorship bias hits this strategy especially hard.** The universe is
+  today's index membership. Stocks that broke out, collapsed and dropped out
+  of the index are missing, so the backtest never sees the breakouts that
+  failed worst. The equal-weight benchmark has the same bias, so the
+  *relative* comparison is fairer than either absolute number.
+- **Events overlap.** Breakouts cluster in rallies, and one stock can break
+  out several times. The effective sample is much smaller than the event
+  count.
+
+## 9. What this is not
 
 This is a measurement tool. It is designed to tell you when a signal is *not*
 working, which is most of the time and is the useful half of the job.
