@@ -132,3 +132,31 @@ costs:
   commission_bps: 2.0
   # Square-root market impact: impact_bps = coef * sqrt(participation)
   impact_coef_bps: 40.0
+breakout:
+  # All-time-high breakout scanner (scripts/run_breakout.py). Separate from
+  # the cross-sectional momentum book above: this is an event rule, not a
+  # ranking. See scripts/breakout.py for the definitions.
+  #
+  # History required before a new high counts. With a 10y price file, a
+  # stock listed two years ago that makes a "new high" has cleared a two-year
+  # range, not a meaningful all-time high. 104w is the floor, not a target.
+  min_history_weeks: 104
+  # Weeks between the previous high and the breakout close. A stock making a
+  # new high every week is a continuation, not a breakout from a base.
+  # O'Neil's shortest acceptable base is ~7 weeks.
+  min_base_weeks: 8
+  # "Recently": the breakout close must be within this many weeks.
+  recent_weeks: 4
+  # Failed breakout: a close this far below the old high kills the setup.
+  # Also the initial stop in the backtest. 7-8% is the classic CAN SLIM cut.
+  stop_pct: 0.08
+  # Do not chase: skip names already this far above the old high.
+  max_extension: 0.15
+  # Backtest exit once a trade is working: close this far below its peak.
+  trailing_stop: 0.25
+  max_positions: 20
+  # Breakout-week dollar volume vs the median of the prior N weeks. Reported,
+  # not filtered on: yfinance weekly volume is noisy on the ASX.
+  volume_lookback_weeks: 50
+  rs_weeks: 26
+  event_horizons_weeks: [4, 13, 26, 52]
