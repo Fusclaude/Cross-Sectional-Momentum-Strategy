@@ -6,7 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Momentum Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --bg:#0A0E1A;--p1:#0F1525;--p2:#141C30;--p3:#1B2540;
@@ -232,32 +231,37 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .sr-score{font-family:var(--mono);font-size:10px;color:var(--teal);flex-shrink:0;text-align:right}
 .sr-chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
 
-/* HOLDINGS / PORTFOLIO */
-.hold-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.hold-btn{font-family:var(--mono);font-size:10px;font-weight:600;padding:8px 11px;border-radius:8px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer}
-.hold-btn:active{border-color:var(--teal);color:var(--teal)}
-.hold-btn.primary{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+/* PORTFOLIO (from data/trades.csv via build_portfolio.py) */
 .sync-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;font-family:var(--mono);font-size:9px;color:var(--t3)}
-.sync-status{margin-left:auto;text-align:right}
-.hold-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.hold-table{border-collapse:collapse;width:100%;min-width:560px}
-.hold-table th{font-family:var(--mono);font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:6px 6px;border-bottom:1px solid var(--bdr);white-space:nowrap}
-.hold-table td{padding:5px 6px;border-bottom:1px solid var(--bdr);vertical-align:middle}
-.hold-table input,.hold-table select{background:var(--p3);border:1px solid var(--bdr2);border-radius:6px;color:var(--t1);font-family:var(--mono);font-size:11px;padding:6px 7px;outline:none;width:100%}
-.hold-table input:focus,.hold-table select:focus{border-color:var(--teal)}
-.hold-table input[type=number]{text-align:right}
-.h-tkr{width:78px}.h-date{width:130px}.h-num{width:84px}.h-status{width:96px}
-.status-sel.BUY{color:var(--green)}.status-sel.HELD{color:var(--blue)}.status-sel.SOLD{color:var(--red)}
-.h-del{background:transparent;border:none;color:var(--t3);font-size:15px;cursor:pointer;padding:2px 6px}
-.h-del:active{color:var(--red)}
-.h-pl{font-family:var(--mono);font-size:10px;text-align:right;white-space:nowrap}
-.sig-badge{font-family:var(--mono);font-size:8px;padding:2px 5px;border-radius:4px;background:var(--p3);color:var(--t3);white-space:nowrap}
-.sig-badge.in{color:var(--green);background:var(--gd)}
-.sig-badge.out{color:var(--t3)}
-.hold-summary{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--t2);margin:10px 2px 0}
-.hold-summary b{color:var(--t1)}
 .hidden{display:none!important}
-
+.pf-asof{font-family:var(--mono);font-size:9px;color:var(--t3);margin-bottom:10px;line-height:1.6}
+.pf-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:6px}
+@media(min-width:640px){.pf-stats{grid-template-columns:repeat(4,1fr)}}
+.pf-stat{background:var(--p2);border:1px solid var(--bdr);border-radius:8px;padding:9px 11px}
+.pf-stat-lbl{font-family:var(--mono);font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.pf-stat-val{font-family:var(--mono);font-size:15px;font-weight:700;margin-top:3px}
+.pf-stat-sub{font-family:var(--mono);font-size:8px;color:var(--t3);margin-top:2px}
+.pf-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--bdr);border-radius:9px;margin-bottom:6px}
+.pf-table{border-collapse:collapse;width:100%;min-width:540px;font-family:var(--mono);font-size:10px}
+.pf-table th{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:7px 8px;border-bottom:1px solid var(--bdr);background:var(--p1);white-space:nowrap}
+.pf-table td{padding:7px 8px;border-bottom:1px solid var(--bdr);text-align:right;white-space:nowrap;color:var(--t2)}
+.pf-table th:first-child,.pf-table td:first-child{text-align:left}
+.pf-table tbody tr:last-child td{border-bottom:none}
+.pf-table td.tkr{color:var(--t1);font-weight:700}
+.pf-table td.tkr small{display:block;font-weight:400;font-size:8px;color:var(--t3);max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.pf-table tfoot td{color:var(--t1);font-weight:700;background:var(--p3);border-bottom:none}
+.pf-table tr.pf-week{cursor:pointer}
+.pf-table tr.pf-week:hover td{background:var(--p3)}
+.pf-table tr.pf-detail td{background:var(--p1);color:var(--t3);font-size:9px;text-align:left;white-space:normal;line-height:1.7}
+.pf-chart-wrap{position:relative;height:190px;background:var(--p2);border:1px solid var(--bdr);border-radius:9px;margin-bottom:8px}
+.pf-chart-wrap canvas{width:100%;height:100%;display:block}
+.pf-note{font-family:var(--mono);font-size:9px;color:var(--t3);line-height:1.6;margin-bottom:12px}
+.pf-est{color:var(--amber)}
+.pf-man{font-size:8px;font-weight:700;color:var(--blue);margin-right:3px}
+.pf-edit{background:var(--p3);border:1px solid var(--bdr2);border-radius:5px;color:var(--teal);font-family:var(--mono);font-size:9px;padding:2px 6px;margin-left:5px;cursor:pointer}
+.pf-edit:active{border-color:var(--teal)}
+.pf-manual{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:10px 12px;margin-bottom:12px;font-family:var(--mono);font-size:9px;color:var(--t2);line-height:1.7}
+.pf-manual pre{background:var(--p1);border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;margin:6px 0;color:var(--t1);white-space:pre-wrap;word-break:break-all;font-size:10px}
 /* REBALANCE / COUNTDOWN */
 .rebal-hero{background:var(--p2);border:1px solid var(--bdr);border-radius:12px;padding:16px;text-align:center}
 .rebal-hero.due{border-color:var(--red);background:var(--rd)}
@@ -419,43 +423,31 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 
 <!-- HISTORY / PORTFOLIO -->
 <div id="page-history" class="page">
-  <div class="section-hdr">My Holdings</div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">Track what you've actually bought. Saved to this device automatically; export a file or sync to Google Drive to load it on any device. The <b>signal</b> column shows whether each ticker is currently inside the strategy's Top-N under your applied weights.</div>
+  <div class="pf-asof" id="pf-asof">Loading…</div>
+  <div class="pf-stats" id="pf-stats"></div>
 
-  <div class="sync-row">
-    <span>Strategy ref:</span>
-    <button class="ov-btn active" data-holdn="5" onclick="setHoldSignalN(5,this)">Top 5</button>
-    <button class="ov-btn" data-holdn="10" onclick="setHoldSignalN(10,this)">Top 10</button>
-    <button class="ov-btn" data-holdn="20" onclick="setHoldSignalN(20,this)">Top 20</button>
-  </div>
+  <div class="section-hdr">Open positions</div>
+  <div class="pf-table-wrap"><table class="pf-table">
+    <thead><tr><th>Stock</th><th>Shares</th><th>Avg cost</th><th>Price</th><th>Cost</th><th>Value</th><th>Unrealised</th></tr></thead>
+    <tbody id="pf-open"></tbody><tfoot id="pf-open-total"></tfoot>
+  </table></div>
+  <div class="pf-manual hidden" id="pf-manual"></div>
+  <div class="pf-note">Valued at the latest weekly close in the price data. <span class="pf-man">M</span>= your manual price, <span class="pf-est">~</span>= no price yet (valued at your trade price); tap ✎ to set one. Each row is in the stock's own currency; US rows also show the A$ result including the currency move. Cost includes brokerage.</div>
 
-  <div class="hold-tools">
-    <button class="hold-btn primary" onclick="addHolding()">+ Add holding</button>
-    <button class="hold-btn" onclick="exportHoldings()">⬇ Export file</button>
-    <button class="hold-btn" onclick="document.getElementById('hold-import').click()">⬆ Import file</button>
-    <input type="file" id="hold-import" accept="application/json,.json" class="hidden" onchange="importHoldings(event)">
-  </div>
+  <div class="section-hdr">Sold positions</div>
+  <div class="pf-table-wrap"><table class="pf-table">
+    <thead><tr><th>Stock</th><th>Bought</th><th>Sold</th><th>Shares</th><th>Cost</th><th>Proceeds</th><th>Profit / loss</th></tr></thead>
+    <tbody id="pf-closed"></tbody><tfoot id="pf-closed-total"></tfoot>
+  </table></div>
+  <div class="pf-note">Each sale is matched to the shares bought first. Proceeds are after brokerage. Dividends are counted in Realised above, not in this table.</div>
 
-  <div class="sync-row">
-    <button class="hold-btn" id="drive-signin" onclick="driveSignIn()">🔗 Connect Google Drive</button>
-    <button class="hold-btn hidden" id="drive-save" onclick="driveSave()">☁ Save to Drive</button>
-    <button class="hold-btn hidden" id="drive-load" onclick="driveLoad()">⤵ Load from Drive</button>
-    <span class="sync-status" id="sync-status"></span>
-  </div>
-
-  <div class="hold-table-wrap">
-    <table class="hold-table" id="hold-table">
-      <thead><tr>
-        <th>Ticker</th><th>Status</th><th>Date</th><th>Buy price</th><th>Shares</th><th>Cost</th><th>P/L now</th><th>Signal</th><th></th>
-      </tr></thead>
-      <tbody id="hold-body"></tbody>
-    </table>
-  </div>
-  <div class="hold-summary" id="hold-summary"></div>
-
-  <div class="section-hdr" style="margin-top:22px">Past Top-5 Calls (12-1 Momentum Reference)</div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">One snapshot per scheduled run, using the fixed 12-1 signal as a reference point regardless of whatever weights you're currently viewing above.</div>
-  <div id="history-list"><div class="empty">No history yet — accumulates after the first few scheduled runs</div></div>
+  <div class="section-hdr" id="pf-weekly-hdr">Week by week</div>
+  <div class="pf-chart-wrap"><canvas id="pf-chart"></canvas></div>
+  <div class="pf-table-wrap"><table class="pf-table">
+    <thead><tr><th>Week ending</th><th>Value</th><th>Cost</th><th>Unrealised</th><th>Realised to date</th><th>Total P/L</th><th>Change</th></tr></thead>
+    <tbody id="pf-weekly"></tbody>
+  </table></div>
+  <div class="pf-note" id="pf-weekly-note">Tap a week to see what was held. All figures in A$. Updated by the weekly refresh; add new trades to <code>data/trades.csv</code> and deposits or conversions to <code>data/cash.csv</code>.</div>
 </div>
 
 <!-- REBALANCE -->
@@ -492,7 +484,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 
 <script>
 const DATA_URL = 'data/signals_latest.json';
-const HISTORY_URL = 'data/picks_history.jsonl';
 let DATA = null;
 let MARKET = 'sp500';
 let TOPN = 5;
@@ -529,7 +520,6 @@ async function loadData(){
       If you're viewing this file directly (file://), browsers block local fetch() calls —
       serve it over http instead, or via GitHub Pages once deployed.<br><br>Error: ${err.message}</div>`;
   }
-  loadHistory();
 }
 
 function updateStatus(){
@@ -601,7 +591,6 @@ function applyWeights(){
   renderPicks();
   renderAllStocksList();
   if (allStocksView==='grid') renderRankGrid();
-  if (typeof renderHoldings==='function') renderHoldings();
   if (typeof renderRebalance==='function') renderRebalance();
 }
 
@@ -1218,22 +1207,6 @@ function wireChartHover(){
 }
 function goBack(){ showPageById(prevPage); document.getElementById('nav-'+prevPage)?.classList.add('active'); }
 
-// ═══════════════════════════════ HISTORY
-async function loadHistory(){
-  try{
-    const resp = await fetch(HISTORY_URL, {cache:'no-store'});
-    if (!resp.ok) throw new Error('no history yet');
-    const text = await resp.text();
-    const lines = text.trim().split('\n').filter(Boolean);
-    const snapshots = lines.map(l=>JSON.parse(l)).reverse().slice(0,30);
-    if (!snapshots.length) return;
-    document.getElementById('history-list').innerHTML = snapshots.map(snap=>{
-      const allTickers = Object.values(snap.markets).flatMap(picks=>picks.map(p=>p.ticker));
-      return `<div class="history-row"><span class="history-date">${snap.date}</span><span class="history-tickers">${allTickers.join(', ')}</span></div>`;
-    }).join('');
-  }catch(err){ /* no history yet on first runs */ }
-}
-
 // ═══════════════════════════════ ROUTING
 function showPageById(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1243,6 +1216,8 @@ function showPage(id, btn){
   showPageById(id);
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   btn.classList.add('active');
+  // The chart can't be sized while its page is hidden, so draw on arrival.
+  if (id==='history') drawPortfolioChart();
   window.scrollTo(0,0);
 }
 
@@ -1251,7 +1226,6 @@ function renderAll(){
   renderPicks();
   renderAllStocksList();
   if (allStocksView==='grid') renderRankGrid();
-  if (typeof renderHoldings==='function') renderHoldings();
   if (typeof renderRebalance==='function') renderRebalance();
   document.getElementById('data-note').innerHTML =
     `<b>How this works:</b> a scheduled job pulls fresh weekly prices for the S&amp;P 500 and ASX 300, computes all 8 factors below for every eligible stock, and this page ranks everything client-side using whatever weights you set — adjust and tap Apply, no re-run needed. Generated ${new Date(DATA.generatedAt).toLocaleString()}.`;
@@ -1431,39 +1405,47 @@ document.addEventListener('keydown', e=>{
   }
 });
 
-// ═══════════════════════════════ HOLDINGS TRACKER (#6)
-const HOLD_KEY='momentum_holdings_v1';
-const DRIVE_FILE='momentum-holdings.json';
-// Public OAuth client ID (same Google Cloud project as your Wealth Dashboard;
-// github.io origin is already authorised). Replace if you use a different project.
-const GOOGLE_CLIENT_ID='7436150606-qreksqb7tv3k5dsl38akteg9tm9g11ar.apps.googleusercontent.com';
-const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
+// ═══════════════════════════════ PORTFOLIO (data/portfolio.json)
+// Built weekly by scripts/build_portfolio.py from data/trades.csv. The open
+// positions also drive the Rebalance tab, so there is one record of what you
+// hold instead of a hand-maintained list per device.
+const PORTFOLIO_URL = 'data/portfolio.json';
+let PORT = null, PORT_RAW = null;
+let holdings = [];     // open positions in the shape the Rebalance tab reads
+let holdSignalN = 5;
 
-let holdings=[];
-let holdSignalN=5;
+const aud = (v, sign=false)=> v==null ? '—' : (sign && v>0 ? '+' : v<0 ? '−' : '') + '$' + Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const px = (v, ccy)=> v==null ? '—' : (ccy==='USD' ? 'US$' : '$') + v.toFixed(v<1 ? 3 : 2);
+// Money in a holding's own currency: US$ for US stocks, $ for ASX.
+const cur = (v, ccy, sign=false)=> ccy==='USD' ? aud(v, sign).replace('$','US$') : aud(v, sign);
+const shareFmt = n=> Number.isInteger(n) ? n.toLocaleString() : n.toFixed(5).replace(/0+$/,'');
+const fmtDate = d=> new Date(d+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'2-digit'});
 
-function loadHoldings(){
-  try{ const raw=localStorage.getItem(HOLD_KEY); holdings = raw?JSON.parse(raw):[]; }catch(e){ holdings=[]; }
+async function loadPortfolio(){
+  try{
+    const r = await fetch(PORTFOLIO_URL, {cache:'no-store'});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    PORT_RAW = await r.json();
+  }catch(e){ PORT_RAW = {error:e.message}; }
+  PORT = withDeviceOverrides(PORT_RAW);
+  syncHoldings();
+  renderPortfolio();
+  if (typeof renderRebalance==='function') renderRebalance();
 }
-function saveHoldings(){ try{ localStorage.setItem(HOLD_KEY, JSON.stringify(holdings)); }catch(e){} }
-function addHolding(){
-  holdings.push({id:Date.now()+Math.random().toString(36).slice(2,6), ticker:'', status:'BUY', date:new Date().toISOString().slice(0,10), price:'', shares:''});
-  saveHoldings(); renderHoldings(); if(typeof renderRebalance==='function') renderRebalance();
+
+// Trades are recorded as ASX codes; the signal universe uses Yahoo tickers.
+// Holdings are named CDA (ASX) or IREN.US (US); the signal universe uses
+// CDA.AX and IREN.
+function universeTicker(name){
+  return name.endsWith('.US') ? name.slice(0,-3) : name+'.AX';
 }
-function updateHolding(id, field, val){
-  const h=holdings.find(x=>x.id===id); if(!h) return;
-  h[field] = (field==='price'||field==='shares') ? val : (field==='ticker'? val.toUpperCase().trim() : val);
-  saveHoldings();
-  if (field==='ticker'||field==='price'||field==='shares'||field==='status'){ renderHoldings(); if(typeof renderRebalance==='function') renderRebalance(); }
-  else if (field==='date' && typeof renderRebalance==='function') renderRebalance();
+function syncHoldings(){
+  holdings = (PORT && PORT.open || []).map(p=>({ticker:universeTicker(p.ticker), status:'HELD', date:p.firstBuy, shares:p.shares}));
 }
-function deleteHolding(id){ holdings=holdings.filter(x=>x.id!==id); saveHoldings(); renderHoldings(); if(typeof renderRebalance==='function') renderRebalance(); }
+
 function setHoldSignalN(n,btn){
   holdSignalN=n;
-  document.querySelectorAll('[data-holdn]').forEach(b=>b.classList.remove('active'));
-  // both the Portfolio tab's and Rebalance tab's Top-N buttons share this state
-  document.querySelectorAll(`[data-holdn="${n}"]`).forEach(b=>b.classList.add('active'));
-  renderHoldings();
+  document.querySelectorAll('[data-holdn]').forEach(b=>b.classList.toggle('active', Number(b.dataset.holdn)===n));
   if (typeof renderRebalance==='function') renderRebalance();
 }
 
@@ -1472,44 +1454,207 @@ function lookupStock(tkr){
   for (const mk of ['sp500','asx300']){ const m=DATA.markets[mk]; if(!m) continue; const s=m.stocks.find(x=>x.ticker===tkr); if(s) return {s,mk}; }
   return null;
 }
-function renderHoldings(){
-  const body=document.getElementById('hold-body'); if(!body) return;
-  if (!holdings.length){ body.innerHTML='<tr><td colspan="9" class="t3" style="text-align:center;padding:18px;font-family:var(--mono);font-size:10px">No holdings yet — tap “+ Add holding”.</td></tr>'; document.getElementById('hold-summary').innerHTML=''; return; }
-  let totCost=0, totVal=0, haveVal=false;
-  body.innerHTML = holdings.map(h=>{
-    const price=parseFloat(h.price)||0, shares=parseFloat(h.shares)||0, cost=price*shares;
-    const look=lookupStock(h.ticker);
-    let plCell='<span class="t3">—</span>', sigCell='<span class="sig-badge">—</span>';
-    if (h.status!=='SOLD') totCost+=cost;
-    if (look && price>0 && shares>0){
-      const cur=look.s.price, val=cur*shares, pl=val-cost, plpc=cost>0?pl/cost:0;
-      if (h.status!=='SOLD'){ totVal+=val; haveVal=true; }
-      plCell=`<span class="h-pl" style="color:${rc(pl)}">${pct1(plpc)}<br><span class="t3" style="font-size:8px">$${pl.toFixed(0)}</span></span>`;
+
+
+// ── Manual prices set on this device ──
+// For holdings the price feed doesn't cover (e.g. IREN). Saved in this
+// browser and applied on top of portfolio.json straight away; the panel gives
+// the lines to add to data/manual_prices.csv so the price is kept for every
+// device and the weekly history. Like the CSV, they never replace a market
+// price.
+const MANUAL_KEY = 'portfolio_manual_prices_v1';
+function loadDeviceManual(){ try{ return JSON.parse(localStorage.getItem(MANUAL_KEY)) || {}; }catch(e){ return {}; } }
+function saveDeviceManual(m){ try{ localStorage.setItem(MANUAL_KEY, JSON.stringify(m)); }catch(e){} }
+const todayIso = ()=> new Date().toISOString().slice(0,10);
+// The week a manual price belongs to: its own week ending, or the latest week if newer.
+const inWeek = (week, date)=> new Date(week+'T00:00:00') >= new Date(new Date(date+'T00:00:00').getTime() - 6*86400000);
+
+function withDeviceOverrides(raw){
+  const man = loadDeviceManual();
+  if (!raw || raw.error || !Object.keys(man).length) return raw;
+  const P = JSON.parse(JSON.stringify(raw));
+  const fxOv = man.AUDUSD && P.fx && P.fx.source!=='market' ? man.AUDUSD : null;
+  if (fxOv){ P.fx.audUsd = fxOv.price; P.fx.source = 'set on this device'; }
+  const rate = P.fx && P.fx.audUsd;
+  // open positions
+  P.open.forEach(p=>{
+    const ov = man[p.ticker];
+    if (ov && p.priceSource!=='market'){ p.price = ov.price; p.priceSource = 'device'; p.estimated = false; }
+    if ((ov && p.priceSource==='device') || (fxOv && p.currency==='USD')){
+      p.marketValue = +(p.shares*p.price).toFixed(2);
+      p.unrealised = +(p.marketValue - p.cost).toFixed(2);
+      p.unrealisedPct = p.cost ? p.unrealised/p.cost : null;
+      p.valueAud = +(p.currency==='USD' ? p.marketValue/rate : p.marketValue).toFixed(2);
+      p.unrealisedAud = +(p.valueAud - p.costAud).toFixed(2);
     }
-    if (look){
-      const inN = look.mk===MARKET ? look.s._rank<=holdSignalN : null;
-      sigCell = inN===null
-        ? `<span class="sig-badge out" title="switch market tab to ${look.mk.toUpperCase()}">${look.mk==='sp500'?'S&P':'ASX'}</span>`
-        : `<span class="sig-badge ${inN?'in':'out'}">${inN?'in T'+holdSignalN:'out'}</span>`;
+  });
+  P.open.sort((a,b)=>b.valueAud-a.valueAud);
+  const S = P.summary;
+  S.marketValue = P.open.reduce((a,p)=>a+p.valueAud,0);
+  S.unrealised = S.marketValue - S.openCost;
+  S.unrealisedPct = S.openCost ? S.unrealised/S.openCost : null;
+  S.totalPnl = S.unrealised + S.realised;
+  P.noPriceData = P.noPriceData.filter(t=>!man[t]);
+  // weekly rows from the week each manual price belongs to
+  P.weekly.forEach(w=>{
+    let changed = false;
+    if (fxOv && w.audUsd && inWeek(w.week, fxOv.date)){ w.audUsd = fxOv.price; changed = true; }
+    w.positions.forEach(x=>{
+      const ov = man[x.ticker];
+      if (ov && x.source!=='market' && inWeek(w.week, ov.date)){
+        x.price = ov.price; x.value = +(x.shares*ov.price).toFixed(2); x.source = 'device';
+        w.estimated = w.estimated.filter(t=>t!==x.ticker); changed = true;
+      }
+      if (changed || x.source==='device') x.valueAud = +(x.currency==='USD' ? x.value/w.audUsd : x.value).toFixed(2);
+    });
+    if (changed){
+      w.marketValue = +w.positions.reduce((a,x)=>a+x.valueAud,0).toFixed(2);
+      w.unrealised = +(w.marketValue - w.openCost).toFixed(2);
+      w.totalPnl = +(w.unrealised + w.realisedToDate).toFixed(2);
     }
-    return `<tr>
-      <td><input class="h-tkr" value="${h.ticker}" placeholder="TICKER" oninput="updateHolding('${h.id}','ticker',this.value)"></td>
-      <td><select class="h-status status-sel ${h.status}" onchange="updateHolding('${h.id}','status',this.value)">
-        ${['BUY','HELD','SOLD'].map(o=>`<option ${o===h.status?'selected':''}>${o}</option>`).join('')}
-      </select></td>
-      <td><input class="h-date" type="date" value="${h.date}" onchange="updateHolding('${h.id}','date',this.value)"></td>
-      <td><input class="h-num" type="number" inputmode="decimal" step="0.01" value="${h.price}" placeholder="0.00" oninput="updateHolding('${h.id}','price',this.value)"></td>
-      <td><input class="h-num" type="number" inputmode="numeric" step="1" value="${h.shares}" placeholder="0" oninput="updateHolding('${h.id}','shares',this.value)"></td>
-      <td class="h-pl">${cost>0?'$'+cost.toFixed(0):'—'}</td>
-      <td>${plCell}</td>
-      <td>${sigCell}</td>
-      <td><button class="h-del" onclick="deleteHolding('${h.id}')" title="Remove">✕</button></td>
-    </tr>`;
-  }).join('');
-  const open = holdings.filter(h=>h.status!=='SOLD');
-  let sum=`<span>Open positions: <b>${open.length}</b></span><span>Cost basis: <b>$${totCost.toLocaleString(undefined,{maximumFractionDigits:0})}</b></span>`;
-  if (haveVal){ const pl=totVal-totCost; sum+=`<span>Market value: <b>$${totVal.toLocaleString(undefined,{maximumFractionDigits:0})}</b></span><span>Unrealised P/L: <b style="color:${rc(pl)}">$${pl.toLocaleString(undefined,{maximumFractionDigits:0})} (${pct1(totCost>0?pl/totCost:0)})</b></span>`; }
-  document.getElementById('hold-summary').innerHTML=sum;
+  });
+  P.weekly.forEach((w,i)=>{ w.weekChange = i ? +(w.totalPnl - P.weekly[i-1].totalPnl).toFixed(2) : null; });
+  return P;
+}
+
+function setManualPrice(ticker){
+  const isFx = ticker==='AUDUSD';
+  const p = isFx ? null : (PORT_RAW.open||[]).find(x=>x.ticker===ticker);
+  const cur0 = isFx ? (PORT.fx && PORT.fx.audUsd) : (PORT.open.find(x=>x.ticker===ticker)||{}).price;
+  const label = isFx ? 'AUD/USD exchange rate (US dollars per 1 Australian dollar)'
+    : `${ticker} price in ${p && p.currency==='USD' ? 'US$' : 'A$'}`;
+  const v = prompt(`${label}\nLeave blank to remove the price set on this device.`, cur0 ?? '');
+  if (v===null) return;
+  const man = loadDeviceManual();
+  const n = parseFloat(String(v).replace(/[$,\s]|US/g,''));
+  if (String(v).trim()==='') delete man[ticker];
+  else if (!(n>0)){ alert('Enter a number greater than 0'); return; }
+  else man[ticker] = {price:n, date:todayIso()};
+  saveDeviceManual(man);
+  PORT = withDeviceOverrides(PORT_RAW);
+  renderPortfolio();
+}
+function clearDeviceManual(){
+  if (!confirm('Remove all prices set on this device?')) return;
+  saveDeviceManual({}); PORT = withDeviceOverrides(PORT_RAW); renderPortfolio();
+}
+function manualCsvLines(){
+  return Object.entries(loadDeviceManual()).map(([t,o])=> t==='AUDUSD'
+    ? `${o.date},AUDUSD,,${o.price}`
+    : `${o.date},${t.replace(/\.US$/,'')},${t.endsWith('.US')?'US':'ASX'},${o.price}`).join('\n');
+}
+function copyManualCsv(btn){
+  const txt = manualCsvLines();
+  const done = ()=>{ btn.textContent='Copied'; setTimeout(()=>btn.textContent='Copy lines',1500); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, ()=>prompt('Copy these lines:', txt));
+  else prompt('Copy these lines:', txt);
+}
+function renderManualPanel(){
+  const el = document.getElementById('pf-manual'); if (!el) return;
+  const man = loadDeviceManual(), keys = Object.keys(man);
+  el.classList.toggle('hidden', !keys.length);
+  if (!keys.length) return;
+  el.innerHTML = `<b style="color:var(--t1)">Prices set on this device</b> (${keys.join(', ')})<br>
+    They show here straight away but only in this browser. To keep them, add these lines to
+    <code>data/manual_prices.csv</code> in the repo (on GitHub: open the file → ✎ Edit → paste at the bottom → Commit);
+    the next refresh then uses them everywhere, including the weekly history.
+    <pre>${manualCsvLines()}</pre>
+    <button class="pf-edit" style="margin-left:0" onclick="copyManualCsv(this)">Copy lines</button>
+    <button class="pf-edit" onclick="clearDeviceManual()">Clear</button>`;
+}
+
+function pfTile(lbl, val, sub, color){
+  return `<div class="pf-stat"><div class="pf-stat-lbl">${lbl}</div><div class="pf-stat-val" style="color:${color||'var(--t1)'}">${val}</div>${sub?`<div class="pf-stat-sub">${sub}</div>`:''}</div>`;
+}
+function pnlCell(v, pctV){
+  return `<td style="color:${rc(v)}">${aud(v,true)}${pctV!=null?`<br><span style="font-size:8px">${pct1(pctV)}</span>`:''}</td>`;
+}
+
+function renderPortfolio(){
+  const asof = document.getElementById('pf-asof');
+  if (!asof || !PORT) return;
+  if (PORT.error){ asof.innerHTML = `<div class="warn">Could not load <code>${PORTFOLIO_URL}</code> (${PORT.error}).</div>`; return; }
+  const S = PORT.summary;
+  const C = PORT.cash || {};
+  asof.innerHTML = `Prices as of ${fmtDate(PORT.priceDate)} · totals in A$`
+    + (PORT.fx && PORT.fx.audUsd ? ` · US holdings at ${(+PORT.fx.audUsd).toFixed(4)} USD per AUD (${PORT.fx.source})${PORT.fx.source!=='market'?`<button class="pf-edit" onclick="setManualPrice('AUDUSD')" title="Set exchange rate">✎</button>`:''}` : '')
+    + (C.convertedAud ? `<br>Cash: deposited ${aud(C.depositedAud)} since ${fmtDate(C.firstDeposit)} · converted ${aud(C.convertedAud)} → ${cur(C.convertedUsd,'USD')} (avg ${C.avgRate}) · <b style="color:var(--t1)">${cur(C.usdCash,'USD')}</b> uninvested` : '')
+    + (PORT.noPriceData.length ? `<br><span class="pf-est">No price data yet for ${PORT.noPriceData.join(', ')}: valued at your trade price (marked ~). Tap ✎ next to a held stock's price to set one; for stocks already sold, add prices to <code>data/manual_prices.csv</code>.</span>` : '');
+  renderManualPanel();
+
+  document.getElementById('pf-stats').innerHTML = [
+    pfTile('Open value', aud(S.marketValue), `cost ${aud(S.openCost)}`),
+    pfTile('Unrealised', aud(S.unrealised,true), pct1(S.unrealisedPct)+' on open', rc(S.unrealised)),
+    pfTile('Realised', aud(S.realised,true), `${S.winners} of ${S.closedTrades} sales in profit`+(S.dividends?` · incl. ${aud(S.dividends)} dividends`:''), rc(S.realised)),
+    pfTile('Total P/L', aud(S.totalPnl,true), 'realised + unrealised', rc(S.totalPnl)),
+  ].join('');
+
+  // AUD equivalent under a US figure, so every row ties to the A$ totals.
+  const audNote = (row, v)=> row.currency==='USD' ? `<br><span style="font-size:8px;color:${rc(v)}">A$ ${aud(v,true)}</span>` : '';
+
+  // open positions
+  document.getElementById('pf-open').innerHTML = PORT.open.length ? PORT.open.map(p=>`<tr>
+      <td class="tkr">${p.ticker}<small>${p.name}</small></td><td>${shareFmt(p.shares)}</td>
+      <td>${px(p.avgPrice,p.currency)}</td><td>${p.priceSource==='trade'?'<span class="pf-est">~</span>':p.priceSource==='market'?'':'<span class="pf-man" title="your manual price">M</span>'}${px(p.price,p.currency)}${p.priceSource!=='market'?`<button class="pf-edit" onclick="setManualPrice('${p.ticker}')" title="Set price">✎</button>`:''}</td>
+      <td>${cur(p.cost,p.currency)}</td><td>${cur(p.marketValue,p.currency)}</td>
+      <td style="color:${rc(p.unrealised)}">${cur(p.unrealised,p.currency,true)}${p.unrealisedPct!=null?`<br><span style="font-size:8px">${pct1(p.unrealisedPct)}</span>`:''}${audNote(p,p.unrealisedAud)}</td></tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center">No open positions</td></tr>';
+  document.getElementById('pf-open-total').innerHTML = PORT.open.length
+    ? `<tr><td>Total (A$)</td><td></td><td></td><td></td><td>${aud(S.openCost)}</td><td>${aud(S.marketValue)}</td>${pnlCell(S.unrealised, S.unrealisedPct)}</tr>` : '';
+
+  // sold positions
+  const sum = k=> PORT.closed.reduce((a,c)=>a+c[k],0);
+  const soldCost = sum('costAud'), soldPnl = sum('pnlAud');
+  document.getElementById('pf-closed').innerHTML = PORT.closed.length ? PORT.closed.map(c=>`<tr>
+      <td class="tkr">${c.ticker}<small>${c.name}</small></td><td>${fmtDate(c.firstBuy)}</td><td>${fmtDate(c.sold)}</td>
+      <td>${shareFmt(c.shares)}</td><td>${cur(c.cost,c.currency)}</td><td>${cur(c.proceeds,c.currency)}</td>
+      <td style="color:${rc(c.pnl)}">${cur(c.pnl,c.currency,true)}${c.pnlPct!=null?`<br><span style="font-size:8px">${pct1(c.pnlPct)}</span>`:''}${audNote(c,c.pnlAud)}</td></tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center">Nothing sold yet</td></tr>';
+  document.getElementById('pf-closed-total').innerHTML = PORT.closed.length
+    ? `<tr><td>Total (A$)</td><td></td><td></td><td></td><td>${aud(soldCost)}</td><td>${aud(sum('proceedsAud'))}</td>${pnlCell(soldPnl, soldCost?soldPnl/soldCost:null)}</tr>` : '';
+
+  // weekly
+  document.getElementById('pf-weekly-hdr').textContent = `Week by week since ${fmtDate(PORT.historyStart)}`;
+  const W = PORT.weekly;
+  document.getElementById('pf-weekly').innerHTML = W.length ? [...W].reverse().map((w,i)=>{
+    const est = w.estimated.length ? '<span class="pf-est">~</span>' : '';
+    const held = w.positions.map(p=>`${p.ticker} ${shareFmt(p.shares)} × ${p.source==='manual'||p.source==='device'?'<span class="pf-man">M</span>':''}${px(p.price,p.currency)} = ${cur(p.value,p.currency)}${p.currency==='USD'?` (${aud(p.valueAud)})`:''}${w.estimated.includes(p.ticker)?' <span class="pf-est">(est.)</span>':''}`).join(' · ') || 'Nothing held';
+    return `<tr class="pf-week" onclick="this.nextElementSibling.classList.toggle('hidden')">
+        <td>${fmtDate(w.week)}</td><td>${est}${aud(w.marketValue)}</td><td>${aud(w.openCost)}</td>
+        <td style="color:${rc(w.unrealised)}">${aud(w.unrealised,true)}</td><td style="color:${rc(w.realisedToDate)}">${aud(w.realisedToDate,true)}</td>
+        <td style="color:${rc(w.totalPnl)};font-weight:700">${aud(w.totalPnl,true)}</td>
+        <td style="color:${rc(w.weekChange)}">${w.weekChange==null?'—':aud(w.weekChange,true)}</td></tr>
+      <tr class="pf-detail hidden"><td colspan="7">${held}</td></tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center">No weeks yet</td></tr>';
+  drawPortfolioChart();
+}
+
+// Total P/L (realised + unrealised) per week, with the zero line marked.
+function drawPortfolioChart(){
+  const c = document.getElementById('pf-chart');
+  if (!c || !PORT || !PORT.weekly || PORT.weekly.length<2 || !c.parentElement.clientWidth) return;
+  const W = PORT.weekly, n = W.length;
+  const dpr = window.devicePixelRatio||1, Wd = c.parentElement.clientWidth, H = c.parentElement.clientHeight;
+  c.width=Wd*dpr; c.height=H*dpr; c.style.width=Wd+'px'; c.style.height=H+'px';
+  const ctx=c.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,Wd,H);
+  const series = [[W.map(w=>w.totalPnl),'#00D4AA',2,'Total P/L'],[W.map(w=>w.unrealised),'#4D9FFF',1.5,'Unrealised'],[W.map(w=>w.realisedToDate),'#8A9CBC',1.5,'Realised to date']];
+  const all = series.flatMap(s=>s[0]).concat([0]);
+  const mn=Math.min(...all), mx=Math.max(...all), range=(mx-mn)||1;
+  const pad={t:24,b:18,l:52,r:10}, cW=Wd-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const xS=i=>pad.l+i/(n-1)*cW, yS=v=>pad.t+cH-(v-mn)/range*cH;
+  ctx.font='9px JetBrains Mono';
+  [mn, (mn+mx)/2, mx].forEach(v=>{ ctx.fillStyle='#23304D'; ctx.fillRect(pad.l,yS(v),cW,1);
+    ctx.fillStyle='#8A9CBC'; ctx.textAlign='right'; ctx.fillText(aud(Math.round(v)).replace('.00',''), pad.l-6, yS(v)+3); });
+  ctx.strokeStyle='#4A5B7A'; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(pad.l,yS(0)); ctx.lineTo(pad.l+cW,yS(0)); ctx.stroke(); ctx.setLineDash([]);
+  let lx = pad.l;
+  series.slice().reverse().forEach(([vals,col,lw])=>{
+    ctx.beginPath(); vals.forEach((v,i)=> i?ctx.lineTo(xS(i),yS(v)):ctx.moveTo(xS(i),yS(v)));
+    ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.stroke();
+  });
+  ctx.textAlign='left';
+  series.forEach(([vals,col,,lbl])=>{ ctx.fillStyle=col; const t='● '+lbl; ctx.fillText(t, lx, 12); lx += ctx.measureText(t).width + 12; });
+  ctx.fillStyle='#8A9CBC'; ctx.fillText(fmtDate(W[0].week), pad.l, H-4);
+  ctx.textAlign='right'; ctx.fillText(fmtDate(W[n-1].week), pad.l+cW, H-4);
 }
 
 // ═══════════════════════════════ REBALANCE (countdown + buy/sell/hold)
@@ -1555,7 +1700,7 @@ function renderRebalanceHero(openHoldings){
     .sort((a,b)=>a.due-b.due);
   if (!withDue.length){
     el.className = 'rebal-hero';
-    el.innerHTML = `<div class="rebal-hero-empty">No open holdings with an entry date yet — add one in the Portfolio tab to start the countdown.</div>`;
+    el.innerHTML = `<div class="rebal-hero-empty">No open positions — add trades to <code>data/trades.csv</code> to start the countdown.</div>`;
     return;
   }
   const next = withDue[0];
@@ -1635,72 +1780,7 @@ function startRebalanceClock(){
   }, 1000);
 }
 
-function exportHoldings(){
-  const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),holdings}, null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob); const a=document.createElement('a');
-  a.href=url; a.download=DRIVE_FILE; a.click(); URL.revokeObjectURL(url);
-}
-function importHoldings(ev){
-  const file=ev.target.files[0]; if(!file) return;
-  const r=new FileReader();
-  r.onload=()=>{ try{ const d=JSON.parse(r.result); holdings=Array.isArray(d)?d:(d.holdings||[]); saveHoldings(); renderHoldings(); if(typeof renderRebalance==='function') renderRebalance(); syncMsg('Imported '+holdings.length+' holdings'); }catch(e){ syncMsg('Import failed: bad file'); } };
-  r.readAsText(file); ev.target.value='';
-}
-
-// ── Google Drive sync (Google Identity Services, drive.file scope) ──
-let tokenClient=null, accessToken=null;
-function syncMsg(m){ const el=document.getElementById('sync-status'); if(el) el.textContent=m; }
-function driveReady(){ return typeof google!=='undefined' && google.accounts && google.accounts.oauth2; }
-function driveSignIn(){
-  if (!driveReady()){ syncMsg('Google library still loading — try again'); return; }
-  if (GOOGLE_CLIENT_ID.indexOf('apps.googleusercontent.com')<0){ syncMsg('Set GOOGLE_CLIENT_ID first'); return; }
-  if (!tokenClient){
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id:GOOGLE_CLIENT_ID, scope:DRIVE_SCOPE,
-      callback:(resp)=>{ if(resp.error){ syncMsg('Sign-in failed'); return; } accessToken=resp.access_token; onDriveConnected(); }
-    });
-  }
-  syncMsg('Connecting…'); tokenClient.requestAccessToken({prompt:''});
-}
-function onDriveConnected(){
-  document.getElementById('drive-signin').classList.add('hidden');
-  document.getElementById('drive-save').classList.remove('hidden');
-  document.getElementById('drive-load').classList.remove('hidden');
-  syncMsg('Connected to Drive');
-}
-async function driveFindFile(){
-  const q=encodeURIComponent(`name='${DRIVE_FILE}' and trashed=false`);
-  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&spaces=drive&fields=files(id,name)`,{headers:{Authorization:'Bearer '+accessToken}});
-  const d=await r.json(); return d.files&&d.files.length?d.files[0].id:null;
-}
-async function driveSave(){
-  if(!accessToken){ driveSignIn(); return; }
-  try{
-    syncMsg('Saving…');
-    const id=await driveFindFile();
-    const meta={name:DRIVE_FILE, mimeType:'application/json'};
-    const content=JSON.stringify({version:1,savedAt:new Date().toISOString(),holdings});
-    const boundary='-------momentum'+Date.now();
-    const body=`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
-    const url=id?`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart`:`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
-    const r=await fetch(url,{method:id?'PATCH':'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'multipart/related; boundary='+boundary},body});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    syncMsg('Saved to Drive · '+new Date().toLocaleTimeString());
-  }catch(e){ syncMsg('Save failed: '+e.message); }
-}
-async function driveLoad(){
-  if(!accessToken){ driveSignIn(); return; }
-  try{
-    syncMsg('Loading…');
-    const id=await driveFindFile();
-    if(!id){ syncMsg('No saved file in Drive yet'); return; }
-    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
-    const d=await r.json(); holdings=d.holdings||[]; saveHoldings(); renderHoldings(); if(typeof renderRebalance==='function') renderRebalance();
-    syncMsg('Loaded '+holdings.length+' holdings from Drive');
-  }catch(e){ syncMsg('Load failed: '+e.message); }
-}
-
-window.addEventListener('load', ()=>{ loadHoldings(); renderHoldings(); loadData(); startRebalanceClock(); });
+window.addEventListener('load', ()=>{ loadData(); loadPortfolio(); startRebalanceClock(); });
 </script>
 </body>
 </html>
