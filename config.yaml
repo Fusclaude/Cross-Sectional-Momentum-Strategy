@@ -140,3 +140,5 @@ my_trades:
   history_start: "2026-06-22"
   # Deposits and AUD->USD conversions; converts US holdings into AUD.
   cash_file: data/cash.csv
+  # Prices you set yourself where the feed has none (e.g. IREN).
+  manual_prices_file: data/manual_prices.csv

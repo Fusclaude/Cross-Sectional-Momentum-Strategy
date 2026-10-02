@@ -257,6 +257,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .pf-chart-wrap canvas{width:100%;height:100%;display:block}
 .pf-note{font-family:var(--mono);font-size:9px;color:var(--t3);line-height:1.6;margin-bottom:12px}
 .pf-est{color:var(--amber)}
+.pf-man{font-size:8px;font-weight:700;color:var(--blue);margin-right:3px}
+.pf-edit{background:var(--p3);border:1px solid var(--bdr2);border-radius:5px;color:var(--teal);font-family:var(--mono);font-size:9px;padding:2px 6px;margin-left:5px;cursor:pointer}
+.pf-edit:active{border-color:var(--teal)}
+.pf-manual{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:10px 12px;margin-bottom:12px;font-family:var(--mono);font-size:9px;color:var(--t2);line-height:1.7}
+.pf-manual pre{background:var(--p1);border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;margin:6px 0;color:var(--t1);white-space:pre-wrap;word-break:break-all;font-size:10px}
 /* REBALANCE / COUNTDOWN */
 .rebal-hero{background:var(--p2);border:1px solid var(--bdr);border-radius:12px;padding:16px;text-align:center}
 .rebal-hero.due{border-color:var(--red);background:var(--rd)}
@@ -426,7 +431,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     <thead><tr><th>Stock</th><th>Shares</th><th>Avg cost</th><th>Price</th><th>Cost</th><th>Value</th><th>Unrealised</th></tr></thead>
     <tbody id="pf-open"></tbody><tfoot id="pf-open-total"></tfoot>
   </table></div>
-  <div class="pf-note">Valued at the latest weekly close in the price data. Each row is in the stock's own currency; US rows also show the A$ result including the currency move. Cost includes brokerage.</div>
+  <div class="pf-manual hidden" id="pf-manual"></div>
+  <div class="pf-note">Valued at the latest weekly close in the price data. <span class="pf-man">M</span>= your manual price, <span class="pf-est">~</span>= no price yet (valued at your trade price); tap ✎ to set one. Each row is in the stock's own currency; US rows also show the A$ result including the currency move. Cost includes brokerage.</div>
 
   <div class="section-hdr">Sold positions</div>
   <div class="pf-table-wrap"><table class="pf-table">
@@ -1404,7 +1410,7 @@ document.addEventListener('keydown', e=>{
 // positions also drive the Rebalance tab, so there is one record of what you
 // hold instead of a hand-maintained list per device.
 const PORTFOLIO_URL = 'data/portfolio.json';
-let PORT = null;
+let PORT = null, PORT_RAW = null;
 let holdings = [];     // open positions in the shape the Rebalance tab reads
 let holdSignalN = 5;
 
@@ -1419,8 +1425,9 @@ async function loadPortfolio(){
   try{
     const r = await fetch(PORTFOLIO_URL, {cache:'no-store'});
     if (!r.ok) throw new Error('HTTP '+r.status);
-    PORT = await r.json();
-  }catch(e){ PORT = {error:e.message}; }
+    PORT_RAW = await r.json();
+  }catch(e){ PORT_RAW = {error:e.message}; }
+  PORT = withDeviceOverrides(PORT_RAW);
   syncHoldings();
   renderPortfolio();
   if (typeof renderRebalance==='function') renderRebalance();
@@ -1448,6 +1455,114 @@ function lookupStock(tkr){
   return null;
 }
 
+
+// ── Manual prices set on this device ──
+// For holdings the price feed doesn't cover (e.g. IREN). Saved in this
+// browser and applied on top of portfolio.json straight away; the panel gives
+// the lines to add to data/manual_prices.csv so the price is kept for every
+// device and the weekly history. Like the CSV, they never replace a market
+// price.
+const MANUAL_KEY = 'portfolio_manual_prices_v1';
+function loadDeviceManual(){ try{ return JSON.parse(localStorage.getItem(MANUAL_KEY)) || {}; }catch(e){ return {}; } }
+function saveDeviceManual(m){ try{ localStorage.setItem(MANUAL_KEY, JSON.stringify(m)); }catch(e){} }
+const todayIso = ()=> new Date().toISOString().slice(0,10);
+// The week a manual price belongs to: its own week ending, or the latest week if newer.
+const inWeek = (week, date)=> new Date(week+'T00:00:00') >= new Date(new Date(date+'T00:00:00').getTime() - 6*86400000);
+
+function withDeviceOverrides(raw){
+  const man = loadDeviceManual();
+  if (!raw || raw.error || !Object.keys(man).length) return raw;
+  const P = JSON.parse(JSON.stringify(raw));
+  const fxOv = man.AUDUSD && P.fx && P.fx.source!=='market' ? man.AUDUSD : null;
+  if (fxOv){ P.fx.audUsd = fxOv.price; P.fx.source = 'set on this device'; }
+  const rate = P.fx && P.fx.audUsd;
+  // open positions
+  P.open.forEach(p=>{
+    const ov = man[p.ticker];
+    if (ov && p.priceSource!=='market'){ p.price = ov.price; p.priceSource = 'device'; p.estimated = false; }
+    if ((ov && p.priceSource==='device') || (fxOv && p.currency==='USD')){
+      p.marketValue = +(p.shares*p.price).toFixed(2);
+      p.unrealised = +(p.marketValue - p.cost).toFixed(2);
+      p.unrealisedPct = p.cost ? p.unrealised/p.cost : null;
+      p.valueAud = +(p.currency==='USD' ? p.marketValue/rate : p.marketValue).toFixed(2);
+      p.unrealisedAud = +(p.valueAud - p.costAud).toFixed(2);
+    }
+  });
+  P.open.sort((a,b)=>b.valueAud-a.valueAud);
+  const S = P.summary;
+  S.marketValue = P.open.reduce((a,p)=>a+p.valueAud,0);
+  S.unrealised = S.marketValue - S.openCost;
+  S.unrealisedPct = S.openCost ? S.unrealised/S.openCost : null;
+  S.totalPnl = S.unrealised + S.realised;
+  P.noPriceData = P.noPriceData.filter(t=>!man[t]);
+  // weekly rows from the week each manual price belongs to
+  P.weekly.forEach(w=>{
+    let changed = false;
+    if (fxOv && w.audUsd && inWeek(w.week, fxOv.date)){ w.audUsd = fxOv.price; changed = true; }
+    w.positions.forEach(x=>{
+      const ov = man[x.ticker];
+      if (ov && x.source!=='market' && inWeek(w.week, ov.date)){
+        x.price = ov.price; x.value = +(x.shares*ov.price).toFixed(2); x.source = 'device';
+        w.estimated = w.estimated.filter(t=>t!==x.ticker); changed = true;
+      }
+      if (changed || x.source==='device') x.valueAud = +(x.currency==='USD' ? x.value/w.audUsd : x.value).toFixed(2);
+    });
+    if (changed){
+      w.marketValue = +w.positions.reduce((a,x)=>a+x.valueAud,0).toFixed(2);
+      w.unrealised = +(w.marketValue - w.openCost).toFixed(2);
+      w.totalPnl = +(w.unrealised + w.realisedToDate).toFixed(2);
+    }
+  });
+  P.weekly.forEach((w,i)=>{ w.weekChange = i ? +(w.totalPnl - P.weekly[i-1].totalPnl).toFixed(2) : null; });
+  return P;
+}
+
+function setManualPrice(ticker){
+  const isFx = ticker==='AUDUSD';
+  const p = isFx ? null : (PORT_RAW.open||[]).find(x=>x.ticker===ticker);
+  const cur0 = isFx ? (PORT.fx && PORT.fx.audUsd) : (PORT.open.find(x=>x.ticker===ticker)||{}).price;
+  const label = isFx ? 'AUD/USD exchange rate (US dollars per 1 Australian dollar)'
+    : `${ticker} price in ${p && p.currency==='USD' ? 'US$' : 'A$'}`;
+  const v = prompt(`${label}\nLeave blank to remove the price set on this device.`, cur0 ?? '');
+  if (v===null) return;
+  const man = loadDeviceManual();
+  const n = parseFloat(String(v).replace(/[$,\s]|US/g,''));
+  if (String(v).trim()==='') delete man[ticker];
+  else if (!(n>0)){ alert('Enter a number greater than 0'); return; }
+  else man[ticker] = {price:n, date:todayIso()};
+  saveDeviceManual(man);
+  PORT = withDeviceOverrides(PORT_RAW);
+  renderPortfolio();
+}
+function clearDeviceManual(){
+  if (!confirm('Remove all prices set on this device?')) return;
+  saveDeviceManual({}); PORT = withDeviceOverrides(PORT_RAW); renderPortfolio();
+}
+function manualCsvLines(){
+  return Object.entries(loadDeviceManual()).map(([t,o])=> t==='AUDUSD'
+    ? `${o.date},AUDUSD,,${o.price}`
+    : `${o.date},${t.replace(/\.US$/,'')},${t.endsWith('.US')?'US':'ASX'},${o.price}`).join('\n');
+}
+function copyManualCsv(btn){
+  const txt = manualCsvLines();
+  const done = ()=>{ btn.textContent='Copied'; setTimeout(()=>btn.textContent='Copy lines',1500); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, ()=>prompt('Copy these lines:', txt));
+  else prompt('Copy these lines:', txt);
+}
+function renderManualPanel(){
+  const el = document.getElementById('pf-manual'); if (!el) return;
+  const man = loadDeviceManual(), keys = Object.keys(man);
+  el.classList.toggle('hidden', !keys.length);
+  if (!keys.length) return;
+  el.innerHTML = `<b style="color:var(--t1)">Prices set on this device</b> (${keys.join(', ')})<br>
+    They show here straight away but only in this browser. To keep them, add these lines to
+    <code>data/manual_prices.csv</code> in the repo (on GitHub: open the file → ✎ Edit → paste at the bottom → Commit);
+    the next refresh then uses them everywhere, including the weekly history.
+    <pre>${manualCsvLines()}</pre>
+    <button class="pf-edit" style="margin-left:0" onclick="copyManualCsv(this)">Copy lines</button>
+    <button class="pf-edit" onclick="clearDeviceManual()">Clear</button>`;
+}
+
 function pfTile(lbl, val, sub, color){
   return `<div class="pf-stat"><div class="pf-stat-lbl">${lbl}</div><div class="pf-stat-val" style="color:${color||'var(--t1)'}">${val}</div>${sub?`<div class="pf-stat-sub">${sub}</div>`:''}</div>`;
 }
@@ -1462,9 +1577,10 @@ function renderPortfolio(){
   const S = PORT.summary;
   const C = PORT.cash || {};
   asof.innerHTML = `Prices as of ${fmtDate(PORT.priceDate)} · totals in A$`
-    + (PORT.fx && PORT.fx.audUsd ? ` · US holdings at ${PORT.fx.audUsd} USD per AUD (${PORT.fx.source})` : '')
+    + (PORT.fx && PORT.fx.audUsd ? ` · US holdings at ${(+PORT.fx.audUsd).toFixed(4)} USD per AUD (${PORT.fx.source})${PORT.fx.source!=='market'?`<button class="pf-edit" onclick="setManualPrice('AUDUSD')" title="Set exchange rate">✎</button>`:''}` : '')
     + (C.convertedAud ? `<br>Cash: deposited ${aud(C.depositedAud)} since ${fmtDate(C.firstDeposit)} · converted ${aud(C.convertedAud)} → ${cur(C.convertedUsd,'USD')} (avg ${C.avgRate}) · <b style="color:var(--t1)">${cur(C.usdCash,'USD')}</b> uninvested` : '')
-    + (PORT.noPriceData.length ? `<br><span class="pf-est">No price data yet for ${PORT.noPriceData.join(', ')}: valued at your trade price (marked ~).</span>` : '');
+    + (PORT.noPriceData.length ? `<br><span class="pf-est">No price data yet for ${PORT.noPriceData.join(', ')}: valued at your trade price (marked ~). Tap ✎ next to a held stock's price to set one; for stocks already sold, add prices to <code>data/manual_prices.csv</code>.</span>` : '');
+  renderManualPanel();
 
   document.getElementById('pf-stats').innerHTML = [
     pfTile('Open value', aud(S.marketValue), `cost ${aud(S.openCost)}`),
@@ -1479,7 +1595,7 @@ function renderPortfolio(){
   // open positions
   document.getElementById('pf-open').innerHTML = PORT.open.length ? PORT.open.map(p=>`<tr>
       <td class="tkr">${p.ticker}<small>${p.name}</small></td><td>${shareFmt(p.shares)}</td>
-      <td>${px(p.avgPrice,p.currency)}</td><td>${p.estimated?'<span class="pf-est">~</span>':''}${px(p.price,p.currency)}</td>
+      <td>${px(p.avgPrice,p.currency)}</td><td>${p.priceSource==='trade'?'<span class="pf-est">~</span>':p.priceSource==='market'?'':'<span class="pf-man" title="your manual price">M</span>'}${px(p.price,p.currency)}${p.priceSource!=='market'?`<button class="pf-edit" onclick="setManualPrice('${p.ticker}')" title="Set price">✎</button>`:''}</td>
       <td>${cur(p.cost,p.currency)}</td><td>${cur(p.marketValue,p.currency)}</td>
       <td style="color:${rc(p.unrealised)}">${cur(p.unrealised,p.currency,true)}${p.unrealisedPct!=null?`<br><span style="font-size:8px">${pct1(p.unrealisedPct)}</span>`:''}${audNote(p,p.unrealisedAud)}</td></tr>`).join('')
     : '<tr><td colspan="7" style="text-align:center">No open positions</td></tr>';
@@ -1502,7 +1618,7 @@ function renderPortfolio(){
   const W = PORT.weekly;
   document.getElementById('pf-weekly').innerHTML = W.length ? [...W].reverse().map((w,i)=>{
     const est = w.estimated.length ? '<span class="pf-est">~</span>' : '';
-    const held = w.positions.map(p=>`${p.ticker} ${shareFmt(p.shares)} × ${px(p.price,p.currency)} = ${cur(p.value,p.currency)}${p.currency==='USD'?` (${aud(p.valueAud)})`:''}${w.estimated.includes(p.ticker)?' <span class="pf-est">(est.)</span>':''}`).join(' · ') || 'Nothing held';
+    const held = w.positions.map(p=>`${p.ticker} ${shareFmt(p.shares)} × ${p.source==='manual'||p.source==='device'?'<span class="pf-man">M</span>':''}${px(p.price,p.currency)} = ${cur(p.value,p.currency)}${p.currency==='USD'?` (${aud(p.valueAud)})`:''}${w.estimated.includes(p.ticker)?' <span class="pf-est">(est.)</span>':''}`).join(' · ') || 'Nothing held';
     return `<tr class="pf-week" onclick="this.nextElementSibling.classList.toggle('hidden')">
         <td>${fmtDate(w.week)}</td><td>${est}${aud(w.marketValue)}</td><td>${aud(w.openCost)}</td>
         <td style="color:${rc(w.unrealised)}">${aud(w.unrealised,true)}</td><td style="color:${rc(w.realisedToDate)}">${aud(w.realisedToDate,true)}</td>

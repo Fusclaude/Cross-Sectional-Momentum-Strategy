@@ -1,0 +1,10 @@
+# Prices you set yourself, for holdings the price feed doesn't cover (IREN,
+# AINF, DTEC, GNP) or an exchange rate. Each price applies from its week
+# onward, but only to weeks with no market close: once real data exists for
+# a stock it wins.
+#   ticker = plain code (IREN, CDA); use AUDUSD for the exchange rate
+#            (US dollars per Australian dollar), leaving market blank
+#   market = ASX or US
+#   price  = in the stock's own currency (US$ for US stocks)
+# Example:  2026-10-02,IREN,US,52.10
+date,ticker,market,price

@@ -136,3 +136,46 @@ def test_build_summary_ties_out():
     assert s["realised"] == pytest.approx(-10.0)
     assert s["totalPnl"] == pytest.approx(0.0)
     assert out["weekly"][-1]["totalPnl"] == pytest.approx(s["totalPnl"])
+
+
+def test_manual_prices_fill_gaps_but_never_override_market():
+    idx = pd.date_range("2026-01-02", periods=4, freq="W-FRI")
+    prices = pd.DataFrame({"AAA": [None, 10.0, 11.0, 12.0]}, index=idx)
+    manual = [{"date": pd.Timestamp("2026-01-01"), "ticker": "AAA", "price": 9.0},
+              {"date": pd.Timestamp("2026-01-20"), "ticker": "AAA", "price": 99.0},   # market exists
+              {"date": pd.Timestamp("2026-01-09"), "ticker": "NEW.US", "price": 5.0},
+              {"date": pd.Timestamp("2026-01-30"), "ticker": "NEW.US", "price": 6.0}]  # after last bar
+    filled, mask = bp.apply_manual(prices, manual)
+    assert list(filled["AAA"]) == [9.0, 10.0, 11.0, 12.0]
+    assert list(mask["AAA"]) == [True, False, False, False]
+    assert pd.isna(filled["NEW.US"].iloc[0])                 # not back-dated
+    assert list(filled["NEW.US"].iloc[1:]) == [5.0, 5.0, 6.0]  # latest week takes the newest entry
+    assert mask["NEW.US"].iloc[1:].all()
+
+
+def test_manual_fx_applies_from_its_date_only():
+    fx = bp.FX(fx_cash(("2026-01-01", 100.0, 70.0)),
+               manual=pd.Series({pd.Timestamp("2026-02-01"): 0.60}))
+    assert fx.market(pd.Timestamp("2026-01-15")) == pytest.approx(0.70)
+    assert fx.market(pd.Timestamp("2026-02-06")) == pytest.approx(0.60)
+    assert fx.source == "manual"
+
+
+def test_value_reports_price_source():
+    idx = pd.date_range("2026-01-02", periods=1, freq="W-FRI")
+    prices = pd.DataFrame({"AAA": [10.0]}, index=idx)
+    trades = [tr("2026-01-01", "AAA", "BUY", 1, 8.0), tr("2026-01-01", "BBB", "BUY", 1, 4.0),
+              tr("2026-01-01", "CCC", "BUY", 1, 2.0)]
+    filled, mask = bp.apply_manual(prices, [{"date": idx[0], "ticker": "BBB", "price": 5.0}])
+    out = bp.build(trades, filled, {}, {"CCC"}, idx[0], None, [], mask)
+    src = {p["ticker"]: p["priceSource"] for p in out["open"]}
+    assert src == {"AAA": "market", "BBB": "manual", "CCC": "trade"}
+    assert out["weekly"][0]["manual"] == ["BBB"] and out["weekly"][0]["estimated"] == ["CCC"]
+
+
+def test_load_manual(tmp_path):
+    f = tmp_path / "m.csv"
+    f.write_text("# x\ndate,ticker,market,price\n2026-01-02,iren,US,50\n2026-01-02,AUDUSD,,0.66\n"
+                 "2026-01-02,CDA,,60\n")
+    m = bp.load_manual(f)
+    assert [x["ticker"] for x in m] == ["IREN.US", "AUDUSD", "CDA"]
