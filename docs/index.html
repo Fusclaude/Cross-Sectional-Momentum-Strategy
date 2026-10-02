@@ -232,7 +232,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .sr-chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
 
 /* PORTFOLIO (from data/trades.csv via build_portfolio.py) */
-.sync-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;font-family:var(--mono);font-size:9px;color:var(--t3)}
 .hidden{display:none!important}
 .pf-asof{font-family:var(--mono);font-size:9px;color:var(--t3);margin-bottom:10px;line-height:1.6}
 .pf-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:6px}
@@ -262,34 +261,31 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .pf-edit:active{border-color:var(--teal)}
 .pf-manual{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:10px 12px;margin-bottom:12px;font-family:var(--mono);font-size:9px;color:var(--t2);line-height:1.7}
 .pf-manual pre{background:var(--p1);border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;margin:6px 0;color:var(--t1);white-space:pre-wrap;word-break:break-all;font-size:10px}
-/* REBALANCE / COUNTDOWN */
-.rebal-hero{background:var(--p2);border:1px solid var(--bdr);border-radius:12px;padding:16px;text-align:center}
-.rebal-hero.due{border-color:var(--red);background:var(--rd)}
-.rebal-hero-tkr{font-family:var(--mono);font-size:11px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase}
-.rebal-hero-clock{font-family:var(--mono);font-weight:700;font-size:26px;color:var(--teal);margin:6px 0 4px;letter-spacing:.02em}
-.rebal-hero.due .rebal-hero-clock{color:var(--red)}
-.rebal-hero-date{font-size:10px;color:var(--t3)}
-.rebal-hero-empty{font-family:var(--mono);font-size:11px;color:var(--t3);padding:8px 0}
 
-.action-group{margin-bottom:16px}
-.action-hdr{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.action-hdr.sell{color:var(--red)}
-.action-hdr.hold{color:var(--blue)}
-.action-hdr.buy{color:var(--green)}
-.action-count{font-family:var(--mono);font-size:9px;background:var(--p3);color:var(--t3);padding:1px 6px;border-radius:8px}
-.action-card{background:var(--p2);border:1px solid var(--bdr);border-left:3px solid var(--bdr2);border-radius:9px;padding:11px 12px;margin-bottom:7px;display:flex;align-items:center;gap:10px;cursor:pointer}
-.action-card.sell{border-left-color:var(--red)}
-.action-card.hold{border-left-color:var(--blue)}
-.action-card.buy{border-left-color:var(--green)}
-.action-id{flex:1;min-width:0}
-.action-tkr{font-family:var(--mono);font-weight:700;font-size:13px}
-.action-name{font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.action-meta{text-align:right;flex-shrink:0;font-family:var(--mono);font-size:10px}
-.action-meta .due-badge{font-size:9px;padding:2px 6px;border-radius:4px;margin-top:2px;display:inline-block}
-.due-badge.overdue{color:var(--red);background:var(--rd)}
-.due-badge.soon{color:var(--amber);background:rgba(245,166,35,.12)}
-.due-badge.ok{color:var(--t3);background:var(--p3)}
-.action-empty{font-family:var(--mono);font-size:10px;color:var(--t3);padding:8px 2px}
+/* PORTFOLIO ANALYTICS — series colours validated (dataviz validator, dark, surface #141C30) */
+.pa-root{--s1:#3987e5;--s2:#d95926;--s3:#199e70}
+.pa-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px}
+@media(min-width:640px){.pa-grid{grid-template-columns:repeat(4,1fr)}}
+.pa-card{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:10px 12px;margin-bottom:8px}
+.pa-card-hdr{font-family:var(--mono);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.pa-legend{display:flex;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:9px;color:var(--t2);margin-bottom:6px}
+.pa-legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.pa-chart{position:relative;height:200px}
+.pa-chart canvas{width:100%;height:100%;display:block}
+.pa-tip{position:absolute;pointer-events:none;background:var(--p1);border:1px solid var(--bdr2);border-radius:6px;padding:6px 8px;font-family:var(--mono);font-size:9px;color:var(--t1);white-space:nowrap;opacity:0;transition:opacity .1s;z-index:5;line-height:1.6}
+.pa-tip i{display:inline-block;width:8px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.pa-split{display:flex;gap:2px;height:14px;border-radius:4px;overflow:hidden;margin-bottom:6px}
+.pa-split div{height:100%}
+.pa-split-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--t2);margin-bottom:4px}
+.pa-row{display:grid;grid-template-columns:minmax(70px,120px) 1fr 92px;gap:8px;align-items:center;font-family:var(--mono);font-size:9px;color:var(--t2);padding:3px 0}
+.pa-row .lbl{color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pa-row .lbl small{color:var(--t3);font-size:8px;margin-left:4px}
+.pa-row .val{text-align:right;white-space:nowrap}
+.pa-track{height:8px;position:relative}
+.pa-bar{position:absolute;top:0;height:8px;border-radius:0 4px 4px 0}
+.pa-bar.neg{border-radius:4px 0 0 4px}
+.pa-zero{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--bdr2)}
+.pa-foot{font-family:var(--mono);font-size:9px;color:var(--t3);line-height:1.6;margin-top:6px}
 </style>
 </head>
 <body>
@@ -426,6 +422,37 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div class="pf-asof" id="pf-asof">Loading…</div>
   <div class="pf-stats" id="pf-stats"></div>
 
+  <div class="pa-root">
+  <div class="section-hdr">Performance</div>
+  <div class="pa-grid" id="pa-perf-stats"></div>
+  <div class="pa-card">
+    <div class="pa-card-hdr" id="pa-perf-hdr">Growth of $100</div>
+    <div class="pa-legend" id="pa-perf-legend"></div>
+    <div class="pa-chart"><canvas id="pa-perf-chart" aria-label="Portfolio growth of 100 dollars compared with the ASX 200 and S&P 500"></canvas><div class="pa-tip" id="pa-perf-tip"></div></div>
+    <div class="pa-foot" id="pa-perf-foot"></div>
+  </div>
+
+  <div class="section-hdr">Allocation</div>
+  <div class="pa-card">
+    <div class="pa-card-hdr">By market</div>
+    <div id="pa-market"></div>
+  </div>
+  <div class="pa-card">
+    <div class="pa-card-hdr">By sector</div>
+    <div id="pa-sector"></div>
+    <div class="pa-foot" id="pa-conc"></div>
+  </div>
+
+  <div class="section-hdr">Profit and loss by stock</div>
+  <div class="pa-card">
+    <div id="pa-contrib"></div>
+    <div class="pa-foot">Realised and unrealised P/L plus dividends, in A$, for every stock you've traded.</div>
+  </div>
+
+  <div class="section-hdr">Trade statistics</div>
+  <div class="pa-grid" id="pa-trade-stats"></div>
+  </div>
+
   <div class="section-hdr">Open positions</div>
   <div class="pf-table-wrap"><table class="pf-table">
     <thead><tr><th>Stock</th><th>Shares</th><th>Avg cost</th><th>Price</th><th>Cost</th><th>Value</th><th>Unrealised</th></tr></thead>
@@ -450,36 +477,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div class="pf-note" id="pf-weekly-note">Tap a week to see what was held. All figures in A$. Updated by the weekly refresh; add new trades to <code>data/trades.csv</code> and deposits or conversions to <code>data/cash.csv</code>.</div>
 </div>
 
-<!-- REBALANCE -->
-<div id="page-rebalance" class="page">
-  <div class="section-hdr">Next Repurchase</div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">
-    Each open holding runs its own 28-day cycle from its entry <b>Date</b> in the Portfolio tab — the cycle rolls forward automatically, so you never need to re-set it. Countdown below is the <b>soonest</b> due date across your open positions.
-  </div>
-  <div class="rebal-hero" id="rebal-hero"></div>
-
-  <div class="section-hdr" style="margin-top:18px">Buy / Sell / Hold</div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:10px;line-height:1.6">
-    Compares your open holdings against the current Top-<span id="rebal-n-label">5</span> signal (both markets, current weights). <b>Sell</b> = held but dropped out of Top-N. <b>Hold</b> = held and still in Top-N. <b>Buy</b> = in Top-N but not currently held.
-  </div>
-  <div class="sync-row">
-    <span>Strategy ref:</span>
-    <button class="ov-btn active" data-holdn="5" onclick="setHoldSignalN(5,this)">Top 5</button>
-    <button class="ov-btn" data-holdn="10" onclick="setHoldSignalN(10,this)">Top 10</button>
-    <button class="ov-btn" data-holdn="20" onclick="setHoldSignalN(20,this)">Top 20</button>
-  </div>
-
-  <div class="action-group" id="rebal-sell"></div>
-  <div class="action-group" id="rebal-hold"></div>
-  <div class="action-group" id="rebal-buy"></div>
-</div>
-
 <nav class="bottom-nav">
   <button class="nav-item active" id="nav-weights" onclick="showPage('weights',this)"><svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg><span>Weights</span></button>
   <button class="nav-item" id="nav-picks" onclick="showPage('picks',this)"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Top Picks</span></button>
   <button class="nav-item" id="nav-allstocks" onclick="showPage('allstocks',this)"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span>All Stocks</span></button>
   <button class="nav-item" id="nav-history" onclick="showPage('history',this)"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg><span>Portfolio</span></button>
-  <button class="nav-item" id="nav-rebalance" onclick="showPage('rebalance',this)"><svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0-18a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm.5 5H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg><span>Rebalance</span></button>
 </nav>
 
 <script>
@@ -591,14 +593,11 @@ function applyWeights(){
   renderPicks();
   renderAllStocksList();
   if (allStocksView==='grid') renderRankGrid();
-  if (typeof renderRebalance==='function') renderRebalance();
 }
 
 // ═══════════════════════════════ SCORING (per market, cached on DATA object)
-// computeScoresForAnyMarket takes a market key so the Rebalance tab can score
-// BOTH markets (sp500 + asx300) under the current weights regardless of which
-// market tab is currently active — needed to give buy/sell/hold verdicts for
-// a portfolio that spans both universes.
+// computeScoresForAnyMarket takes a market key so either market can be scored
+// under the current weights regardless of which market tab is active.
 function computeScoresForAnyMarket(mk){
   const market = DATA.markets[mk];
   if (!market) return;
@@ -1217,7 +1216,7 @@ function showPage(id, btn){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   btn.classList.add('active');
   // The chart can't be sized while its page is hidden, so draw on arrival.
-  if (id==='history') drawPortfolioChart();
+  if (id==='history'){ drawPortfolioChart(); drawPerfChart(null); }
   window.scrollTo(0,0);
 }
 
@@ -1226,7 +1225,6 @@ function renderAll(){
   renderPicks();
   renderAllStocksList();
   if (allStocksView==='grid') renderRankGrid();
-  if (typeof renderRebalance==='function') renderRebalance();
   document.getElementById('data-note').innerHTML =
     `<b>How this works:</b> a scheduled job pulls fresh weekly prices for the S&amp;P 500 and ASX 300, computes all 8 factors below for every eligible stock, and this page ranks everything client-side using whatever weights you set — adjust and tap Apply, no re-run needed. Generated ${new Date(DATA.generatedAt).toLocaleString()}.`;
 }
@@ -1390,6 +1388,207 @@ function setOverlayN(n){
   drawDetailChartForRange();
 }
 
+// ═══════════════════════════════ PORTFOLIO ANALYTICS
+// Everything here is derived in the browser from portfolio.json (after any
+// prices set on this device), so the numbers always agree with the tables.
+const PA_SERIES = [   // fixed order; validated as a set against the card surface
+  {key:'Portfolio', color:'#3987e5'},
+  {key:'ASX 200', color:'#d95926'},
+  {key:'S&P 500', color:'#199e70'},
+];
+let PA_PERF = null;
+
+// Time-weighted return: each week's change in value with that week's cash in
+// or out (buys, sales, dividends) removed, so adding money isn't a gain.
+function timeWeighted(weekly){
+  const rets = [];
+  for (let i=1;i<weekly.length;i++){
+    const prev = weekly[i-1], w = weekly[i];
+    const flow = w.flowAud ?? (w.netInvested - prev.netInvested);
+    rets.push(prev.marketValue > 0 ? (w.marketValue - flow)/prev.marketValue - 1 : 0);
+  }
+  return rets;
+}
+function indexFrom(rets){ const out=[100]; rets.forEach(r=>out.push(out[out.length-1]*(1+r))); return out; }
+function maxDrawdown(idx){ let peak=-Infinity, dd=0; idx.forEach(v=>{ peak=Math.max(peak,v); dd=Math.min(dd, v/peak-1); }); return dd; }
+function stdev(a){ if(a.length<2) return null; const m=a.reduce((x,y)=>x+y,0)/a.length; return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/(a.length-1)); }
+
+function paTile(lbl, val, sub, color){
+  return `<div class="pf-stat"><div class="pf-stat-lbl">${lbl}</div><div class="pf-stat-val" style="color:${color||'var(--t1)'}">${val}</div>${sub?`<div class="pf-stat-sub">${sub}</div>`:''}</div>`;
+}
+
+function renderAnalytics(){
+  if (!PORT || PORT.error) return;
+  renderPerformance();
+  renderAllocation();
+  renderContribution();
+  renderTradeStats();
+}
+
+function renderPerformance(){
+  const W = PORT.weekly || [];
+  const el = document.getElementById('pa-perf-stats');
+  if (W.length < 2){ el.innerHTML = '<div class="pf-stat">Needs at least two weeks of history.</div>'; PA_PERF=null; return; }
+  const rets = timeWeighted(W), port = indexFrom(rets);
+  const series = [{...PA_SERIES[0], vals:port}];
+  ['ASX 200','S&P 500'].forEach((k,i)=>{
+    const first = W[0].benchmarks && W[0].benchmarks[k];
+    if (first) series.push({...PA_SERIES[i+1], vals: W.map(w=>w.benchmarks && w.benchmarks[k] ? w.benchmarks[k]/first*100 : null)});
+  });
+  PA_PERF = {weeks: W.map(w=>w.week), series};
+  const tot = port[port.length-1]/100 - 1;
+  const vol = stdev(rets), dd = maxDrawdown(port);
+  const best = Math.max(...rets), worst = Math.min(...rets);
+  const up = rets.filter(r=>r>0).length;
+  const benchRet = k=>{ const s=series.find(x=>x.key===k); return s ? s.vals[s.vals.length-1]/100-1 : null; };
+  const vs = k=>{ const b=benchRet(k); return b==null ? 'after next refresh' : `you ${pct1(tot)}, index ${pct1(b)}`; };
+  el.innerHTML = [
+    paTile('Return', pct1(tot), `time-weighted, ${rets.length} weeks`, rc(tot)),
+    paTile('vs ASX 200', benchRet('ASX 200')==null ? '—' : pct1(tot-benchRet('ASX 200')), vs('ASX 200'), rc(tot-(benchRet('ASX 200')??tot))),
+    paTile('vs S&P 500', benchRet('S&P 500')==null ? '—' : pct1(tot-benchRet('S&P 500')), vs('S&P 500'), rc(tot-(benchRet('S&P 500')??tot))),
+    paTile('Volatility', vol==null ? '—' : (vol*Math.sqrt(52)*100).toFixed(1)+'%', 'annualised, from weekly returns'),
+    paTile('Max drawdown', pct1(dd), 'largest fall from a peak', dd<0?'var(--red)':null),
+    paTile('Best week', pct1(best), `worst ${pct1(worst)}`),
+    paTile('Up weeks', `${up} of ${rets.length}`, `${Math.round(up/rets.length*100)}% of weeks`),
+    paTile('Cash in positions', aud(W[W.length-1].netInvested), 'bought less sold, A$'),
+  ].join('');
+  document.getElementById('pa-perf-hdr').textContent = `Growth of $100 since ${fmtDate(W[0].week)}`;
+  document.getElementById('pa-perf-legend').innerHTML = series.map(s=>`<span><i style="background:${s.color}"></i>${s.key}${s.key==='S&P 500'?' (US$)':''}</span>`).join('');
+  document.getElementById('pa-perf-foot').textContent = series.length===1
+    ? 'ASX 200 and S&P 500 comparison lines appear after the next weekly refresh.'
+    : 'Your portfolio in A$ (US holdings converted at each week\'s rate); the S&P 500 is in US$. ' + (rets.length < 26 ? `Only ${rets.length} weeks so far, so treat volatility and drawdown as rough.` : '');
+  drawPerfChart(null);
+  wirePerfHover();
+}
+
+function drawPerfChart(hover){
+  const c = document.getElementById('pa-perf-chart');
+  if (!c || !PA_PERF || !c.parentElement.clientWidth) return;
+  const {weeks, series} = PA_PERF, n = weeks.length;
+  const dpr = window.devicePixelRatio||1, W = c.parentElement.clientWidth, H = c.parentElement.clientHeight;
+  c.width=W*dpr; c.height=H*dpr; c.style.width=W+'px'; c.style.height=H+'px';
+  const ctx = c.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
+  const all = series.flatMap(s=>s.vals).filter(v=>v!=null).concat([100]);
+  const mn = Math.min(...all), mx = Math.max(...all), pad5 = (mx-mn)*0.08 || 1;
+  const lo = mn-pad5, hi = mx+pad5;
+  const P = {t:8,b:18,l:36,r:62}, cW = W-P.l-P.r, cH = H-P.t-P.b;
+  const xS = i=>P.l + i/(n-1)*cW, yS = v=>P.t + cH - (v-lo)/(hi-lo)*cH;
+  ctx.font = '9px JetBrains Mono';
+  // recessive grid: 3 lines + the 100 baseline
+  [lo+(hi-lo)*0.1, (lo+hi)/2, hi-(hi-lo)*0.1].forEach(v=>{
+    ctx.fillStyle='#1B2540'; ctx.fillRect(P.l, Math.round(yS(v)), cW, 1);
+    ctx.fillStyle='#8A9CBC'; ctx.textAlign='right'; ctx.fillText(v.toFixed(0), P.l-6, yS(v)+3);
+  });
+  ctx.strokeStyle='#4A5B7A'; ctx.setLineDash([3,3]); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(P.l, yS(100)); ctx.lineTo(P.l+cW, yS(100)); ctx.stroke(); ctx.setLineDash([]);
+  // benchmarks first so the portfolio line sits on top
+  [...series].reverse().forEach(s=>{
+    ctx.beginPath(); let on=false;
+    s.vals.forEach((v,i)=>{ if(v==null){ on=false; return; } on ? ctx.lineTo(xS(i),yS(v)) : ctx.moveTo(xS(i),yS(v)); on=true; });
+    ctx.strokeStyle=s.color; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.stroke();
+  });
+  // direct end labels, nudged apart so they never overlap
+  const ends = series.map(s=>{ const v=s.vals[n-1]; return v==null?null:{s, y:yS(v), v}; }).filter(Boolean).sort((a,b)=>a.y-b.y);
+  for (let i=1;i<ends.length;i++) if (ends[i].y - ends[i-1].y < 11) ends[i].y = ends[i-1].y + 11;
+  ends.forEach(e=>{
+    ctx.beginPath(); ctx.arc(xS(n-1), yS(e.v), 3, 0, Math.PI*2); ctx.fillStyle=e.s.color; ctx.fill();
+    ctx.fillStyle='#EAF0FB'; ctx.textAlign='left'; ctx.fillText(e.v.toFixed(1), xS(n-1)+8, e.y+3);
+  });
+  ctx.fillStyle='#8A9CBC'; ctx.textAlign='left'; ctx.fillText(fmtDate(weeks[0]), P.l, H-4);
+  ctx.textAlign='right'; ctx.fillText(fmtDate(weeks[n-1]), P.l+cW, H-4);
+  const tip = document.getElementById('pa-perf-tip');
+  PA_PERF.geo = {P, cW, n};
+  if (hover!=null){
+    const x = xS(hover);
+    ctx.strokeStyle='rgba(138,156,188,.5)'; ctx.beginPath(); ctx.moveTo(x,P.t); ctx.lineTo(x,P.t+cH); ctx.stroke();
+    series.forEach(s=>{ const v=s.vals[hover]; if(v==null) return;
+      ctx.beginPath(); ctx.arc(x,yS(v),4,0,Math.PI*2); ctx.fillStyle=s.color; ctx.fill();
+      ctx.lineWidth=2; ctx.strokeStyle='#141C30'; ctx.stroke(); });
+    tip.innerHTML = `<span style="color:#8A9CBC">${fmtDate(weeks[hover])}</span><br>` + series.map(s=>s.vals[hover]==null?'':
+      `<i style="background:${s.color}"></i>${s.key} ${s.vals[hover].toFixed(1)} (${pct1(s.vals[hover]/100-1)})`).filter(Boolean).join('<br>');
+    tip.style.opacity='1';
+    const tw = tip.offsetWidth;
+    tip.style.left = (x + 10 + tw > W ? x - 10 - tw : x + 10) + 'px';
+    tip.style.top = P.t + 'px';
+  } else if (tip) tip.style.opacity='0';
+}
+function wirePerfHover(){
+  const c = document.getElementById('pa-perf-chart'); if (!c) return;
+  const idx = cx=>{ const g=PA_PERF&&PA_PERF.geo; if(!g) return null; const r=c.getBoundingClientRect();
+    return Math.max(0, Math.min(g.n-1, Math.round((cx-r.left-g.P.l)/g.cW*(g.n-1)))); };
+  const move = e=>drawPerfChart(idx(e.touches ? e.touches[0].clientX : e.clientX));
+  c.onmousemove = move; c.onmouseleave = ()=>drawPerfChart(null);
+  c.ontouchstart = move; c.ontouchmove = e=>{ move(e); e.preventDefault(); }; c.ontouchend = ()=>drawPerfChart(null);
+}
+
+function renderAllocation(){
+  const open = PORT.open || [], total = open.reduce((a,p)=>a+p.valueAud,0);
+  const mk = document.getElementById('pa-market'), sec = document.getElementById('pa-sector'), conc = document.getElementById('pa-conc');
+  if (!total){ mk.innerHTML = sec.innerHTML = conc.innerHTML = '<div class="pa-foot">No open positions.</div>'; return; }
+  const by = (f)=>{ const m={}; open.forEach(p=>{ const k=f(p); m[k]=(m[k]||0)+p.valueAud; }); return Object.entries(m).sort((a,b)=>b[1]-a[1]); };
+  const markets = by(p=>p.currency==='USD' ? 'US (US$)' : 'ASX (A$)');
+  const colors = {'ASX (A$)':PA_SERIES[1].color, 'US (US$)':PA_SERIES[0].color};
+  mk.innerHTML = `<div class="pa-split">${markets.map(([k,v])=>`<div title="${k}: ${aud(v)} (${(v/total*100).toFixed(1)}%)" style="width:${v/total*100}%;background:${colors[k]}"></div>`).join('')}</div>
+    <div class="pa-split-lbl">${markets.map(([k,v])=>`<span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colors[k]};margin-right:5px"></i>${k} ${(v/total*100).toFixed(1)}% · ${aud(v)}</span>`).join('')}</div>`;
+  const sectors = by(p=>p.sector || 'Unclassified'), top = sectors[0][1];
+  sec.innerHTML = sectors.map(([k,v])=>`<div class="pa-row" title="${k}: ${aud(v)}">
+      <span class="lbl">${k}</span>
+      <span class="pa-track"><span class="pa-bar" style="left:0;width:${v/top*100}%;background:${PA_SERIES[0].color}"></span></span>
+      <span class="val">${(v/total*100).toFixed(1)}% · ${aud(v).replace('.00','')}</span></div>`).join('');
+  const w = open.map(p=>p.valueAud/total).sort((a,b)=>b-a);
+  const biggest = [...open].sort((a,b)=>b.valueAud-a.valueAud)[0];
+  const effN = 1/w.reduce((a,x)=>a+x*x,0);
+  conc.innerHTML = `Largest holding <b style="color:var(--t1)">${biggest.ticker}</b> is ${(w[0]*100).toFixed(1)}% of the portfolio; the top 3 are ${(w.slice(0,3).reduce((a,x)=>a+x,0)*100).toFixed(1)}%. `
+    + `${open.length} holdings behave like ${effN.toFixed(1)} equal-sized ones (effective number, 1 ÷ Σ weight²) — the lower it is, the more one stock drives your result.`;
+}
+
+function renderContribution(){
+  const m = {};
+  const add = (t, name, v, status)=>{ m[t] = m[t] || {t, name, v:0, status:new Set()}; m[t].v += v; if (status) m[t].status.add(status); };
+  (PORT.closed||[]).forEach(c=>add(c.ticker, c.name, c.pnlAud, 'sold'));
+  (PORT.open||[]).forEach(p=>add(p.ticker, p.name, p.unrealisedAud, 'held'));
+  (PORT.dividends||[]).forEach(d=>add(d.ticker, d.ticker, d.aud));
+  const rows = Object.values(m).sort((a,b)=>b.v-a.v);
+  const maxAbs = Math.max(...rows.map(r=>Math.abs(r.v)), 1);
+  const el = document.getElementById('pa-contrib');
+  if (!rows.length){ el.innerHTML = '<div class="pa-foot">No trades yet.</div>'; return; }
+  // diverging: zero in the middle, gains right in green, losses left in red
+  el.innerHTML = rows.map(r=>{
+    const wPct = Math.abs(r.v)/maxAbs*50;
+    const bar = r.v >= 0
+      ? `<span class="pa-bar" style="left:50%;width:${wPct}%;background:var(--green)"></span>`
+      : `<span class="pa-bar neg" style="left:${50-wPct}%;width:${wPct}%;background:var(--red)"></span>`;
+    const st = [...r.status].join(' + ');
+    return `<div class="pa-row" title="${r.t} (${st}): ${aud(r.v,true)}">
+      <span class="lbl">${r.t}<small>${st}</small></span>
+      <span class="pa-track"><span class="pa-zero" style="left:50%"></span>${bar}</span>
+      <span class="val" style="color:${rc(r.v)}">${aud(r.v,true)}</span></div>`;
+  }).join('');
+}
+
+function renderTradeStats(){
+  const C = PORT.closed || [], O = PORT.open || [];
+  const el = document.getElementById('pa-trade-stats');
+  const ret = c=> c.costAud ? c.pnlAud/c.costAud : 0;
+  const wins = C.filter(c=>c.pnlAud>0), losses = C.filter(c=>c.pnlAud<=0);
+  const avg = a=> a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const days = (a,b)=> Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00'))/86400000);
+  const today = PORT.priceDate;
+  const best = C.length ? C.reduce((a,c)=>ret(c)>ret(a)?c:a) : null, worst = C.length ? C.reduce((a,c)=>ret(c)<ret(a)?c:a) : null;
+  const byMkt = k=> C.filter(c=>(c.currency==='USD')===(k==='US')).reduce((a,c)=>a+c.pnlAud,0);
+  const openUp = O.filter(p=>p.unrealisedAud>0).length;
+  el.innerHTML = [
+    paTile('Win rate', C.length ? `${Math.round(wins.length/C.length*100)}%` : '—', `${wins.length} of ${C.length} sales in profit`),
+    paTile('Avg win / loss', `${wins.length?pct1(avg(wins.map(ret))):'—'} / ${losses.length?pct1(avg(losses.map(ret))):'—'}`, 'average return per sale'),
+    paTile('Best sale', best ? pct1(ret(best)) : '—', best ? `${best.ticker} ${aud(best.pnlAud,true)}` : '', best ? rc(best.pnlAud) : null),
+    paTile('Worst sale', worst ? pct1(ret(worst)) : '—', worst ? `${worst.ticker} ${aud(worst.pnlAud,true)}` : '', worst ? rc(worst.pnlAud) : null),
+    paTile('Avg time held', C.length ? `${Math.round(avg(C.map(c=>days(c.firstBuy,c.sold))))} days` : '—', 'sold positions'),
+    paTile('Open for', O.length ? `${Math.round(avg(O.map(p=>days(p.firstBuy,today))))} days` : '—', `average across ${O.length} open`),
+    paTile('Open in profit', `${openUp} of ${O.length}`, 'by unrealised A$ P/L'),
+    paTile('Realised by market', aud(byMkt('ASX'),true), `ASX · US ${aud(byMkt('US'),true)}`, rc(byMkt('ASX')+byMkt('US'))),
+  ].join('');
+}
+
 // ═══════════════════════════════ KEYBOARD NAV (#1)
 document.addEventListener('keydown', e=>{
   if (document.getElementById('page-detail').classList.contains('active')){
@@ -1406,13 +1605,10 @@ document.addEventListener('keydown', e=>{
 });
 
 // ═══════════════════════════════ PORTFOLIO (data/portfolio.json)
-// Built weekly by scripts/build_portfolio.py from data/trades.csv. The open
-// positions also drive the Rebalance tab, so there is one record of what you
-// hold instead of a hand-maintained list per device.
+// Built weekly by scripts/build_portfolio.py from data/trades.csv,
+// data/cash.csv and data/manual_prices.csv.
 const PORTFOLIO_URL = 'data/portfolio.json';
 let PORT = null, PORT_RAW = null;
-let holdings = [];     // open positions in the shape the Rebalance tab reads
-let holdSignalN = 5;
 
 const aud = (v, sign=false)=> v==null ? '—' : (sign && v>0 ? '+' : v<0 ? '−' : '') + '$' + Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const px = (v, ccy)=> v==null ? '—' : (ccy==='USD' ? 'US$' : '$') + v.toFixed(v<1 ? 3 : 2);
@@ -1428,31 +1624,7 @@ async function loadPortfolio(){
     PORT_RAW = await r.json();
   }catch(e){ PORT_RAW = {error:e.message}; }
   PORT = withDeviceOverrides(PORT_RAW);
-  syncHoldings();
   renderPortfolio();
-  if (typeof renderRebalance==='function') renderRebalance();
-}
-
-// Trades are recorded as ASX codes; the signal universe uses Yahoo tickers.
-// Holdings are named CDA (ASX) or IREN.US (US); the signal universe uses
-// CDA.AX and IREN.
-function universeTicker(name){
-  return name.endsWith('.US') ? name.slice(0,-3) : name+'.AX';
-}
-function syncHoldings(){
-  holdings = (PORT && PORT.open || []).map(p=>({ticker:universeTicker(p.ticker), status:'HELD', date:p.firstBuy, shares:p.shares}));
-}
-
-function setHoldSignalN(n,btn){
-  holdSignalN=n;
-  document.querySelectorAll('[data-holdn]').forEach(b=>b.classList.toggle('active', Number(b.dataset.holdn)===n));
-  if (typeof renderRebalance==='function') renderRebalance();
-}
-
-function lookupStock(tkr){
-  if (!DATA) return null;
-  for (const mk of ['sp500','asx300']){ const m=DATA.markets[mk]; if(!m) continue; const s=m.stocks.find(x=>x.ticker===tkr); if(s) return {s,mk}; }
-  return null;
 }
 
 
@@ -1627,6 +1799,7 @@ function renderPortfolio(){
       <tr class="pf-detail hidden"><td colspan="7">${held}</td></tr>`;
   }).join('') : '<tr><td colspan="7" style="text-align:center">No weeks yet</td></tr>';
   drawPortfolioChart();
+  renderAnalytics();
 }
 
 // Total P/L (realised + unrealised) per week, with the zero line marked.
@@ -1657,130 +1830,7 @@ function drawPortfolioChart(){
   ctx.textAlign='right'; ctx.fillText(fmtDate(W[n-1].week), pad.l+cW, H-4);
 }
 
-// ═══════════════════════════════ REBALANCE (countdown + buy/sell/hold)
-const REBAL_CYCLE_MS = 28 * 86400000; // 28-day cycle, matches your rebalance cadence
-let rebalTimer = null;
-
-// Rolls a holding's entry date forward in 28-day increments until it lands
-// in the future — so a position bought months ago still gets a correct
-// "next due" date without you ever having to touch it again.
-function nextDueDate(dateStr){
-  if (!dateStr) return null;
-  let d = new Date(dateStr + 'T00:00:00');
-  if (isNaN(d.getTime())) return null;
-  const now = Date.now();
-  while (d.getTime() <= now) d = new Date(d.getTime() + REBAL_CYCLE_MS);
-  return d;
-}
-function fmtCountdown(target){
-  const ms = target.getTime() - Date.now();
-  if (ms <= 0) return 'DUE NOW';
-  const days = Math.floor(ms/86400000);
-  const hrs = Math.floor((ms%86400000)/3600000);
-  const mins = Math.floor((ms%3600000)/60000);
-  if (days > 0) return `${days}d ${hrs}h`;
-  if (hrs > 0) return `${hrs}h ${mins}m`;
-  const secs = Math.floor((ms%60000)/1000);
-  return `${mins}m ${secs}s`;
-}
-function dueBadgeClass(target){
-  const ms = target.getTime() - Date.now();
-  if (ms <= 0) return 'overdue';
-  if (ms <= 3*86400000) return 'soon';
-  return 'ok';
-}
-
-function renderRebalanceHero(openHoldings){
-  const el = document.getElementById('rebal-hero');
-  if (!el) return;
-  const withDue = openHoldings
-    .filter(h=>h.ticker && h.date)
-    .map(h=>({h, due: nextDueDate(h.date)}))
-    .filter(x=>x.due)
-    .sort((a,b)=>a.due-b.due);
-  if (!withDue.length){
-    el.className = 'rebal-hero';
-    el.innerHTML = `<div class="rebal-hero-empty">No open positions — add trades to <code>data/trades.csv</code> to start the countdown.</div>`;
-    return;
-  }
-  const next = withDue[0];
-  const overdue = next.due.getTime() <= Date.now();
-  el.className = 'rebal-hero' + (overdue ? ' due' : '');
-  el.innerHTML = `
-    <div class="rebal-hero-tkr">${overdue ? 'Due now' : 'Next due'} · ${next.h.ticker}</div>
-    <div class="rebal-hero-clock">${fmtCountdown(next.due)}</div>
-    <div class="rebal-hero-date">${next.due.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${withDue.length>1?` · +${withDue.length-1} more position${withDue.length>2?'s':''} queued`:''}</div>`;
-}
-
-function renderRebalanceActions(openHoldings){
-  const sellEl = document.getElementById('rebal-sell');
-  const holdEl = document.getElementById('rebal-hold');
-  const buyEl  = document.getElementById('rebal-buy');
-  if (!sellEl || !holdEl || !buyEl || !DATA) return;
-
-  document.getElementById('rebal-n-label').textContent = holdSignalN;
-
-  // Score both markets under current weights so the verdict is correct
-  // regardless of which market tab happens to be active right now.
-  computeScoresForAnyMarket('sp500');
-  computeScoresForAnyMarket('asx300');
-
-  const heldTickers = new Set(openHoldings.map(h=>h.ticker).filter(Boolean));
-  const sells = [], holds = [];
-
-  openHoldings.forEach(h=>{
-    if (!h.ticker) return;
-    const look = lookupStock(h.ticker);
-    const due = nextDueDate(h.date);
-    const row = {h, look, due};
-    if (!look){ holds.push({...row, unknown:true}); return; }
-    if (look.s._rank <= holdSignalN) holds.push(row); else sells.push(row);
-  });
-
-  const buys = [];
-  ['sp500','asx300'].forEach(mk=>{
-    const market = DATA.markets[mk];
-    if (!market) return;
-    market.stocks.filter(s=>s._rank<=holdSignalN && !heldTickers.has(s.ticker))
-      .forEach(s=> buys.push({s, mk}));
-  });
-  buys.sort((a,b)=>a.s._rank-b.s._rank);
-
-  const actionCard = (cls, tkr, name, right, dueTarget)=> `
-    <div class="action-card ${cls}" onclick="${DATA.markets['sp500'].stocks.some(s=>s.ticker===tkr)||DATA.markets['asx300'].stocks.some(s=>s.ticker===tkr)?`openTicker('${tkr}')`:''}">
-      <div class="action-id"><div class="action-tkr">${tkr}</div><div class="action-name">${name||''}</div></div>
-      <div class="action-meta">${right}${dueTarget?`<br><span class="due-badge ${dueBadgeClass(dueTarget)}">${fmtCountdown(dueTarget)}</span>`:''}</div>
-    </div>`;
-
-  sellEl.innerHTML = `<div class="action-hdr sell">⚠ Sell <span class="action-count">${sells.length}</span></div>` +
-    (sells.length ? sells.map(r=>actionCard('sell', r.h.ticker, r.look?r.look.s.name:'Ticker not found in either universe', r.look?`Rank #${r.look.s._rank} (${r.look.mk==='sp500'?'S&P':'ASX'})`:'—', r.due)).join('')
-      : `<div class="action-empty">No open holdings have dropped out of the Top-${holdSignalN}.</div>`);
-
-  holdEl.innerHTML = `<div class="action-hdr hold">✓ Hold <span class="action-count">${holds.length}</span></div>` +
-    (holds.length ? holds.map(r=>r.unknown
-        ? actionCard('hold', r.h.ticker, 'Ticker not found in either universe — check spelling', '—', r.due)
-        : actionCard('hold', r.h.ticker, r.look.s.name, `Rank #${r.look.s._rank} (${r.look.mk==='sp500'?'S&P':'ASX'})`, r.due)).join('')
-      : `<div class="action-empty">No open holdings currently in the Top-${holdSignalN}.</div>`);
-
-  buyEl.innerHTML = `<div class="action-hdr buy">＋ Buy <span class="action-count">${buys.length}</span></div>` +
-    (buys.length ? buys.map(b=>actionCard('buy', b.s.ticker, b.s.name, `Rank #${b.s._rank} (${b.mk==='sp500'?'S&P':'ASX'})`, null)).join('')
-      : `<div class="action-empty">Every Top-${holdSignalN} stock is already held.</div>`);
-}
-
-function renderRebalance(){
-  if (!DATA) return;
-  const openHoldings = holdings.filter(h=>h.status!=='SOLD' && h.ticker);
-  renderRebalanceHero(openHoldings);
-  renderRebalanceActions(openHoldings);
-}
-function startRebalanceClock(){
-  if (rebalTimer) clearInterval(rebalTimer);
-  rebalTimer = setInterval(()=>{
-    if (document.getElementById('page-rebalance')?.classList.contains('active')) renderRebalance();
-  }, 1000);
-}
-
-window.addEventListener('load', ()=>{ loadData(); loadPortfolio(); startRebalanceClock(); });
+window.addEventListener('load', ()=>{ loadData(); loadPortfolio(); });
 </script>
 </body>
 </html>

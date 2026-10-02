@@ -179,3 +179,18 @@ def test_load_manual(tmp_path):
                  "2026-01-02,CDA,,60\n")
     m = bp.load_manual(f)
     assert [x["ticker"] for x in m] == ["IREN.US", "AUDUSD", "CDA"]
+
+
+def test_weekly_flows_and_benchmarks():
+    idx = pd.date_range("2026-01-02", periods=3, freq="W-FRI")
+    prices = pd.DataFrame({"AAA": [10.0, 11.0, 12.0]}, index=idx)
+    trades = [tr("2026-01-01", "AAA", "BUY", 10, 100.0),
+              tr("2026-01-07", "AAA", "BUY", 5, 55.0),
+              tr("2026-01-14", "AAA", "SELL", 3, 36.0),
+              tr("2026-01-14", "AAA", "DIVIDEND", 0, 2.0)]
+    bench = {"IDX": pd.Series([1000.0, 1010.0, 990.0], index=idx)}
+    rows = bp.weekly_history(trades, prices, idx[0], None, None, bench)
+    assert rows[0]["flowAud"] is None
+    assert rows[1]["flowAud"] == pytest.approx(55.0)
+    assert rows[2]["flowAud"] == pytest.approx(-36.0 - 2.0)   # sale and dividend both leave
+    assert [r["benchmarks"]["IDX"] for r in rows] == [1000.0, 1010.0, 990.0]

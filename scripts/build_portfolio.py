@@ -187,7 +187,8 @@ def match_fifo(trades: list[dict], fx: FX | None = None) -> tuple[list[dict], di
 
 
 def load_prices(trades: list[dict], start: pd.Timestamp) -> tuple[pd.DataFrame, dict, set[str]]:
-    """Weekly closes keyed by holding name. Returns (prices, names, still missing)."""
+    """Weekly closes keyed by holding name. Returns (prices, names, still missing).
+    `names` maps holding -> {"name", "sector"} where the price files know them."""
     wanted = {t["ticker"]: (t["code"], t["market"]) for t in trades if t["side"] != "DIVIDEND"}
     frames, names = [], {}
     for market, (file, suffix, _) in MARKETS.items():
@@ -200,7 +201,8 @@ def load_prices(trades: list[dict], start: pd.Timestamp) -> tuple[pd.DataFrame, 
         if have:
             frames.append(pd.DataFrame({k: raw["prices"][y] for k, y in have.items()},
                                        index=pd.to_datetime(raw["dates"])))
-            names.update({k: raw["names"].get(y, k) for k, y in have.items()})
+            names.update({k: {"name": raw["names"].get(y, k),
+                              "sector": raw.get("sectors", {}).get(y)} for k, y in have.items()})
     prices = pd.concat(frames, axis=1).sort_index() if frames else pd.DataFrame()
 
     missing = {k: code + MARKETS[m][1] for k, (code, m) in wanted.items() if k not in prices.columns}
@@ -323,7 +325,8 @@ def _last_trade_prices(trades: list[dict]) -> dict[str, float]:
 
 
 def weekly_history(trades: list[dict], prices: pd.DataFrame, start: pd.Timestamp,
-                   fx: FX | None = None, manual_mask: pd.DataFrame | None = None) -> list[dict]:
+                   fx: FX | None = None, manual_mask: pd.DataFrame | None = None,
+                   benchmarks: dict[str, pd.Series] | None = None) -> list[dict]:
     """
     One row per Friday from `start` to the latest price, in AUD. Holdings at a
     week are every trade dated on or before that Friday; a name with no close
@@ -344,7 +347,8 @@ def weekly_history(trades: list[dict], prices: pd.DataFrame, start: pd.Timestamp
                           manual_mask.loc[wk] if manual_mask is not None and wk in manual_mask.index else None)
         value = sum(p["valueAud"] for p in pos)
         cost = sum(p["costAud"] for p in pos)
-        realised = sum(c["pnlAud"] for c in closed) + sum(d["aud"] for d in divs)
+        div_aud = sum(d["aud"] for d in divs)
+        realised = sum(c["pnlAud"] for c in closed) + div_aud
         bought = sum(fx.to_aud(t["amount"], t["ccy"], fx.paid(t["date"]) if t["ccy"] != "AUD" else 1.0)
                      for t in upto if t["side"] == "BUY")
         invested = bought - sum(c["proceedsAud"] for c in closed)
@@ -356,6 +360,9 @@ def weekly_history(trades: list[dict], prices: pd.DataFrame, start: pd.Timestamp
             "realisedToDate": round(realised, 2),
             "totalPnl": round(value - cost + realised, 2),
             "netInvested": round(invested, 2),
+            "dividendsToDate": round(div_aud, 2),
+            "benchmarks": {k: round(float(v.loc[:wk].iloc[-1]), 4)
+                           for k, v in (benchmarks or {}).items() if len(v.loc[:wk])},
             "audUsd": round(rate, 4) if has_usd else None,
             "positions": [{"ticker": p["ticker"], "currency": p["currency"],
                            "shares": round(p["shares"], 5), "price": round(p["price"], 4),
@@ -366,6 +373,11 @@ def weekly_history(trades: list[dict], prices: pd.DataFrame, start: pd.Timestamp
         })
     for prev, row in zip([None] + rows[:-1], rows):
         row["weekChange"] = None if prev is None else round(row["totalPnl"] - prev["totalPnl"], 2)
+        # Cash put into positions this week (buys, less sales and dividends):
+        # what a time-weighted return strips out so deposits don't count as gains.
+        row["flowAud"] = None if prev is None else round(
+            (row["netInvested"] - prev["netInvested"])
+            - (row["dividendsToDate"] - prev["dividendsToDate"]), 2)
     return rows
 
 
@@ -386,9 +398,32 @@ def cash_summary(cash: list[dict], trades: list[dict]) -> dict:
     }
 
 
+def _name(names: dict, tkr: str) -> str:
+    v = names.get(tkr)
+    return v.get("name", tkr) if isinstance(v, dict) else (v or tkr)
+
+
+def _sector(names: dict, tkr: str) -> str | None:
+    v = names.get(tkr)
+    return v.get("sector") if isinstance(v, dict) else None
+
+
+def load_benchmarks() -> dict[str, pd.Series]:
+    """The index series the price files already carry: ASX 200 and S&P 500."""
+    out = {}
+    for file, label in [("asx300", "ASX 200"), ("sp500", "S&P 500")]:
+        path = DATA_DIR / f"{file}_prices.json"
+        if path.exists():
+            b = json.loads(path.read_text()).get("benchmark")
+            if b and b.get("values"):
+                out[label] = pd.Series(b["values"], index=pd.to_datetime(b["dates"])).sort_index()
+    return out
+
+
 def build(trades: list[dict], prices: pd.DataFrame, names: dict, missing: set[str],
           start: pd.Timestamp, fx: FX | None = None, cash: list[dict] | None = None,
-          manual_mask: pd.DataFrame | None = None) -> dict:
+          manual_mask: pd.DataFrame | None = None,
+          benchmarks: dict[str, pd.Series] | None = None) -> dict:
     fx = fx or FX(cash or [])
     ccy_of = {t["ticker"]: t["ccy"] for t in trades}
     has_usd = any(c != "AUD" for c in ccy_of.values())
@@ -402,7 +437,7 @@ def build(trades: list[dict], prices: pd.DataFrame, names: dict, missing: set[st
     r2 = lambda v: None if v is None else round(v, 2)  # noqa: E731
 
     open_pos = [{
-        "ticker": p["ticker"], "name": names.get(p["ticker"], p["ticker"]),
+        "ticker": p["ticker"], "name": _name(names, p["ticker"]), "sector": _sector(names, p["ticker"]),
         "currency": p["currency"], "shares": round(p["shares"], 5),
         "cost": r2(p["cost"]), "avgPrice": round(p["cost"] / p["shares"], 4),
         "firstBuy": ds(p["firstBuy"]), "buys": p["lots"],
@@ -415,7 +450,7 @@ def build(trades: list[dict], prices: pd.DataFrame, names: dict, missing: set[st
     } for p in pos]
     open_pos.sort(key=lambda p: -p["valueAud"])
 
-    sold = [{"ticker": c["ticker"], "name": names.get(c["ticker"], c["ticker"]),
+    sold = [{"ticker": c["ticker"], "name": _name(names, c["ticker"]), "sector": _sector(names, c["ticker"]),
              "currency": c["currency"], "firstBuy": ds(c["firstBuy"]), "sold": ds(c["sold"]),
              "shares": round(c["shares"], 5), "cost": r2(c["cost"]), "proceeds": r2(c["proceeds"]),
              "pnl": r2(c["pnl"]), "pnlPct": None if c["pnlPct"] is None else round(c["pnlPct"], 4),
@@ -454,7 +489,7 @@ def build(trades: list[dict], prices: pd.DataFrame, names: dict, missing: set[st
                        "currency": d["ccy"], "aud": r2(d["aud"])} for d in divs],
         "open": open_pos,
         "closed": sold,
-        "weekly": weekly_history(trades, prices, start, fx, manual_mask),
+        "weekly": weekly_history(trades, prices, start, fx, manual_mask, benchmarks),
     }
 
 
@@ -466,6 +501,11 @@ def main() -> None:
     start = pd.Timestamp(pcfg.get("history_start", "2026-06-22"))
     first = min(t["date"] for t in trades)
     prices, names, missing = load_prices(trades, first)
+    # Sectors for holdings outside both indexes (the price files only know
+    # index members). Set in config so the allocation view can place them.
+    for tkr, sector in (pcfg.get("sectors") or {}).items():
+        v = names.get(tkr)
+        names[tkr] = {"name": v.get("name", tkr) if isinstance(v, dict) else tkr, "sector": sector}
 
     market_fx = None
     if any(t["ccy"] != "AUD" for t in trades):
@@ -478,7 +518,7 @@ def main() -> None:
     prices, mask = apply_manual(prices, manual)
     missing = {m for m in missing if m not in mask.columns or not mask[m].any()}
 
-    out = build(trades, prices, names, missing, start, fx, cash, mask)
+    out = build(trades, prices, names, missing, start, fx, cash, mask, load_benchmarks())
     (DATA_DIR / "portfolio.json").write_text(json.dumps(out, separators=(",", ":")))
 
     s = out["summary"]
