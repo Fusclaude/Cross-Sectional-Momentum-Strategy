@@ -142,3 +142,8 @@ my_trades:
   cash_file: data/cash.csv
   # Prices you set yourself where the feed has none (e.g. IREN).
   manual_prices_file: data/manual_prices.csv
+  # Sector for holdings outside the S&P 500 / ASX 300, which the price files
+  # can't classify. Used by the Portfolio tab's allocation view. Key is the
+  # holding as shown on the tab (IREN.US for US, plain code for ASX).
+  sectors:
+    IREN.US: Information Technology
