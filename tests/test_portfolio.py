@@ -17,16 +17,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import build_portfolio as bp  # noqa: E402
 
 
-def tr(date, ticker, side, shares, amount):
-    return {"date": pd.Timestamp(date), "ticker": ticker, "side": side,
-            "shares": shares, "amount": amount}
+def tr(date, ticker, side, shares, amount, market="ASX"):
+    code = ticker.split(".")[0]
+    return {"date": pd.Timestamp(date), "code": code, "market": market,
+            "ticker": bp.key(code, market), "side": side, "shares": shares,
+            "amount": amount, "ccy": "AUD" if market == "ASX" else "USD"}
+
+
+def fx_cash(*conversions):
+    """FX events: (date, aud, usd)."""
+    return [{"date": pd.Timestamp(d), "type": "FX", "aud": a, "usd": u} for d, a, u in conversions]
 
 
 def test_fifo_sells_oldest_lots_first():
     trades = [tr("2026-01-02", "AAA", "BUY", 10, 100.0),    # $10.00
               tr("2026-02-02", "AAA", "BUY", 10, 200.0),    # $20.00
               tr("2026-03-02", "AAA", "SELL", 15, 270.0)]
-    closed, lots = bp.match_fifo(trades)
+    closed, lots, _ = bp.match_fifo(trades)
     assert closed[0]["cost"] == pytest.approx(100.0 + 5 * 20.0)
     assert closed[0]["pnl"] == pytest.approx(70.0)
     assert closed[0]["firstBuy"] == pd.Timestamp("2026-01-02")
@@ -45,7 +52,56 @@ def test_load_trades_skips_comments_and_sorts(tmp_path):
                  "2026-02-01,bbb,sell,1,5\n2026-01-01,BBB,Buy,1,4\n")
     t = bp.load_trades(f)
     assert [x["side"] for x in t] == ["BUY", "SELL"]
-    assert t[0]["ticker"] == "BBB"
+    assert t[0]["ticker"] == "BBB" and t[0]["ccy"] == "AUD"
+
+
+def test_load_trades_us_fractional_and_dividend(tmp_path):
+    f = tmp_path / "t.csv"
+    f.write_text("date,ticker,market,side,shares,amount,currency\n"
+                 "2026-01-01,iren,US,BUY,0.5,10,USD\n2026-01-02,IREN,US,DIVIDEND,,0.03,USD\n")
+    t = bp.load_trades(f)
+    assert t[0]["ticker"] == "IREN.US" and t[0]["shares"] == 0.5
+    assert t[1]["side"] == "DIVIDEND" and t[1]["shares"] == 0.0
+
+
+def test_us_cost_uses_your_conversion_rate_and_sale_uses_market():
+    fx = bp.FX(fx_cash(("2026-01-01", 1000.0, 700.0),      # 0.70 USD per AUD
+                       ("2026-03-01", 1000.0, 600.0)),     # 0.60, after the buy
+               market=pd.Series({pd.Timestamp("2026-03-27"): 0.80}))
+    trades = [tr("2026-01-05", "XYZ", "BUY", 0.25, 70.0, "US"),
+              tr("2026-03-27", "XYZ", "SELL", 0.25, 80.0, "US")]
+    closed, lots, _ = bp.match_fifo(trades, fx)
+    c = closed[0]
+    assert c["pnl"] == pytest.approx(10.0)                   # in USD
+    assert c["costAud"] == pytest.approx(70.0 / 0.70)        # rate paid on 1 Jan
+    assert c["proceedsAud"] == pytest.approx(80.0 / 0.80)    # market rate at sale
+    assert c["pnlAud"] == pytest.approx(0.0)                 # the AUD rally ate the gain
+    assert not lots["XYZ.US"]
+
+
+def test_grant_has_zero_cost_and_dividends_count_as_realised():
+    idx = pd.date_range("2026-01-02", periods=2, freq="W-FRI")
+    prices = pd.DataFrame({"NV.US": [100.0, 120.0]}, index=idx)
+    fx = bp.FX(fx_cash(("2026-01-01", 100.0, 50.0)))         # 0.50
+    trades = [tr("2026-01-01", "NV", "GRANT", 0.1, 0.0, "US"),
+              tr("2026-01-06", "NV", "DIVIDEND", 0.0, 1.0, "US")]
+    out = bp.build(trades, prices, {}, set(), idx[0], fx, [])
+    s = out["summary"]
+    assert out["open"][0]["costAud"] == 0.0
+    assert s["marketValue"] == pytest.approx(0.1 * 120.0 / 0.5)
+    assert s["dividends"] == pytest.approx(2.0) and s["realised"] == pytest.approx(2.0)
+    assert s["closedTrades"] == 0
+
+
+def test_cash_summary_tracks_uninvested_usd():
+    cash = fx_cash(("2026-01-01", 1000.0, 700.0)) + [
+        {"date": pd.Timestamp("2026-01-01"), "type": "DEPOSIT", "aud": 1200.0, "usd": 0.0}]
+    trades = [tr("2026-01-02", "A", "BUY", 1.0, 500.0, "US"),
+              tr("2026-01-09", "A", "SELL", 1.0, 450.0, "US"),
+              tr("2026-01-10", "B", "BUY", 0.3, 600.0, "US")]
+    cs = bp.cash_summary(cash, trades)
+    assert cs["depositedAud"] == 1200.0
+    assert cs["usdCash"] == pytest.approx(700.0 - 500.0 + 450.0 - 600.0)
 
 
 def test_weekly_history_values_and_realised():

@@ -426,14 +426,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     <thead><tr><th>Stock</th><th>Shares</th><th>Avg cost</th><th>Price</th><th>Cost</th><th>Value</th><th>Unrealised</th></tr></thead>
     <tbody id="pf-open"></tbody><tfoot id="pf-open-total"></tfoot>
   </table></div>
-  <div class="pf-note">Valued at the latest weekly close in the price data. Cost includes brokerage.</div>
+  <div class="pf-note">Valued at the latest weekly close in the price data. Each row is in the stock's own currency; US rows also show the A$ result including the currency move. Cost includes brokerage.</div>
 
   <div class="section-hdr">Sold positions</div>
   <div class="pf-table-wrap"><table class="pf-table">
     <thead><tr><th>Stock</th><th>Bought</th><th>Sold</th><th>Shares</th><th>Cost</th><th>Proceeds</th><th>Profit / loss</th></tr></thead>
     <tbody id="pf-closed"></tbody><tfoot id="pf-closed-total"></tfoot>
   </table></div>
-  <div class="pf-note">Each sale is matched to the shares bought first. Proceeds are after brokerage.</div>
+  <div class="pf-note">Each sale is matched to the shares bought first. Proceeds are after brokerage. Dividends are counted in Realised above, not in this table.</div>
 
   <div class="section-hdr" id="pf-weekly-hdr">Week by week</div>
   <div class="pf-chart-wrap"><canvas id="pf-chart"></canvas></div>
@@ -441,7 +441,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     <thead><tr><th>Week ending</th><th>Value</th><th>Cost</th><th>Unrealised</th><th>Realised to date</th><th>Total P/L</th><th>Change</th></tr></thead>
     <tbody id="pf-weekly"></tbody>
   </table></div>
-  <div class="pf-note" id="pf-weekly-note">Tap a week to see what was held. Updated by the weekly refresh; add new trades to <code>data/trades.csv</code>.</div>
+  <div class="pf-note" id="pf-weekly-note">Tap a week to see what was held. All figures in A$. Updated by the weekly refresh; add new trades to <code>data/trades.csv</code> and deposits or conversions to <code>data/cash.csv</code>.</div>
 </div>
 
 <!-- REBALANCE -->
@@ -1409,7 +1409,10 @@ let holdings = [];     // open positions in the shape the Rebalance tab reads
 let holdSignalN = 5;
 
 const aud = (v, sign=false)=> v==null ? '—' : (sign && v>0 ? '+' : v<0 ? '−' : '') + '$' + Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-const px = v=> v==null ? '—' : '$' + v.toFixed(v<1 ? 3 : 2);
+const px = (v, ccy)=> v==null ? '—' : (ccy==='USD' ? 'US$' : '$') + v.toFixed(v<1 ? 3 : 2);
+// Money in a holding's own currency: US$ for US stocks, $ for ASX.
+const cur = (v, ccy, sign=false)=> ccy==='USD' ? aud(v, sign).replace('$','US$') : aud(v, sign);
+const shareFmt = n=> Number.isInteger(n) ? n.toLocaleString() : n.toFixed(5).replace(/0+$/,'');
 const fmtDate = d=> new Date(d+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'2-digit'});
 
 async function loadPortfolio(){
@@ -1424,12 +1427,10 @@ async function loadPortfolio(){
 }
 
 // Trades are recorded as ASX codes; the signal universe uses Yahoo tickers.
-function universeTicker(code){
-  if (DATA){
-    if (DATA.markets.asx300?.stocks.some(s=>s.ticker===code+'.AX')) return code+'.AX';
-    if (DATA.markets.sp500?.stocks.some(s=>s.ticker===code)) return code;
-  }
-  return code+'.AX';
+// Holdings are named CDA (ASX) or IREN.US (US); the signal universe uses
+// CDA.AX and IREN.
+function universeTicker(name){
+  return name.endsWith('.US') ? name.slice(0,-3) : name+'.AX';
 }
 function syncHoldings(){
   holdings = (PORT && PORT.open || []).map(p=>({ticker:universeTicker(p.ticker), status:'HELD', date:p.firstBuy, shares:p.shares}));
@@ -1459,40 +1460,49 @@ function renderPortfolio(){
   if (!asof || !PORT) return;
   if (PORT.error){ asof.innerHTML = `<div class="warn">Could not load <code>${PORTFOLIO_URL}</code> (${PORT.error}).</div>`; return; }
   const S = PORT.summary;
-  asof.innerHTML = `Prices as of ${fmtDate(PORT.priceDate)} · from ${S.openPositions + S.closedTrades} positions in <code>data/trades.csv</code>`
+  const C = PORT.cash || {};
+  asof.innerHTML = `Prices as of ${fmtDate(PORT.priceDate)} · totals in A$`
+    + (PORT.fx && PORT.fx.audUsd ? ` · US holdings at ${PORT.fx.audUsd} USD per AUD (${PORT.fx.source})` : '')
+    + (C.convertedAud ? `<br>Cash: deposited ${aud(C.depositedAud)} since ${fmtDate(C.firstDeposit)} · converted ${aud(C.convertedAud)} → ${cur(C.convertedUsd,'USD')} (avg ${C.avgRate}) · <b style="color:var(--t1)">${cur(C.usdCash,'USD')}</b> uninvested` : '')
     + (PORT.noPriceData.length ? `<br><span class="pf-est">No price data yet for ${PORT.noPriceData.join(', ')}: valued at your trade price (marked ~).</span>` : '');
 
   document.getElementById('pf-stats').innerHTML = [
     pfTile('Open value', aud(S.marketValue), `cost ${aud(S.openCost)}`),
     pfTile('Unrealised', aud(S.unrealised,true), pct1(S.unrealisedPct)+' on open', rc(S.unrealised)),
-    pfTile('Realised', aud(S.realised,true), `${S.winners} of ${S.closedTrades} sales in profit`, rc(S.realised)),
+    pfTile('Realised', aud(S.realised,true), `${S.winners} of ${S.closedTrades} sales in profit`+(S.dividends?` · incl. ${aud(S.dividends)} dividends`:''), rc(S.realised)),
     pfTile('Total P/L', aud(S.totalPnl,true), 'realised + unrealised', rc(S.totalPnl)),
   ].join('');
 
+  // AUD equivalent under a US figure, so every row ties to the A$ totals.
+  const audNote = (row, v)=> row.currency==='USD' ? `<br><span style="font-size:8px;color:${rc(v)}">A$ ${aud(v,true)}</span>` : '';
+
   // open positions
   document.getElementById('pf-open').innerHTML = PORT.open.length ? PORT.open.map(p=>`<tr>
-      <td class="tkr">${p.ticker}<small>${p.name}</small></td><td>${p.shares.toLocaleString()}</td>
-      <td>${px(p.avgPrice)}</td><td>${p.estimated?'<span class="pf-est">~</span>':''}${px(p.price)}</td>
-      <td>${aud(p.cost)}</td><td>${aud(p.marketValue)}</td>${pnlCell(p.unrealised, p.unrealisedPct)}</tr>`).join('')
+      <td class="tkr">${p.ticker}<small>${p.name}</small></td><td>${shareFmt(p.shares)}</td>
+      <td>${px(p.avgPrice,p.currency)}</td><td>${p.estimated?'<span class="pf-est">~</span>':''}${px(p.price,p.currency)}</td>
+      <td>${cur(p.cost,p.currency)}</td><td>${cur(p.marketValue,p.currency)}</td>
+      <td style="color:${rc(p.unrealised)}">${cur(p.unrealised,p.currency,true)}${p.unrealisedPct!=null?`<br><span style="font-size:8px">${pct1(p.unrealisedPct)}</span>`:''}${audNote(p,p.unrealisedAud)}</td></tr>`).join('')
     : '<tr><td colspan="7" style="text-align:center">No open positions</td></tr>';
   document.getElementById('pf-open-total').innerHTML = PORT.open.length
-    ? `<tr><td>Total</td><td></td><td></td><td></td><td>${aud(S.openCost)}</td><td>${aud(S.marketValue)}</td>${pnlCell(S.unrealised, S.unrealisedPct)}</tr>` : '';
+    ? `<tr><td>Total (A$)</td><td></td><td></td><td></td><td>${aud(S.openCost)}</td><td>${aud(S.marketValue)}</td>${pnlCell(S.unrealised, S.unrealisedPct)}</tr>` : '';
 
   // sold positions
-  const soldCost = PORT.closed.reduce((a,c)=>a+c.cost,0), soldProc = PORT.closed.reduce((a,c)=>a+c.proceeds,0);
+  const sum = k=> PORT.closed.reduce((a,c)=>a+c[k],0);
+  const soldCost = sum('costAud'), soldPnl = sum('pnlAud');
   document.getElementById('pf-closed').innerHTML = PORT.closed.length ? PORT.closed.map(c=>`<tr>
       <td class="tkr">${c.ticker}<small>${c.name}</small></td><td>${fmtDate(c.firstBuy)}</td><td>${fmtDate(c.sold)}</td>
-      <td>${c.shares.toLocaleString()}</td><td>${aud(c.cost)}</td><td>${aud(c.proceeds)}</td>${pnlCell(c.pnl, c.pnlPct)}</tr>`).join('')
+      <td>${shareFmt(c.shares)}</td><td>${cur(c.cost,c.currency)}</td><td>${cur(c.proceeds,c.currency)}</td>
+      <td style="color:${rc(c.pnl)}">${cur(c.pnl,c.currency,true)}${c.pnlPct!=null?`<br><span style="font-size:8px">${pct1(c.pnlPct)}</span>`:''}${audNote(c,c.pnlAud)}</td></tr>`).join('')
     : '<tr><td colspan="7" style="text-align:center">Nothing sold yet</td></tr>';
   document.getElementById('pf-closed-total').innerHTML = PORT.closed.length
-    ? `<tr><td>Total</td><td></td><td></td><td></td><td>${aud(soldCost)}</td><td>${aud(soldProc)}</td>${pnlCell(S.realised, S.realisedPct)}</tr>` : '';
+    ? `<tr><td>Total (A$)</td><td></td><td></td><td></td><td>${aud(soldCost)}</td><td>${aud(sum('proceedsAud'))}</td>${pnlCell(soldPnl, soldCost?soldPnl/soldCost:null)}</tr>` : '';
 
   // weekly
   document.getElementById('pf-weekly-hdr').textContent = `Week by week since ${fmtDate(PORT.historyStart)}`;
   const W = PORT.weekly;
   document.getElementById('pf-weekly').innerHTML = W.length ? [...W].reverse().map((w,i)=>{
     const est = w.estimated.length ? '<span class="pf-est">~</span>' : '';
-    const held = w.positions.map(p=>`${p.ticker} ${p.shares.toLocaleString()} × ${px(p.price)} = ${aud(p.value)}${w.estimated.includes(p.ticker)?' <span class="pf-est">(est.)</span>':''}`).join(' · ') || 'Nothing held';
+    const held = w.positions.map(p=>`${p.ticker} ${shareFmt(p.shares)} × ${px(p.price,p.currency)} = ${cur(p.value,p.currency)}${p.currency==='USD'?` (${aud(p.valueAud)})`:''}${w.estimated.includes(p.ticker)?' <span class="pf-est">(est.)</span>':''}`).join(' · ') || 'Nothing held';
     return `<tr class="pf-week" onclick="this.nextElementSibling.classList.toggle('hidden')">
         <td>${fmtDate(w.week)}</td><td>${est}${aud(w.marketValue)}</td><td>${aud(w.openCost)}</td>
         <td style="color:${rc(w.unrealised)}">${aud(w.unrealised,true)}</td><td style="color:${rc(w.realisedToDate)}">${aud(w.realisedToDate,true)}</td>
