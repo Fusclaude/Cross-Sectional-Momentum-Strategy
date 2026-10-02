@@ -132,3 +132,9 @@ costs:
   commission_bps: 2.0
   # Square-root market impact: impact_bps = coef * sqrt(participation)
   impact_coef_bps: 40.0
+my_trades:
+  # Your actual trades, valued weekly for the dashboard's Portfolio tab
+  # (scripts/build_portfolio.py). Edit the CSV to add new fills.
+  trades_file: data/trades.csv
+  # First week shown in the weekly history.
+  history_start: "2026-06-22"
