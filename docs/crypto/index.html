@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Crypto Momentum</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0E1A;--p1:#0F1525;--p2:#141C30;--p3:#1B2540;
+  --bdr:#23304D;--bdr2:#2E3E5E;
+  --teal:#00D4AA;--amber:#F5A623;--green:#26D07C;--gd:rgba(38,208,124,.12);
+  --red:#FF5C5C;--rd:rgba(255,92,92,.12);--blue:#4D9FFF;--purple:#A78BFA;--orange:#F7931A;
+  --t1:#EAF0FB;--t2:#8A9CBC;--t3:#4A5B7A;
+  --mono:"JetBrains Mono",monospace;--sans:"Inter",sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:14px;background:var(--bg)}
+body{font-family:var(--sans);color:var(--t1);min-height:100vh;padding-bottom:calc(58px + var(--safe-b))}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+a{color:inherit}
+.wrap{max-width:820px;margin:0 auto}
+
+.top-hdr{position:sticky;top:0;z-index:200;background:var(--p1);border-bottom:1px solid var(--bdr);padding:9px 14px}
+.top-row{display:flex;align-items:center;gap:8px}
+.logo{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--orange);letter-spacing:.04em}
+.sleeve-link{font-family:var(--mono);font-size:10px;color:var(--t2);text-decoration:none;border:1px solid var(--bdr2);border-radius:5px;padding:3px 8px}
+.sleeve-link:hover{color:var(--teal);border-color:var(--teal)}
+.status-pill{font-family:var(--mono);font-size:9px;color:var(--t3);background:var(--p2);border:1px solid var(--bdr);border-radius:3px;padding:2px 7px;margin-left:auto;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.status-dot.stale{background:var(--amber)}.status-dot.error{background:var(--red)}
+.regime-bar{display:flex;align-items:center;gap:8px;margin-top:8px;font-family:var(--mono);font-size:11px;border-radius:7px;padding:7px 10px;border:1px solid var(--bdr2);background:var(--p2)}
+.regime-bar.on{border-color:rgba(38,208,124,.45);background:var(--gd)}
+.regime-bar.off{border-color:rgba(255,92,92,.45);background:var(--rd)}
+.regime-tag{font-weight:700;letter-spacing:.06em}
+.regime-bar.on .regime-tag{color:var(--green)}.regime-bar.off .regime-tag{color:var(--red)}
+.regime-detail{color:var(--t2);font-size:10px;margin-left:auto;text-align:right}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--p1);border-top:1px solid var(--bdr);display:flex;padding-bottom:var(--safe-b)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;cursor:pointer;border:none;background:transparent;color:var(--t3);font-size:9px;font-family:var(--sans)}
+.nav-item.active{color:var(--orange)}
+.nav-item svg{width:19px;height:19px;fill:currentColor}
+
+.page{display:none;padding:12px}.page.active{display:block}
+.warn{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:10px;color:var(--amber);line-height:1.6}
+.note{font-size:10px;color:var(--t3);line-height:1.6;margin-bottom:10px}
+.note b{color:var(--t2)}
+.section-hdr{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+.section-hdr::after{content:"";flex:1;height:1px;background:var(--bdr)}
+.card{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px}
+.empty{text-align:center;color:var(--t3);font-family:var(--mono);font-size:11px;padding:30px 0}
+.green{color:var(--green)}.red{color:var(--red)}.teal{color:var(--teal)}.amber{color:var(--amber)}.t2{color:var(--t2)}.t3{color:var(--t3)}
+.hidden{display:none!important}
+.load-file{display:inline-block;margin-top:10px;font-family:var(--mono);font-size:11px;padding:8px 12px;border-radius:8px;border:1px solid var(--teal);color:var(--teal);cursor:pointer}
+
+/* WEIGHTS */
+.preset-row{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:4px}
+@media(min-width:560px){.preset-row{grid-template-columns:repeat(3,1fr)}}
+.preset-btn{font-family:var(--mono);font-size:10px;font-weight:600;padding:9px 6px;border-radius:8px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer;text-align:center}
+.preset-btn:active,.preset-btn:hover{border-color:var(--teal);color:var(--teal)}
+.weight-row{margin-bottom:14px}.weight-row:last-child{margin-bottom:0}
+.weight-lbl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;gap:10px}
+.weight-name{font-size:11px;font-weight:600}
+.weight-desc{font-size:9px;color:var(--t3);display:block;margin-top:1px}
+.weight-pct{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--teal);min-width:38px;text-align:right}
+input[type=range]{width:100%;height:4px;background:var(--bdr2);border-radius:2px;outline:none;-webkit-appearance:none;appearance:none;accent-color:var(--teal)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--teal);cursor:pointer;box-shadow:0 0 0 3px rgba(0,212,170,.2)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--teal);cursor:pointer;border:none}
+.weight-total-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:12px;background:var(--bdr)}
+.wt-seg{height:100%;transition:width .2s}
+.weight-total-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:5px}
+.run-bar{position:sticky;bottom:calc(58px + var(--safe-b));z-index:150;background:linear-gradient(to top,var(--bg) 60%,transparent);margin:0 -12px;padding:8px 12px 4px}
+.run-btn{width:100%;background:var(--teal);color:var(--bg);border:none;border-radius:10px;padding:13px;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.05em;cursor:pointer}
+.run-btn.stale{background:var(--amber)}
+
+/* TOP N */
+.topn-control{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.topn-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.topn-label{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.topn-count{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--t3)}
+.num-in{width:58px;background:var(--p3);border:1px solid var(--bdr2);border-radius:7px;color:var(--teal);font-family:var(--mono);font-size:16px;font-weight:700;text-align:center;padding:5px 4px;outline:none}
+
+.pick-card{background:var(--p2);border:1px solid var(--bdr);border-radius:10px;padding:13px 14px;margin-bottom:9px;cursor:pointer}
+.pick-card:hover{border-color:var(--bdr2)}
+.pick-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+.pick-rank{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--teal);width:32px;flex-shrink:0}
+.pick-id{flex:1;min-width:0}
+.pick-tkr{font-family:var(--mono);font-weight:700;font-size:14px}
+.pick-name{font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.pick-right{text-align:right;flex-shrink:0}
+.pick-price{font-family:var(--mono);font-size:14px;font-weight:700}
+.pick-score{font-family:var(--mono);font-size:10px;color:var(--teal);margin-top:2px}
+.spark-wrap{height:40px;margin-bottom:8px}.spark-wrap canvas{width:100%;height:40px;display:block}
+.factor-row{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:5px;background:var(--p3);color:var(--t2)}
+.chip.pos{color:var(--green)}.chip.neg{color:var(--red)}.chip.hl{outline:1.5px solid var(--teal)}
+.cat-chip{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:4px;background:var(--p3);color:var(--purple);margin-left:6px;vertical-align:1px}
+
+/* LIST */
+.search-box{width:100%;background:var(--p2);border:1px solid var(--bdr2);border-radius:8px;color:var(--t1);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;margin-bottom:10px}
+.search-box:focus{border-color:var(--teal)}
+.pill-bar{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;-webkit-overflow-scrolling:touch}
+.pill{font-size:10px;font-family:var(--mono);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t3);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.pill.active{color:var(--teal);border-color:var(--teal)}
+.view-toggle{display:flex;gap:6px;margin-bottom:10px}
+.view-btn{flex:1;font-family:var(--mono);font-size:11px;font-weight:600;padding:8px;border-radius:7px;border:1px solid var(--bdr2);background:var(--p2);color:var(--t2);cursor:pointer}
+.view-btn.active{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+.coin-row{background:var(--p2);border:1px solid var(--bdr);border-radius:9px;padding:10px 12px;margin-bottom:7px;cursor:pointer}
+.cr-top{display:flex;align-items:center;gap:8px}
+.cr-rank{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);width:28px;flex-shrink:0}
+.cr-tkr{font-family:var(--mono);font-weight:700;font-size:13px;width:62px;flex-shrink:0}
+.cr-name{flex:1;font-size:10px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cr-num{font-family:var(--mono);font-size:10px;flex-shrink:0;text-align:right;width:52px}
+.cr-price{font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0;text-align:right;min-width:72px}
+.list-count{font-family:var(--mono);font-size:9px;color:var(--t3);margin-bottom:8px}
+.rank-delta{font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;flex-shrink:0}
+.rank-delta.up{color:var(--green);background:var(--gd)}.rank-delta.down{color:var(--red);background:var(--rd)}.rank-delta.flat{color:var(--t3);background:var(--p3)}
+
+.rg-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--bdr);border-radius:9px;max-height:65vh;margin-bottom:12px}
+.rg-table{border-collapse:collapse;font-family:var(--mono);font-size:9px;width:max-content}
+.rg-table th,.rg-table td{padding:4px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--bdr);border-right:1px solid var(--bdr);min-width:44px}
+.rg-table thead th{position:sticky;top:0;z-index:3;background:var(--p1);color:var(--t3);font-weight:600}
+.rg-table thead th.off{color:var(--red)}
+.rg-table tbody th{position:sticky;left:0;z-index:2;background:var(--p1);color:var(--teal);font-weight:700;text-align:right}
+.rg-table thead th:first-child{position:sticky;left:0;z-index:4}
+.rg-cell{cursor:pointer}
+.rg-up{color:var(--green);background:var(--gd)}.rg-down{color:var(--red);background:var(--rd)}.rg-flat{color:var(--t2);background:var(--p3)}.rg-new{color:var(--blue)}
+
+/* DETAIL */
+.td-header{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.back-btn{background:var(--p3);border:1px solid var(--bdr2);border-radius:8px;color:var(--t2);font-size:16px;padding:5px 11px;cursor:pointer;flex-shrink:0}
+.td-tkr{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--teal)}
+.td-name{font-size:11px;color:var(--t3)}
+.td-price{font-family:var(--mono);font-size:20px;font-weight:700;margin:8px 0}
+.step-nav{display:flex;gap:6px;margin-left:auto}
+.step-nav button{background:var(--p3);border:1px solid var(--bdr2);border-radius:8px;color:var(--t2);font-size:14px;padding:5px 11px;cursor:pointer}
+.step-nav button:disabled{opacity:.3;cursor:default}
+.chart-controls{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+.cbtn{font-family:var(--mono);font-size:9px;padding:4px 9px;border-radius:6px;border:1px solid var(--bdr2);background:var(--p3);color:var(--t3);cursor:pointer}
+.cbtn.active{color:var(--teal);border-color:var(--teal)}
+.chart-wrap{position:relative;height:220px;margin-bottom:8px}
+.chart-wrap.tall{height:260px}
+.chart-wrap canvas{width:100%;height:100%;display:block}
+.chart-tip{position:absolute;pointer-events:none;background:var(--p1);border:1px solid var(--bdr2);border-radius:6px;padding:4px 8px;font-family:var(--mono);font-size:9px;white-space:nowrap;opacity:0;transition:opacity .08s;z-index:5;line-height:1.5}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--mono);font-size:9px;color:var(--t2);margin:-2px 0 8px}
+.legend span{display:flex;align-items:center;gap:4px}
+.dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+@media(min-width:560px){.stat-grid{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--p3);border-radius:8px;padding:9px 10px}
+.stat-l{font-family:var(--mono);font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.stat-v{font-family:var(--mono);font-size:14px;font-weight:700;margin-top:3px}
+.stat-s{font-family:var(--mono);font-size:8px;color:var(--t3);margin-top:2px}
+.month-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl{border-collapse:collapse;font-family:var(--mono);font-size:9px;width:max-content;min-width:100%}
+.tbl th{color:var(--t3);padding:4px 7px;font-weight:600;text-align:right;white-space:nowrap;border-bottom:1px solid var(--bdr)}
+.tbl td{padding:4px 7px;text-align:right;white-space:nowrap;border-bottom:1px solid rgba(35,48,77,.5)}
+.tbl th:first-child,.tbl td:first-child{text-align:left;color:var(--t2)}
+.score-break{border:1px solid var(--bdr);border-radius:8px;overflow:hidden}
+.sb-row{display:grid;grid-template-columns:50px 1fr 46px 50px;gap:6px;align-items:center;padding:6px 10px;font-family:var(--mono);font-size:9px;border-bottom:1px solid var(--bdr)}
+.sb-row:last-child{border-bottom:none}
+.sb-row.head{color:var(--t3);background:var(--p3);font-size:8px}
+.sb-row.total{background:var(--p3);color:var(--teal);font-weight:700}
+.sb-bar{display:block;height:6px;border-radius:3px;background:var(--bdr);position:relative;overflow:hidden;margin-top:3px}
+.sb-bar>i{position:absolute;top:0;bottom:0}
+.r{text-align:right}
+
+/* RESEARCH */
+.q-bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px;border-bottom:1px solid var(--bdr2);position:relative}
+.q-bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative}
+.q-fill{width:100%;border-radius:4px 4px 0 0}
+.q-lbl{font-family:var(--mono);font-size:9px;color:var(--t3);text-align:center;flex:1}
+.q-val{font-family:var(--mono);font-size:9px;margin-bottom:3px}
+.verdict{font-size:11px;line-height:1.6;color:var(--t2);padding:10px 12px;border-radius:8px;background:var(--p3);margin-bottom:10px}
+.verdict b{color:var(--t1)}
+.history-row{display:flex;align-items:center;gap:10px;background:var(--p2);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-family:var(--mono);font-size:10px}
+.history-date{color:var(--t3);width:80px;flex-shrink:0}
+.history-tickers{flex:1;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<header class="top-hdr">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="logo">CRYPTO MOMENTUM</div>
+      <a class="sleeve-link" href="../">Equities</a>
+      <div class="status-pill"><span class="status-dot" id="status-dot"></span><span id="status-text">Loading…</span></div>
+    </div>
+    <div class="regime-bar" id="regime-bar"><span class="regime-tag">REGIME</span><span class="regime-detail">loading…</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- WEIGHTS -->
+<div id="page-weights" class="page">
+  <div class="section-hdr">Preset Blends</div>
+  <div class="preset-row" id="preset-row"></div>
+  <div id="weight-groups"></div>
+  <div class="weight-total-bar" id="weight-bar"></div>
+  <div class="weight-total-lbl"><span>Raw total: <b id="wt-raw" style="color:var(--t1)">0</b></span><span>Auto-normalised to 100%</span></div>
+  <div class="run-bar"><button class="run-btn" id="run-btn" onclick="applyWeights()">▶ APPLY WEIGHTS</button></div>
+  <div class="note" id="weights-note" style="margin-top:10px"></div>
+</div>
+
+<!-- TOP PICKS -->
+<div id="page-picks" class="page active">
+  <div id="picks-banner"></div>
+  <div class="topn-control">
+    <div class="topn-head">
+      <span class="topn-label">Show top</span>
+      <input class="num-in" type="number" id="topn-num" min="1" max="50" value="5" inputmode="numeric" oninput="setTopN(this.value)">
+      <span class="topn-label">coins</span>
+      <span class="topn-count" id="topn-count"></span>
+    </div>
+    <input type="range" id="topn-range" min="1" max="20" value="5" oninput="setTopN(this.value)">
+  </div>
+  <div id="picks-list"></div>
+</div>
+
+<!-- ALL COINS -->
+<div id="page-coins" class="page">
+  <div class="view-toggle">
+    <button class="view-btn active" data-view="list" onclick="setCoinsView('list')">List</button>
+    <button class="view-btn" data-view="grid" onclick="setCoinsView('grid')">Rank Grid</button>
+  </div>
+  <div id="list-view">
+    <input type="search" class="search-box" id="list-search" placeholder="Search symbol, name or category…" oninput="renderList()">
+    <div class="pill-bar" id="sort-bar"></div>
+    <div class="list-count" id="list-count"></div>
+    <div id="coin-list"></div>
+  </div>
+  <div id="grid-view" class="hidden">
+    <div class="note" id="rg-note"></div>
+    <div class="rg-wrap" id="rg-wrap"></div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div id="page-detail" class="page"><div id="detail-content"></div></div>
+
+<!-- RESEARCH -->
+<div id="page-research" class="page"><div id="research-content"></div></div>
+
+<!-- HISTORY -->
+<div id="page-history" class="page">
+  <div class="section-hdr">Past Top-5 Calls (default weights)</div>
+  <div class="note">One snapshot per scheduled run, using the config default blend regardless of the weights you are viewing. Risk-off runs are marked — the backtested rule held cash on those.</div>
+  <div id="history-list"><div class="empty">No history yet — accumulates after the first scheduled runs</div></div>
+</div>
+
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-item" data-page="weights" onclick="showPage('weights')"><svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg><span>Weights</span></button>
+  <button class="nav-item active" data-page="picks" onclick="showPage('picks')"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm0 7L2 14l10 5 10-5-10-5z"/></svg><span>Top Picks</span></button>
+  <button class="nav-item" data-page="coins" onclick="showPage('coins')"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span>All Coins</span></button>
+  <button class="nav-item" data-page="research" onclick="showPage('research')"><svg viewBox="0 0 24 24"><path d="M3.5 18.5 9.5 12.5l4 4L22 6.92 20.59 5.5l-7.09 7.97-4-4L2 16.99z"/></svg><span>Research</span></button>
+  <button class="nav-item" data-page="history" onclick="showPage('history')"><svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg><span>History</span></button>
+</nav>
+
+<script>
+// ═══════════════════════════════ SCORER
+// Must stay identical to crypto_engine.composite_row (metrics.composite_score
+// with sector_neutral=False). tests/test_crypto.py extracts the block between
+// the markers below and checks it against Python under node.
+// BEGIN SCORER
+function _mean(a){ let s=0; for(const v of a) s+=v; return s/a.length; }
+function _sd(a,mu){ if(a.length<2) return NaN; let s=0; for(const v of a) s+=(v-mu)*(v-mu); return Math.sqrt(s/(a.length-1)); }
+function winsorize(a, sigma){
+  const mu=_mean(a), sd=_sd(a,mu);
+  if (!isFinite(sd) || sd<=1e-12) return a.slice();
+  const lo=mu-sigma*sd, hi=mu+sigma*sd;
+  return a.map(v=>Math.min(hi,Math.max(lo,v)));
+}
+function zscore(a, sigma){
+  const v = sigma ? winsorize(a,sigma) : a;
+  const mu=_mean(v), sd=_sd(v,mu);
+  if (!isFinite(sd) || sd<=1e-12) return a.map(()=>0);
+  return v.map(x=>(x-mu)/sd);
+}
+// rows: one array of factor values per coin, ordered as `keys`.
+// weights: raw slider values; negative/zero ignored, renormalised to 1.
+function compositeScores(rows, keys, weights, sigma){
+  const n=rows.length; if(!n) return [];
+  const active=keys.map((k,i)=>({k,i,w:Math.max(0,+weights[k]||0)})).filter(x=>x.w>0);
+  const tot=active.reduce((a,x)=>a+x.w,0);
+  if (!tot) return rows.map(()=>0);
+  const acc=new Array(n).fill(0);
+  active.forEach(({i,w})=>{ const z=zscore(rows.map(r=>r[i]), sigma); for(let j=0;j<n;j++) acc[j]+=z[j]*(w/tot); });
+  return zscore(acc, null);
+}
+// END SCORER
+
+// ═══════════════════════════════ STATE
+const DATA_URL='../data/crypto_signals.json', HISTORY_URL='../data/crypto_picks_history.jsonl';
+const WKEY='crypto_momentum_weights_v1';
+let DATA=null, KEYS=[], COINS=[], TOPN=5, WEIGHTS={}, APPLIED={};
+let listSort='score', coinsView='list', selected=null, navList=[], prevPage='picks', detailRange='1y', overlayOn=true;
+const FACTOR_META={
+  m1:{label:'4w',name:'4-Week Return',desc:'Fast signal — where most crypto momentum lives',group:'Return'},
+  m2:{label:'8w',name:'8-Week Return',desc:'Two-month trend',group:'Return'},
+  m3:{label:'13w',name:'13-Week Return',desc:'Quarter trend',group:'Return'},
+  m6:{label:'26w',name:'26-Week Return',desc:'Half-year trend — slow, more beta',group:'Return'},
+  q2:{label:'R²8',name:'R² @ 8 Weeks',desc:'How clean the 8-week log trend is',group:'Trend Quality (R²)'},
+  q3:{label:'R²13',name:'R² @ 13 Weeks',desc:'Trend cleanliness over a quarter',group:'Trend Quality (R²)'},
+  q6:{label:'R²26',name:'R² @ 26 Weeks',desc:'Trend cleanliness over six months',group:'Trend Quality (R²)'},
+  vadj:{label:'Vol-adj',name:'Vol-Adjusted 13w',desc:'13-week return ÷ 13-week volatility — penalises lottery coins',group:'Risk-Adjusted'},
+};
+const COLORS={m1:'#F7931A',m2:'#F5A623',m3:'#4D9FFF',m4:'#A78BFA',m6:'#A78BFA',q2:'#26D07C',q3:'#00D4AA',q6:'#5EEAD4',vadj:'#F472B6'};
+const PRESETS={
+  'Default blend':null,
+  'Fast (4–8w)':{m1:45,m2:40,m3:0,m6:0,q2:5,q3:0,q6:0,vadj:10},
+  'Slow (13–26w)':{m1:0,m2:0,m3:45,m6:35,q2:0,q3:5,q6:5,vadj:10},
+  'Trend quality':{m1:5,m2:10,m3:10,m6:5,q2:20,q3:20,q6:20,vadj:10},
+  'Risk-adjusted':{m1:5,m2:10,m3:10,m6:5,q2:5,q3:5,q6:5,vadj:55},
+  '4-week only':{m1:100,m2:0,m3:0,m6:0,q2:0,q3:0,q6:0,vadj:0},
+};
+
+// ═══════════════════════════════ FORMAT
+const isNum=v=>typeof v==='number'&&isFinite(v);
+const pct=(v,d=0)=>!isNum(v)?'—':(v>=0?'+':'')+(v*100).toFixed(d)+'%';
+const pctu=(v,d=1)=>!isNum(v)?'—':(v*100).toFixed(d)+'%';
+const num=(v,d=2)=>!isNum(v)?'—':v.toFixed(d);
+const rc=v=>v>0?'var(--green)':v<0?'var(--red)':'var(--t3)';
+function fmtPrice(p){
+  if(!isNum(p)) return '—';
+  if(p>=1000) return '$'+p.toLocaleString(undefined,{maximumFractionDigits:0});
+  if(p>=1) return '$'+p.toFixed(2);
+  if(p>=0.01) return '$'+p.toFixed(4);
+  return '$'+p.toPrecision(3);
+}
+function fmtUsd(v){ if(!isNum(v)) return '—'; if(v>=1e9) return '$'+(v/1e9).toFixed(1)+'B'; if(v>=1e6) return '$'+(v/1e6).toFixed(0)+'M'; return '$'+(v/1e3).toFixed(0)+'K'; }
+function fmtDate(d){ if(!d) return '—'; return new Date(d+'T00:00:00Z').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}); }
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sid=t=>t.replace(/[^A-Za-z0-9]/g,'_');
+
+// ═══════════════════════════════ LOAD
+async function loadData(){
+  try{
+    const r=await fetch(DATA_URL,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    init(await r.json());
+  }catch(err){
+    document.getElementById('status-dot').className='status-dot error';
+    document.getElementById('status-text').textContent='Failed to load';
+    document.getElementById('picks-list').innerHTML=`<div class="warn">Could not load <code>${DATA_URL}</code> (${esc(err.message)}).<br><br>
+      Opened from disk? Browsers block fetch() on file:// pages — pick the file instead:<br>
+      <label class="load-file">Load crypto_signals.json<input type="file" accept=".json,application/json" class="hidden" onchange="loadLocal(event)"></label></div>`;
+  }
+  loadHistory();
+}
+function loadLocal(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const rd=new FileReader(); rd.onload=()=>{ try{ init(JSON.parse(rd.result)); }catch(e){ alert('Not a valid crypto_signals.json'); } }; rd.readAsText(f);
+}
+function init(d){
+  DATA=d; KEYS=d.config.factorKeys; COINS=d.coins;
+  WEIGHTS=Object.assign({}, d.config.defaultWeights);
+  try{ const saved=JSON.parse(localStorage.getItem(WKEY)||'null'); if(saved && KEYS.every(k=>k in saved)) WEIGHTS=saved; }catch(e){}
+  APPLIED=Object.assign({},WEIGHTS);
+  TOPN=d.config.topN||5; setTopN(TOPN,true);
+  buildWeightsUI(); updateStatus(); renderRegime(); score(); renderAll();
+}
+function updateStatus(){
+  const age=(Date.now()-new Date(DATA.generatedAt))/3600000;
+  const bad=(DATA.qualityProblems||[]).length>0;
+  document.getElementById('status-dot').className='status-dot'+(bad||age>24*9?' error':age>24*8?' stale':'');
+  const ageTxt=age<1?'just now':age<24?Math.round(age)+'h ago':Math.round(age/24)+'d ago';
+  document.getElementById('status-text').textContent=`Week to ${fmtDate(DATA.asOf)} · ${DATA.universeSize} coins · ${ageTxt}`;
+}
+function renderRegime(){
+  const g=DATA.regime, el=document.getElementById('regime-bar');
+  if(!DATA.config.regimeEnabled){ el.className='regime-bar'; el.innerHTML='<span class="regime-tag t3">REGIME FILTER OFF</span>'; return; }
+  el.className='regime-bar '+(g.riskOn?'on':'off');
+  el.innerHTML=`<span class="regime-tag">${g.riskOn?'RISK-ON':'RISK-OFF'}</span>
+    <span class="regime-detail">BTC ${fmtPrice(g.price)} is ${isNum(g.distance)?pctu(Math.abs(g.distance))+(g.distance>=0?' above':' below'):'—'} its ${DATA.config.regimeSmaWeeks}-week average</span>`;
+}
+
+// ═══════════════════════════════ SCORING (live)
+function rowOf(f){ return KEYS.map(k=>f[k]); }
+function score(){
+  const sc=compositeScores(COINS.map(c=>rowOf(c.factors)), KEYS, APPLIED, DATA.config.winsorSigma);
+  COINS.forEach((c,i)=>c._score=sc[i]);
+  COINS.sort((a,b)=>b._score-a._score);
+  COINS.forEach((c,i)=>c._rank=i+1);
+  computeZ();
+  RANKHIST=null;
+}
+function computeZ(){
+  // per-factor z for the breakdown table (winsorised, same as the scorer)
+  KEYS.forEach((k,i)=>{ const z=zscore(COINS.map(c=>c.factors[k]), DATA.config.winsorSigma); COINS.forEach((c,j)=>{ (c._z=c._z||{})[k]=z[j]; }); });
+}
+let RANKHIST=null;   // {dates, rank:{ticker:[rank|null per date]}}
+function rankHistory(){
+  if (RANKHIST) return RANKHIST;
+  const H=DATA.history, tickers=Object.keys(H.coins), rank={};
+  tickers.forEach(t=>rank[t]=new Array(H.dates.length).fill(null));
+  H.dates.forEach((d,i)=>{
+    const mem=tickers.filter(t=>H.coins[t][i]);
+    if (mem.length<5) return;
+    const sc=compositeScores(mem.map(t=>H.coins[t][i]), KEYS, APPLIED, DATA.config.winsorSigma);
+    mem.map((t,j)=>({t,s:sc[j]})).sort((a,b)=>b.s-a.s).forEach((o,j)=>rank[o.t][i]=j+1);
+  });
+  // pin the latest week to the live ranking so the grid and Top Picks agree exactly
+  const last=H.dates.length-1;
+  COINS.forEach(c=>{ if(rank[c.ticker]) rank[c.ticker][last]=c._rank; });
+  RANKHIST={dates:H.dates, rank};
+  return RANKHIST;
+}
+
+// ═══════════════════════════════ WEIGHTS PAGE
+function buildWeightsUI(){
+  document.getElementById('preset-row').innerHTML=Object.keys(PRESETS).map(n=>`<button class="preset-btn" onclick="applyPreset('${n}')">${n}</button>`).join('');
+  const groups={}; KEYS.forEach(k=>{ const g=FACTOR_META[k].group; (groups[g]=groups[g]||[]).push(k); });
+  document.getElementById('weight-groups').innerHTML=Object.entries(groups).map(([g,ks])=>`
+    <div class="section-hdr">${g}</div>
+    <div class="card">${ks.map(k=>`
+      <div class="weight-row">
+        <div class="weight-lbl"><div><span class="weight-name">${FACTOR_META[k].name}</span><span class="weight-desc">${FACTOR_META[k].desc}</span></div><span class="weight-pct" id="wv-${k}"></span></div>
+        <input type="range" id="w-${k}" min="0" max="100" value="${WEIGHTS[k]||0}" oninput="onWeight('${k}',this.value)">
+      </div>`).join('')}</div>`).join('');
+  updateWeightUI();
+}
+function onWeight(k,v){ WEIGHTS[k]=+v; updateWeightUI(); const b=document.getElementById('run-btn'); b.classList.add('stale'); b.textContent='▶ APPLY WEIGHTS (changed)'; }
+function updateWeightUI(){
+  const tot=KEYS.reduce((a,k)=>a+(+WEIGHTS[k]||0),0);
+  document.getElementById('wt-raw').textContent=tot;
+  KEYS.forEach(k=>{ document.getElementById('wv-'+k).textContent=(tot?Math.round(WEIGHTS[k]/tot*100):0)+'%'; document.getElementById('w-'+k).value=WEIGHTS[k]||0; });
+  document.getElementById('weight-bar').innerHTML=KEYS.map(k=>`<div class="wt-seg" style="width:${tot?(WEIGHTS[k]/tot*100).toFixed(1):0}%;background:${COLORS[k]}"></div>`).join('');
+  const dflt=DATA.config.defaultWeights, same=KEYS.every(k=>(+dflt[k]||0)===(+WEIGHTS[k]||0));
+  document.getElementById('weights-note').innerHTML=`Ranking runs in your browser on the factor values computed by the weekly job — adjust and tap Apply, nothing re-runs.
+    <b>The Research tab's backtest uses the config default blend${same?' (which is what you have selected)':', not these weights'}.</b>
+    Choosing weights by looking at results is itself a research trial; if you settle on a new blend, put it in <code>config_crypto.yaml</code> and raise <code>evaluation.n_trials</code>.`;
+}
+function applyPreset(n){ WEIGHTS=Object.assign({}, PRESETS[n]||DATA.config.defaultWeights); updateWeightUI(); applyWeights(); }
+function applyWeights(){
+  APPLIED=Object.assign({},WEIGHTS);
+  try{ localStorage.setItem(WKEY, JSON.stringify(APPLIED)); }catch(e){}
+  const b=document.getElementById('run-btn'); b.classList.remove('stale'); b.textContent='▶ APPLY WEIGHTS';
+  score(); renderAll();
+}
+
+// ═══════════════════════════════ TOP PICKS
+function setTopN(n, silent){
+  n=Math.max(1,Math.min(50,Math.round(+n)||1)); TOPN=n;
+  const r=document.getElementById('topn-range'), i=document.getElementById('topn-num');
+  r.value=Math.min(n,20); if(document.activeElement!==i) i.value=n;
+  if(!silent && DATA){ renderPicks(); RANKHIST && coinsView==='grid' && renderGrid(); }
+}
+function chip(k,v,hl){
+  const isRet=k.startsWith('m')||k==='vadj';
+  const txt=k==='vadj'?num(v,2):isRet?pct(v):num(v,2);
+  const cls=isRet?(v>0?'pos':v<0?'neg':''):'';
+  return `<span class="chip ${cls}${hl?' hl':''}">${FACTOR_META[k].label} ${txt}</span>`;
+}
+function renderPicks(){
+  const g=DATA.regime;
+  const banner=DATA.config.regimeEnabled && !g.riskOn
+    ? `<div class="warn"><b>Risk-off.</b> BTC closed below its ${DATA.config.regimeSmaWeeks}-week average, so the backtested rule holds <b>cash</b> this week. The ranking below is still shown so you can see what would be bought when the regime turns.</div>`:'';
+  const q=(DATA.qualityProblems||[]).length?`<div class="warn">⚠ Data quality problems on this run: ${DATA.qualityProblems.map(esc).join('; ')}</div>`:'';
+  document.getElementById('picks-banner').innerHTML=q+banner;
+  const tot=KEYS.reduce((a,k)=>a+(+APPLIED[k]||0),0);
+  const top=KEYS.slice().sort((a,b)=>(APPLIED[b]||0)-(APPLIED[a]||0)).slice(0,3);
+  const picks=COINS.slice(0,TOPN);
+  document.getElementById('topn-count').textContent=`of ${COINS.length}`;
+  document.getElementById('picks-list').innerHTML=picks.map(c=>`
+    <div class="pick-card" onclick="openCoin('${c.ticker}','picks')">
+      <div class="pick-top">
+        <div class="pick-rank">#${c._rank}</div>
+        <div class="pick-id"><div class="pick-tkr">${esc(c.symbol)}<span class="cat-chip">${esc(c.category)}</span></div><div class="pick-name">${esc(c.name)} · vol ${pctu(c.risk.vol_13w,0)} · ${fmtUsd(c.risk.median_daily_dollar_volume)}/day</div></div>
+        <div class="pick-right"><div class="pick-price">${fmtPrice(c.price)}</div><div class="pick-score">score ${num(c._score,2)}</div></div>
+      </div>
+      <div class="spark-wrap"><canvas id="spark-${sid(c.ticker)}"></canvas></div>
+      <div class="factor-row">${KEYS.map(k=>chip(k,c.factors[k],tot&&top.includes(k))).join('')}</div>
+    </div>`).join('') || '<div class="empty">No coins in the universe</div>';
+  requestAnimationFrame(()=>picks.forEach(c=>{ const cv=document.getElementById('spark-'+sid(c.ticker)); if(cv) drawSpark(cv,c.chart.slice(-26).map(p=>p.price)); }));
+}
+function drawSpark(cv, vals){
+  const dpr=window.devicePixelRatio||1, W=cv.parentElement.clientWidth||300, H=40;
+  cv.width=W*dpr; cv.height=H*dpr; const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  const v=vals.filter(isNum); if(v.length<2) return;
+  const lv=vals.map(x=>isNum(x)&&x>0?Math.log(x):null), lvv=lv.filter(x=>x!=null);
+  const mn=Math.min(...lvv), mx=Math.max(...lvv), rg=mx-mn||1, up=v[v.length-1]>=v[0];
+  const xS=i=>2+i/(vals.length-1)*(W-4), yS=x=>4+(H-8)*(1-(x-mn)/rg);
+  ctx.beginPath(); let f=true; lv.forEach((x,i)=>{ if(x==null) return; f?ctx.moveTo(xS(i),yS(x)):ctx.lineTo(xS(i),yS(x)); f=false; });
+  ctx.strokeStyle=up?'#26D07C':'#FF5C5C'; ctx.lineWidth=1.6; ctx.stroke();
+}
+
+// ═══════════════════════════════ ALL COINS
+const SORTS=[['score','Score'],['m1','4w'],['m3','13w'],['m6','26w'],['vol','Volatility'],['liq','Liquidity'],['sym','A–Z']];
+function setCoinsView(v){
+  coinsView=v; document.querySelectorAll('.view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  document.getElementById('list-view').classList.toggle('hidden',v!=='list');
+  document.getElementById('grid-view').classList.toggle('hidden',v!=='grid');
+  v==='grid'?renderGrid():renderList();
+}
+function setSort(k){ listSort=k; renderList(); }
+function filteredCoins(){
+  const q=(document.getElementById('list-search').value||'').trim().toLowerCase();
+  let L=COINS.filter(c=>!q||c.symbol.toLowerCase().includes(q)||c.name.toLowerCase().includes(q)||c.category.toLowerCase().includes(q));
+  const by={score:c=>-c._score, m1:c=>-(c.factors.m1??-9), m3:c=>-(c.factors.m3??-9), m6:c=>-(c.factors.m6??-9),
+            vol:c=>(c.risk.vol_13w??9), liq:c=>-(c.risk.median_daily_dollar_volume??0)};
+  if(listSort==='sym') L.sort((a,b)=>a.symbol.localeCompare(b.symbol)); else L.sort((a,b)=>by[listSort](a)-by[listSort](b));
+  return L;
+}
+function renderList(){
+  document.getElementById('sort-bar').innerHTML=SORTS.map(([k,l])=>`<button class="pill ${k===listSort?'active':''}" onclick="setSort('${k}')">${l}</button>`).join('');
+  const L=filteredCoins(), H=rankHistory(), n=H.dates.length;
+  document.getElementById('list-count').textContent=`${L.length} coins · Δ = rank change vs last week`;
+  document.getElementById('coin-list').innerHTML=L.map(c=>{
+    const r=H.rank[c.ticker], prev=r&&n>1?r[n-2]:null, delta=prev!=null?prev-c._rank:null;
+    const badge=delta==null?'<span class="rank-delta flat">new</span>':delta===0?'<span class="rank-delta flat">±0</span>':delta>0?`<span class="rank-delta up">▲${delta}</span>`:`<span class="rank-delta down">▼${-delta}</span>`;
+    return `<div class="coin-row" onclick="openCoin('${c.ticker}','coins')">
+      <div class="cr-top">
+        <span class="cr-rank">#${c._rank}</span>${badge}
+        <span class="cr-tkr">${esc(c.symbol)}</span>
+        <span class="cr-name">${esc(c.name)} <span class="t3">· ${esc(c.category)}</span></span>
+        <span class="cr-num" style="color:${rc(c.factors.m1)}">${pct(c.factors.m1)}</span>
+        <span class="cr-price">${fmtPrice(c.price)}</span>
+      </div></div>`;
+  }).join('')||'<div class="empty">No coins match</div>';
+}
+function renderGrid(){
+  const H=rankHistory(), N=Math.min(COINS.length, Math.max(TOPN*3, 20));
+  const reg=regimeByDate();
+  const byRank=H.dates.map((d,i)=>{ const m={}; Object.keys(H.rank).forEach(t=>{ const r=H.rank[t][i]; if(r!=null) m[r]=t; }); return m; });
+  const sym=t=>{ const c=COINS.find(x=>x.ticker===t); return c?c.symbol:t.split('-')[0].replace(/\d+$/,''); };
+  document.getElementById('rg-note').innerHTML=`Ranks 1–${N} under your applied weights for each of the last ${H.dates.length} weeks. <span class="green">Green</span> moved up, <span class="red">red</span> moved down, <span style="color:var(--blue)">blue</span> new to the universe. Week headers in <span class="red">red</span> were risk-off. Tap a coin to open it.`;
+  let h='<table class="rg-table"><thead><tr><th>Rank</th>'+H.dates.map(d=>`<th class="${reg[d]===false?'off':''}">${d.slice(8,10)}/${d.slice(5,7)}</th>`).join('')+'</tr></thead><tbody>';
+  for(let r=1;r<=N;r++){
+    h+=`<tr><th>#${r}</th>`;
+    H.dates.forEach((d,i)=>{
+      const t=byRank[i][r]; if(!t){ h+='<td class="t3">—</td>'; return; }
+      const prev=i>0?H.rank[t][i-1]:undefined;
+      const cls=i===0?'rg-flat':prev==null?'rg-new':prev>r?'rg-up':prev<r?'rg-down':'rg-flat';
+      const inCoins=COINS.some(c=>c.ticker===t);
+      h+=`<td class="rg-cell ${cls}" ${inCoins?`onclick="openCoin('${t}','coins')"`:''}>${esc(sym(t))}</td>`;
+    });
+    h+='</tr>';
+  }
+  const wrap=document.getElementById('rg-wrap'); wrap.innerHTML=h+'</tbody></table>';
+  wrap.scrollLeft=wrap.scrollWidth;   // newest week in view
+}
+function regimeByDate(){
+  const m={}; (DATA.regime.chart||[]).forEach(p=>{ if(isNum(p.sma)) m[p.date]=p.price>p.sma; }); return m;
+}
+
+// ═══════════════════════════════ DETAIL
+function openCoin(t, from){
+  selected=t; prevPage=from||currentPage();
+  navList=(prevPage==='coins'&&coinsView==='list'?filteredCoins():COINS).map(c=>c.ticker);
+  showPage('detail'); renderDetail();
+}
+function step(dir){ const i=navList.indexOf(selected), j=i+dir; if(i<0||j<0||j>=navList.length) return; selected=navList[j]; renderDetail(); window.scrollTo(0,0); }
+function renderDetail(){
+  const c=COINS.find(x=>x.ticker===selected); if(!c){ document.getElementById('detail-content').innerHTML='<div class="empty">Coin not found</div>'; return; }
+  const i=navList.indexOf(selected), r=c.risk;
+  const ranges=[['3m',13],['6m',26],['1y',52],['2y',104]];
+  document.getElementById('detail-content').innerHTML=`
+  <div class="card">
+    <div class="td-header">
+      <button class="back-btn" onclick="showPage(prevPage)">←</button>
+      <div><div class="td-tkr">${esc(c.symbol)}<span class="cat-chip">${esc(c.category)}</span></div><div class="td-name">${esc(c.name)} · ${esc(c.ticker)}</div></div>
+      <div class="step-nav"><button onclick="step(-1)" ${i>0?'':'disabled'}>▲</button><button onclick="step(1)" ${i>=0&&i<navList.length-1?'':'disabled'}>▼</button></div>
+    </div>
+    <div class="td-price">${fmtPrice(c.price)} <span style="font-size:12px;color:var(--teal)">#${c._rank} of ${COINS.length} · score ${num(c._score,2)}</span></div>
+    <div class="chart-controls">
+      ${ranges.map(([k])=>`<button class="cbtn ${k===detailRange?'active':''}" onclick="detailRange='${k}';renderDetail()">${k.toUpperCase()}</button>`).join('')}
+      <span style="flex:1"></span>
+      <button class="cbtn ${overlayOn?'active':''}" onclick="overlayOn=!overlayOn;renderDetail()">Top-${TOPN} overlay</button>
+    </div>
+    ${overlayOn?`<div class="legend"><span><i class="dot" style="background:var(--teal)"></i>In Top ${TOPN} (your weights)</span><span><i class="dot" style="background:#4A5B7A"></i>In universe, outside Top ${TOPN}</span><span><i class="dot" style="background:var(--t2)"></i>Before ranked history</span></div>`:''}
+    <div class="chart-wrap"><canvas id="detail-chart"></canvas><div class="chart-tip" id="detail-tip"></div></div>
+    <div class="note">Log scale. Shaded bands are weeks the BTC regime filter was risk-off.</div>
+
+    <div class="section-hdr">Factors</div>
+    <div class="factor-row" style="margin-bottom:12px">${KEYS.map(k=>chip(k,c.factors[k])).join('')}</div>
+
+    <div class="section-hdr">Composite Score Breakdown</div>
+    ${breakdown(c)}
+
+    <div class="section-hdr">Risk</div>
+    <div class="stat-grid">
+      ${stat('Volatility (13w, ann.)',pctu(r.vol_13w,0))}
+      ${stat('Beta to BTC (26w)',num(r.beta_btc,2))}
+      ${stat('Max drawdown (1y)',pct(r.max_drawdown_1y),r.max_drawdown_1y<-0.6?'var(--red)':null)}
+      ${stat('From 52w high',isNum(r.pct_52w_high)?pct(r.pct_52w_high-1):'—')}
+      ${stat('Median $ volume/day',fmtUsd(r.median_daily_dollar_volume))}
+    </div>
+
+    <div class="section-hdr">Monthly Closes</div>
+    <div class="month-table-wrap"><table class="tbl">
+      <tr><th>Month</th>${c.monthly.map(m=>`<th>${m.date.slice(0,7)}</th>`).join('')}</tr>
+      <tr><td>Close</td>${c.monthly.map(m=>`<td>${fmtPrice(m.price)}</td>`).join('')}</tr>
+      <tr><td>Chg</td>${c.monthly.map(m=>`<td style="color:${rc(m.chg)}">${pct(m.chg,1)}</td>`).join('')}</tr>
+    </table></div>
+  </div>`;
+  drawDetailChart(c, ranges.find(x=>x[0]===detailRange)[1]);
+}
+function stat(l,v,color,sub){ return `<div class="stat"><div class="stat-l">${l}</div><div class="stat-v" ${color?`style="color:${color}"`:''}>${v}</div>${sub?`<div class="stat-s">${sub}</div>`:''}</div>`; }
+function breakdown(c){
+  const tot=KEYS.reduce((a,k)=>a+(+APPLIED[k]||0),0)||1;
+  const rows=KEYS.map(k=>({k,w:(+APPLIED[k]||0)/tot,z:c._z[k]})).map(x=>({...x,c:x.w*x.z})).sort((a,b)=>b.c-a.c);
+  const bar=z=>{ const w=Math.min(50,Math.abs(z)/3*50); return `<span class="sb-bar"><i style="left:${z>=0?50:50-w}%;width:${w}%;background:${z>=0?'var(--green)':'var(--red)'}"></i><i style="left:50%;width:1px;background:var(--t3)"></i></span>`; };
+  return `<div class="score-break">
+    <div class="sb-row head"><span>Factor</span><span>z-score vs universe (±3σ)</span><span class="r">Weight</span><span class="r">Contrib</span></div>
+    ${rows.map(x=>`<div class="sb-row"><span class="t2">${FACTOR_META[x.k].label}</span><span><span class="t3" style="font-size:8px">z ${num(x.z,2)}</span>${bar(x.z)}</span><span class="r t2">${Math.round(x.w*100)}%</span><span class="r" style="color:${rc(x.c)}">${num(x.c,2)}</span></div>`).join('')}
+    <div class="sb-row total"><span>SCORE</span><span class="t3" style="font-size:8px">Σ weight × z, re-standardised</span><span></span><span class="r">${num(c._score,2)}</span></div>
+  </div>`;
+}
+function drawDetailChart(c, weeks){
+  const cv=document.getElementById('detail-chart'); if(!cv) return;
+  const pts=c.chart.slice(-weeks).filter(p=>isNum(p.price)&&p.price>0);
+  const H=rankHistory(), idx={}; H.dates.forEach((d,i)=>idx[d]=i);
+  const rk=H.rank[c.ticker]||[], reg=regimeByDate();
+  const state=pts.map(p=>{ const i=idx[p.date]; if(i==null) return undefined; const r=rk[i]; return r==null?false:r<=TOPN; });
+  lineChart(cv, document.getElementById('detail-tip'), {
+    dates:pts.map(p=>p.date), series:[{vals:pts.map(p=>p.price), color:'#EAF0FB', seg:overlayOn?state:null}],
+    shade:pts.map(p=>reg[p.date]===false), log:true, fmt:fmtPrice,
+    tip:(i)=>`<span class="t3">${pts[i].date}</span> ${fmtPrice(pts[i].price)}${state[i]===true?' <b class="teal">TOP '+TOPN+'</b>':state[i]===false?' <span class="t3">out</span>':''}`
+  });
+}
+
+// generic log/linear multi-line chart with hover
+function lineChart(cv, tip, o){
+  const dpr=window.devicePixelRatio||1, W=cv.parentElement.clientWidth, Hh=cv.parentElement.clientHeight;
+  const paint=(hi)=>{
+    cv.width=W*dpr; cv.height=Hh*dpr; cv.style.width=W+'px'; cv.style.height=Hh+'px';
+    const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,Hh);
+    const n=o.dates.length; if(n<2) return null;
+    const tf=v=>o.log?Math.log(v):v, all=[];
+    o.series.forEach(s=>s.vals.forEach(v=>{ if(isNum(v)&&(!o.log||v>0)) all.push(tf(v)); }));
+    const mn=Math.min(...all), mx=Math.max(...all), rg=(mx-mn)||1;
+    const pad={t:10,b:20,l:56,r:8}, cW=W-pad.l-pad.r, cH=Hh-pad.t-pad.b;
+    const xS=i=>pad.l+i/(n-1)*cW, yS=v=>pad.t+cH-(tf(v)-mn)/rg*cH;
+    if(o.shade){ ctx.fillStyle='rgba(255,92,92,.08)'; o.shade.forEach((s,i)=>{ if(s){ const x0=xS(Math.max(0,i-.5)), x1=xS(Math.min(n-1,i+.5)); ctx.fillRect(x0,pad.t,x1-x0,cH);} }); }
+    ctx.font='9px JetBrains Mono'; ctx.textAlign='right';
+    for(let k=0;k<=4;k++){ const tv=mn+rg*k/4, y=pad.t+cH-cH*k/4, v=o.log?Math.exp(tv):tv;
+      ctx.fillStyle='#23304D'; ctx.fillRect(pad.l,y,cW,1); ctx.fillStyle='#8A9CBC'; ctx.fillText(o.fmt(v),pad.l-5,y+3); }
+    ctx.textAlign='left'; ctx.fillText(o.dates[0].slice(0,7),pad.l,Hh-5); ctx.textAlign='right'; ctx.fillText(o.dates[n-1].slice(0,7),pad.l+cW,Hh-5);
+    o.series.forEach(s=>{
+      ctx.lineWidth=s.width||1.8; ctx.lineJoin='round';
+      if(s.seg){
+        for(let i=1;i<n;i++){ if(!isNum(s.vals[i])||!isNum(s.vals[i-1])) continue;
+          const st=s.seg[i]; ctx.strokeStyle=st===true?'#00D4AA':st===false?'#4A5B7A':'#8A9CBC';
+          ctx.beginPath(); ctx.moveTo(xS(i-1),yS(s.vals[i-1])); ctx.lineTo(xS(i),yS(s.vals[i])); ctx.stroke(); }
+      } else {
+        ctx.strokeStyle=s.color; ctx.setLineDash(s.dash||[]); ctx.beginPath(); let f=true;
+        s.vals.forEach((v,i)=>{ if(!isNum(v)||(o.log&&v<=0)){ f=true; return; } f?ctx.moveTo(xS(i),yS(v)):ctx.lineTo(xS(i),yS(v)); f=false; });
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+    });
+    if(hi!=null){ const x=xS(hi); ctx.strokeStyle='rgba(138,156,188,.5)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+cH); ctx.stroke();
+      o.series.forEach(s=>{ const v=s.vals[hi]; if(isNum(v)){ ctx.beginPath(); ctx.arc(x,yS(v),3,0,7); ctx.fillStyle=s.color||'#EAF0FB'; ctx.fill(); } }); }
+    return {xS,pad,cW,n};
+  };
+  const g=paint(null); if(!g) return;
+  const move=e=>{ const rect=cv.getBoundingClientRect(), cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+    const i=Math.max(0,Math.min(g.n-1,Math.round((cx-g.pad.l)/g.cW*(g.n-1)))); paint(i);
+    tip.innerHTML=o.tip(i); const x=g.xS(i); tip.style.left=Math.min(Math.max(x,70),W-70)+'px'; tip.style.top='4px'; tip.style.transform='translateX(-50%)'; tip.style.opacity=1; };
+  const leave=()=>{ paint(null); tip.style.opacity=0; };
+  cv.onmousemove=move; cv.onmouseleave=leave; cv.ontouchstart=move; cv.ontouchmove=e=>{ move(e); e.preventDefault(); }; cv.ontouchend=leave;
+}
+
+// ═══════════════════════════════ RESEARCH
+function renderResearch(){
+  const R=DATA.research||{}, el=document.getElementById('research-content');
+  if(!R.backtest||R.backtest.error){ el.innerHTML=`<div class="empty">${esc((R.backtest&&R.backtest.error)||'No research results in this payload')}</div>`; return; }
+  const a=R.backtest['blend']||{}, b=R.backtest['blend+regime']||{}, ic4=(R.ic||{})['4w']||{};
+  const dA=(a.deflated_sharpe||{}).dsr, dB=(b.deflated_sharpe||{}).dsr, pbo=(R.pbo||{}).pbo;
+  const sig=ic4.t_stat!=null&&Math.abs(ic4.t_stat)>=2;
+  const dsrPass=Math.max(dA??0,dB??0)>=0.95;
+  const verdict=`<b>Verdict on the default blend:</b> 4-week rank IC ${num(ic4.ic_mean,3)} (Newey-West t ${num(ic4.t_stat,1)}) is ${sig?'statistically distinguishable from zero':'<b>not</b> statistically distinguishable from zero'}.
+    Deflated Sharpe ${num(dA,2)} without / ${num(dB,2)} with the regime filter — ${dsrPass?'at least one clears':'<b>neither clears</b>'} the 0.95 bar after accounting for ${R.n_trials_declared} trials.
+    PBO ${num(pbo,2)}${pbo!=null?(pbo>0.5?' — picking the best of the evaluated configurations is <b>worse than random</b> out of sample':' — selection holds up out of sample better than chance'):''}.
+    Sample starts ${fmtDate(R.start)} (first week with ${'≥'}20 coins), ${num(a.years,1)} years.`;
+
+  const C=R.curves;
+  el.innerHTML=`
+    <div class="note">Everything on this tab is computed by the weekly job on the full point-in-time history, using the <b>config default blend</b> — not the sliders. Top ${DATA.config.topN}, equal weight, rebalanced every ${DATA.config.rebalanceWeeks} weeks, ${DATA.config.oneWayCostBps} bps one-way cost. Universe = top ${DATA.config.universeSize} coins by trailing dollar volume <i>as known each week</i>.</div>
+    <div class="verdict">${verdict}</div>
+
+    <div class="section-hdr">Growth of $1 (log)</div>
+    <div class="legend"><span><i class="dot" style="background:var(--teal)"></i>Blend</span><span><i class="dot" style="background:var(--orange)"></i>Blend + regime</span><span><i class="dot" style="background:#8A9CBC"></i>BTC buy &amp; hold</span><span><i class="dot" style="background:var(--purple)"></i>Equal-weight universe</span></div>
+    <div class="chart-wrap tall"><canvas id="eq-chart"></canvas><div class="chart-tip" id="eq-tip"></div></div>
+    <div class="note">Red bands: regime risk-off (the filtered book was in cash).</div>
+
+    <div class="section-hdr">Performance</div>
+    <div class="month-table-wrap"><table class="tbl">
+      <tr><th>Metric</th><th>Blend</th><th>Blend + regime</th></tr>
+      ${[['CAGR','cagr',pct,1],['Volatility','vol_ann',pctu,0],['Sharpe','sharpe',num,2],['Sortino','sortino',num,2],['Max drawdown','max_drawdown',pct,0],['Calmar','calmar',num,2],['Weekly hit rate','hit_rate',pctu,0],['Turnover / yr','annual_turnover',v=>num(v,1)+'×'],['Cost drag / yr','total_cost_drag_ann',pctu,1],['Breakeven cost (bps)','breakeven_cost_bps',v=>num(v,0)]]
+        .map(([l,k,f,d])=>`<tr><td>${l}</td><td>${f(a[k],d)}</td><td>${f(b[k],d)}</td></tr>`).join('')}
+      <tr><td>Deflated Sharpe</td><td style="color:${(dA??0)>=.95?'var(--green)':'var(--red)'}">${num(dA,2)}</td><td style="color:${(dB??0)>=.95?'var(--green)':'var(--red)'}">${num(dB,2)}</td></tr>
+      <tr><td>Active vs BTC / yr</td><td>${pct(a.benchmark&&a.benchmark.active_return_ann,1)}</td><td>${pct(b.benchmark&&b.benchmark.active_return_ann,1)}</td></tr>
+      <tr><td>Active t-stat</td><td>${num(a.benchmark&&a.benchmark.active_t_stat,2)}</td><td>${num(b.benchmark&&b.benchmark.active_t_stat,2)}</td></tr>
+      <tr><td>Weeks to recover max DD</td><td>${a.drawdown_detail&&a.drawdown_detail.still_underwater?'still under':num(a.drawdown_detail&&a.drawdown_detail.weeks_to_recover,0)}</td><td>${b.drawdown_detail&&b.drawdown_detail.still_underwater?'still under':num(b.drawdown_detail&&b.drawdown_detail.weeks_to_recover,0)}</td></tr>
+    </table></div>
+
+    <div class="section-hdr">Predictive Power (rank IC)</div>
+    <div class="month-table-wrap"><table class="tbl">
+      <tr><th>Horizon</th><th>Mean IC</th><th>NW t-stat</th><th>IC IR</th><th>Hit rate</th><th>Weeks</th><th>Avg breadth</th></tr>
+      ${Object.entries(R.ic||{}).map(([h,x])=>`<tr><td>${h}</td><td style="color:${rc(x.ic_mean)}">${num(x.ic_mean,3)}</td><td style="color:${x.t_stat!=null&&Math.abs(x.t_stat)>=2?'var(--green)':'var(--t2)'}">${num(x.t_stat,2)}</td><td>${num(x.ic_ir,2)}</td><td>${pctu(x.hit_rate,0)}</td><td>${x.n_periods??'—'}</td><td>${num(x.avg_breadth,0)}</td></tr>`).join('')}
+    </table></div>
+    <div class="note" style="margin-top:6px">t-stats are Newey-West corrected for overlapping horizons. |t| ≥ 2 shaded green. An IC above ~0.15 on a price-only signal usually means a bug, not an edge.</div>
+
+    <div class="section-hdr">Single-Factor IC (4-week)</div>
+    <div class="month-table-wrap"><table class="tbl">
+      <tr><th>Factor</th><th>Mean IC</th><th>t-stat</th><th>IC IR</th><th>Hit rate</th><th>Top-${DATA.config.topN} CAGR</th><th>+ regime</th></tr>
+      ${KEYS.map(k=>{ const x=(R.factor_ic_4w||{})[k]||{}, t1=(R.trials||{})[k]||{}, t2=(R.trials||{})[k+'+regime']||{};
+        return `<tr><td>${FACTOR_META[k].name}</td><td style="color:${rc(x.ic_mean)}">${num(x.ic_mean,3)}</td><td>${num(x.t_stat,2)}</td><td>${num(x.ic_ir,2)}</td><td>${pctu(x.hit_rate,0)}</td><td>${pct(t1.cagr,1)}</td><td>${pct(t2.cagr,1)}</td></tr>`; }).join('')}
+    </table></div>
+
+    <div class="section-hdr">Quintile Spread (4-week forward)</div>
+    ${quintiles(R.quintiles_4w)}
+
+    <div class="section-hdr">Calendar Years</div>
+    <div class="month-table-wrap"><table class="tbl">
+      <tr><th>Year</th><th>Blend</th><th>+ regime</th><th>BTC</th><th>Blend max DD</th><th>Blend Sharpe</th></tr>
+      ${(a.annual_returns||[]).map(y=>{ const yb=(b.annual_returns||[]).find(z=>z.year===y.year)||{};
+        return `<tr><td>${y.year}${y.partial?' <span class="t3">(part)</span>':''}</td><td style="color:${rc(y.return)}">${pct(y.return,0)}</td><td style="color:${rc(yb.return)}">${pct(yb.return,0)}</td><td style="color:${rc(y.benchmark_return)}">${pct(y.benchmark_return,0)}</td><td>${pct(y.max_drawdown,0)}</td><td>${num(y.sharpe,2)}</td></tr>`; }).join('')}
+    </table></div>
+
+    <div class="section-hdr">Overfitting Checks</div>
+    <div class="stat-grid">
+      ${stat('Trials declared',R.n_trials_declared??'—','', 'configs evaluated or tried')}
+      ${stat('PBO (CSCV)',num(pbo,2),pbo>0.5?'var(--red)':pbo!=null?'var(--green)':null,'> 0.5 = selection is noise')}
+      ${stat('Signal autocorr',num((R.autocorr||{}).autocorr,2),'',`${(R.autocorr||{}).lag_weeks||'—'}-week lag`)}
+      ${stat('Implied turnover',pctu((R.autocorr||{}).implied_turnover_per_rebal,0),'','of book per rebalance')}
+    </div>
+
+    <div class="section-hdr">Data</div>
+    <div class="note">Config <code>${esc(DATA.manifest.configHash)}</code> · git <code>${esc(DATA.manifest.gitRev)}</code> · volume units: ${esc(DATA.manifest.volumeUnits||'—')} · ${DATA.universeSize} coins investable of ${DATA.candidateCount} candidates.
+      ${(DATA.missingTickers||[]).length?`<br>No Yahoo data for: ${DATA.missingTickers.map(esc).join(', ')}.`:''}
+      ${(DATA.qualityWarnings||[]).length?`<br><span class="amber">Warnings:</span> ${DATA.qualityWarnings.map(esc).join(' · ')}`:''}
+      <br><br><b>Known limits.</b> The candidate list was written in hindsight, so a coin that was big and has since vanished from Yahoo entirely cannot appear — the backtest is still somewhat flattered. A held coin whose feed stops is treated as flat, not as a total loss. Costs are a single middling guess; small caps cost more.</div>`;
+
+  requestAnimationFrame(()=>{
+    const cv=document.getElementById('eq-chart'); if(!cv||!C) return;
+    lineChart(cv, document.getElementById('eq-tip'), {
+      dates:C.dates, log:true, fmt:v=>v>=10?v.toFixed(0)+'×':v.toFixed(2)+'×', shade:C.regime.map(x=>!x),
+      series:[{vals:C.ew_universe,color:'#A78BFA',width:1.2},{vals:C.btc,color:'#8A9CBC',width:1.4},{vals:C.blend,color:'#00D4AA'},{vals:C.blend_regime,color:'#F7931A'}],
+      tip:i=>`<span class="t3">${C.dates[i]}</span><br><span class="teal">Blend ${num(C.blend[i],2)}×</span> · <span style="color:var(--orange)">+regime ${num(C.blend_regime[i],2)}×</span><br><span class="t2">BTC ${num(C.btc[i],2)}×</span> · <span style="color:var(--purple)">EW ${num(C.ew_universe[i],2)}×</span>`
+    });
+  });
+}
+function quintiles(Q){
+  if(!Q||!Q.buckets) return '<div class="empty">Not enough history</div>';
+  const mx=Math.max(...Q.buckets.map(b=>Math.abs(b.mean_fwd_ret)))||1;
+  return `<div class="card"><div class="q-bars">${Q.buckets.map(b=>`<div class="q-bar"><div class="q-val" style="color:${rc(b.mean_fwd_ret)}">${pct(b.mean_fwd_ret,1)}</div><div class="q-fill" style="height:${(Math.abs(b.mean_fwd_ret)/mx*80).toFixed(0)}%;background:${b.mean_fwd_ret>=0?'var(--green)':'var(--red)'};opacity:.75"></div></div>`).join('')}</div>
+    <div style="display:flex;gap:8px;padding:4px 4px 0">${Q.buckets.map(b=>`<div class="q-lbl">Q${b.bucket}${b.bucket===1?' low':b.bucket===Q.buckets.length?' high':''}</div>`).join('')}</div>
+    <div class="note" style="margin:10px 0 0">Mean 4-week forward return by score quintile. Top–bottom spread ${pct(Q.spread_mean,1)} per period (t ${num(Q.spread_t_stat,2)}), monotonicity ρ ${num(Q.monotonicity_rho,2)}. A real factor shows a staircase, not one lucky bucket.</div></div>`;
+}
+
+// ═══════════════════════════════ HISTORY
+async function loadHistory(){
+  try{
+    const r=await fetch(HISTORY_URL,{cache:'no-store'}); if(!r.ok) return;
+    const rows=(await r.text()).trim().split('\n').filter(Boolean).map(l=>JSON.parse(l)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,40);
+    if(!rows.length) return;
+    document.getElementById('history-list').innerHTML=rows.map(s=>`<div class="history-row"><span class="history-date">${s.asOf||s.date}</span>
+      <span class="${s.riskOn===false?'red':'green'}" style="font-size:8px;width:58px;flex-shrink:0">${s.riskOn===false?'RISK-OFF':'RISK-ON'}</span>
+      <span class="history-tickers">${(s.markets.crypto||[]).map(p=>esc(p.ticker.split('-')[0].replace(/\d+$/,''))).join(', ')}</span></div>`).join('');
+  }catch(e){}
+}
+
+// ═══════════════════════════════ ROUTING
+function currentPage(){ const p=document.querySelector('.page.active'); return p?p.id.replace('page-',''):'picks'; }
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===id));
+  window.scrollTo(0,0);
+  if(!DATA) return;
+  if(id==='research') renderResearch();
+  if(id==='coins') coinsView==='grid'?renderGrid():renderList();
+}
+function renderAll(){
+  renderPicks(); renderList();
+  if(coinsView==='grid') renderGrid();
+  if(currentPage()==='detail') renderDetail();
+  if(currentPage()==='research') renderResearch();
+}
+document.addEventListener('keydown',e=>{
+  if(currentPage()==='detail'){ if(e.key==='ArrowUp'){ e.preventDefault(); step(-1); } else if(e.key==='ArrowDown'){ e.preventDefault(); step(1); } else if(e.key==='Escape') showPage(prevPage); }
+});
+let rsz; window.addEventListener('resize',()=>{ clearTimeout(rsz); rsz=setTimeout(()=>{ if(!DATA) return; const p=currentPage(); if(p==='detail') renderDetail(); else if(p==='research') renderResearch(); else if(p==='picks') renderPicks(); },150); });
+window.addEventListener('load', loadData);
+</script>
+</body>
+</html>

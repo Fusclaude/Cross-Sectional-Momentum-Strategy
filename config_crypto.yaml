@@ -1,0 +1,250 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# config_crypto.yaml — single source of truth for the CRYPTO sleeve.
+#
+# Kept separate from config.yaml on purpose: the equity manifest hash, trial
+# count and analytics stay untouched by anything done here, and the crypto
+# sleeve can be retuned (or deleted) without invalidating a single equity
+# result. Each run records the SHA-256 of THIS file in crypto_signals.json.
+# ─────────────────────────────────────────────────────────────────────────────
+schema_version: 1
+
+data:
+  # BTC/ETH history on Yahoo starts 2014/2017; most alts 2017-2021. Starting in
+  # 2017 keeps the earliest cross-sections from being a 5-coin universe.
+  start: "2017-01-01"
+  # Crypto trades 24/7. Weeks end at the Sunday 00:00 UTC daily bar's close
+  # (i.e. Sunday 23:59 UTC). The fetch drops the in-progress day and any
+  # incomplete final week, so a run at any time only ever sees closed weeks.
+  resample: W-SUN
+  # Yahoo reports crypto volume in USD (quote currency), not coins. The fetch
+  # auto-detects this from BTC's volume scale and records which it used;
+  # "auto" is the right setting unless that detection is ever wrong.
+  volume_units: auto           # auto | usd | coins
+
+quality:
+  # Latest closed weekly bar must be at most this old (days) at run time.
+  max_staleness_days: 9
+  # These must be present and current, or the run fails. Everything else may
+  # be missing — delisted/renamed coins are expected in a survivorship-aware
+  # candidate list and are reported, not fatal.
+  required: [BTC-USD, ETH-USD]
+  # Fail if fewer than this many coins are investable at the latest week.
+  min_universe: 20
+  # Weekly moves this large are reported as warnings, never failures. Crypto
+  # genuinely does +300% / -90% weeks (LUNA, FTT). A split-style gate like the
+  # equity one would fire every month here.
+  extreme_week_warn: 2.0
+
+universe:
+  # Point-in-time liquidity universe, rebuilt EVERY WEEK from data available
+  # that week: the top N coins by trailing median daily dollar volume.
+  # Membership is never taken from today's market-cap table — that is the
+  # single biggest source of survivorship bias in crypto backtests.
+  size: 50
+  dollar_volume_weeks: 13       # trailing window for the liquidity ranking
+  min_daily_dollar_volume: 5000000
+  min_history_weeks: 30         # seasoning: covers the 26w lookback + buffer
+  min_price: 0.0                # meme coins legitimately trade at 1e-5
+  # Stablecoins / pegged / wrapped assets are removed by name AND by a
+  # behavioural test (price near 1.0 with near-zero volatility), so a new
+  # stablecoin added to the list below is caught even if not named here.
+  exclude:
+    - USDT-USD
+    - USDC-USD
+    - DAI-USD
+    - BUSD-USD
+    - TUSD-USD
+    - USDP-USD
+    - UST-USD
+    - USTC-USD
+    - FDUSD-USD
+    - PYUSD-USD
+    - USDE-USD
+    - USDD-USD
+    - FRAX-USD
+    - GUSD-USD
+    - WBTC-USD
+    - WETH-USD
+    - STETH-USD
+    - WSTETH-USD
+    - PAXG-USD
+    - XAUT-USD
+  stablecoin_test:
+    weeks: 26
+    max_abs_deviation_from_1: 0.05
+    max_annual_vol: 0.10
+
+  # Candidate list. Deliberately includes coins that were large and then
+  # collapsed or faded (LUNC/Terra, FTT, CEL, EOS, NEO, XEM, BSV, WAVES ...).
+  # They were in the investable top-50 at the time, so a backtest that
+  # leaves them out is testing a universe nobody could have known in
+  # advance. Tickers Yahoo no longer serves are logged and skipped.
+  #
+  # CAVEAT: the list itself was written in 2026, so which DEAD coins made it
+  # onto it is still a hindsight choice. The liquidity ranking removes most
+  # of the bias, not all of it. Add any delisted coin you remember being big.
+  #
+  # category is informational (shown on the dashboard); the crypto composite
+  # is NOT category-neutralised — categories are subjective and too thin.
+  candidates:
+    BTC-USD: {name: Bitcoin, category: Store of value}
+    ETH-USD: {name: Ethereum, category: Layer 1}
+    BNB-USD: {name: BNB, category: Exchange}
+    XRP-USD: {name: XRP, category: Payments}
+    SOL-USD: {name: Solana, category: Layer 1}
+    ADA-USD: {name: Cardano, category: Layer 1}
+    DOGE-USD: {name: Dogecoin, category: Meme}
+    TRX-USD: {name: TRON, category: Layer 1}
+    TON11419-USD: {name: Toncoin, category: Layer 1}
+    AVAX-USD: {name: Avalanche, category: Layer 1}
+    SHIB-USD: {name: Shiba Inu, category: Meme}
+    DOT-USD: {name: Polkadot, category: Layer 0}
+    LINK-USD: {name: Chainlink, category: Oracle}
+    BCH-USD: {name: Bitcoin Cash, category: Payments}
+    LTC-USD: {name: Litecoin, category: Payments}
+    NEAR-USD: {name: NEAR Protocol, category: Layer 1}
+    UNI7083-USD: {name: Uniswap, category: DeFi}
+    ICP-USD: {name: Internet Computer, category: Layer 1}
+    APT21794-USD: {name: Aptos, category: Layer 1}
+    SUI20947-USD: {name: Sui, category: Layer 1}
+    XLM-USD: {name: Stellar, category: Payments}
+    ETC-USD: {name: Ethereum Classic, category: Layer 1}
+    XMR-USD: {name: Monero, category: Privacy}
+    HBAR-USD: {name: Hedera, category: Layer 1}
+    FIL-USD: {name: Filecoin, category: Storage}
+    ATOM-USD: {name: Cosmos, category: Layer 0}
+    CRO-USD: {name: Cronos, category: Exchange}
+    OKB-USD: {name: OKB, category: Exchange}
+    LEO-USD: {name: UNUS SED LEO, category: Exchange}
+    MATIC-USD: {name: Polygon (MATIC), category: Layer 2}
+    POL28321-USD: {name: Polygon (POL), category: Layer 2}
+    ARB11841-USD: {name: Arbitrum, category: Layer 2}
+    OP-USD: {name: Optimism, category: Layer 2}
+    IMX10603-USD: {name: Immutable, category: Gaming}
+    STX4847-USD: {name: Stacks, category: Layer 2}
+    INJ-USD: {name: Injective, category: DeFi}
+    VET-USD: {name: VeChain, category: Enterprise}
+    ALGO-USD: {name: Algorand, category: Layer 1}
+    AAVE-USD: {name: Aave, category: DeFi}
+    MKR-USD: {name: Maker, category: DeFi}
+    GRT6719-USD: {name: The Graph, category: Infrastructure}
+    RNDR-USD: {name: Render, category: AI}
+    RENDER-USD: {name: Render (new), category: AI}
+    FET-USD: {name: Fetch.ai, category: AI}
+    TAO22974-USD: {name: Bittensor, category: AI}
+    PEPE24478-USD: {name: Pepe, category: Meme}
+    WIF-USD: {name: dogwifhat, category: Meme}
+    BONK-USD: {name: Bonk, category: Meme}
+    SEI-USD: {name: Sei, category: Layer 1}
+    TIA22861-USD: {name: Celestia, category: Layer 1}
+    KAS-USD: {name: Kaspa, category: Layer 1}
+    ENA-USD: {name: Ethena, category: DeFi}
+    ONDO-USD: {name: Ondo, category: RWA}
+    HYPE32196-USD: {name: Hyperliquid, category: DeFi}
+    RUNE-USD: {name: THORChain, category: DeFi}
+    LDO-USD: {name: Lido DAO, category: DeFi}
+    QNT-USD: {name: Quant, category: Infrastructure}
+    EGLD-USD: {name: MultiversX, category: Layer 1}
+    THETA-USD: {name: Theta Network, category: Media}
+    SAND-USD: {name: The Sandbox, category: Gaming}
+    MANA-USD: {name: Decentraland, category: Gaming}
+    AXS-USD: {name: Axie Infinity, category: Gaming}
+    APE18876-USD: {name: ApeCoin, category: Gaming}
+    GALA-USD: {name: Gala, category: Gaming}
+    CHZ-USD: {name: Chiliz, category: Fan tokens}
+    FLOW-USD: {name: Flow, category: Layer 1}
+    XTZ-USD: {name: Tezos, category: Layer 1}
+    EOS-USD: {name: EOS, category: Layer 1}
+    NEO-USD: {name: NEO, category: Layer 1}
+    IOTA-USD: {name: IOTA, category: Layer 1}
+    MIOTA-USD: {name: IOTA (old), category: Layer 1}
+    XEM-USD: {name: NEM, category: Layer 1}
+    BSV-USD: {name: Bitcoin SV, category: Payments}
+    ZEC-USD: {name: Zcash, category: Privacy}
+    DASH-USD: {name: Dash, category: Privacy}
+    WAVES-USD: {name: Waves, category: Layer 1}
+    KSM-USD: {name: Kusama, category: Layer 0}
+    ZIL-USD: {name: Zilliqa, category: Layer 1}
+    ONE3945-USD: {name: Harmony, category: Layer 1}
+    CELO-USD: {name: Celo, category: Layer 1}
+    KAVA-USD: {name: Kava, category: DeFi}
+    MINA-USD: {name: Mina, category: Layer 1}
+    ROSE-USD: {name: Oasis, category: Layer 1}
+    FTM-USD: {name: Fantom, category: Layer 1}
+    COMP5692-USD: {name: Compound, category: DeFi}
+    SNX-USD: {name: Synthetix, category: DeFi}
+    YFI-USD: {name: yearn.finance, category: DeFi}
+    SUSHI-USD: {name: SushiSwap, category: DeFi}
+    CRV-USD: {name: Curve DAO, category: DeFi}
+    CAKE-USD: {name: PancakeSwap, category: DeFi}
+    1INCH-USD: {name: 1inch, category: DeFi}
+    ENJ-USD: {name: Enjin, category: Gaming}
+    BAT-USD: {name: Basic Attention, category: Media}
+    ZRX-USD: {name: 0x, category: DeFi}
+    OMG-USD: {name: OMG Network, category: Layer 2}
+    ICX-USD: {name: ICON, category: Layer 1}
+    QTUM-USD: {name: Qtum, category: Layer 1}
+    ONT-USD: {name: Ontology, category: Layer 1}
+    BTG-USD: {name: Bitcoin Gold, category: Payments}
+    DGB-USD: {name: DigiByte, category: Payments}
+    LSK-USD: {name: Lisk, category: Layer 1}
+    HNT-USD: {name: Helium, category: Infrastructure}
+    KLAY-USD: {name: Klaytn, category: Layer 1}
+    AR-USD: {name: Arweave, category: Storage}
+    LUNC-USD: {name: Terra Classic (LUNA), category: Layer 1}
+    FTT-USD: {name: FTX Token, category: Exchange}
+    CEL-USD: {name: Celsius, category: CeFi}
+    HT-USD: {name: Huobi Token, category: Exchange}
+
+factors:
+  weeks_per_month: 4.345
+  # Equity momentum skips the latest month because of 1-month reversal. In
+  # crypto that reversal is weak and the signal lives at 1-8 week horizons
+  # (Liu, Tsyvinski & Wu 2022), so the default is NO skip. Raising this is a
+  # new research configuration and should bump evaluation.n_trials.
+  skip_weeks: 0
+  winsor_sigma: 3.0
+
+# Default blend for the Python reference book and the backtest. The dashboard
+# opens with these and lets you move them; any blend you settle on after
+# looking at results is another trial -- record it in n_trials.
+default_weights:
+  m1: 15      # 4-week return
+  m2: 20      # 8-week return
+  m3: 20      # 13-week return
+  m6: 15      # 26-week return
+  q2: 5       # R² of log-trend, 8 weeks
+  q3: 5       # R² of log-trend, 13 weeks
+  q6: 5       # R² of log-trend, 26 weeks
+  vadj: 15    # 13-week return / 13-week volatility
+
+regime:
+  # Crypto cross-sections are dominated by BTC beta: in a BTC bear market the
+  # best-ranked coin usually still loses money. The rule: hold the book only
+  # while BTC's weekly close is above its N-week simple moving average, cash
+  # otherwise. Evaluated at the same close the book is formed on -- no peek.
+  enabled: true
+  asset: BTC-USD
+  sma_weeks: 20
+
+evaluation:
+  forward_horizons_weeks: [1, 4, 13]
+  n_buckets: 5              # quintiles: a 50-coin universe is too thin for deciles
+  newey_west_lags: 4
+  min_names: 20             # skip cross-sections thinner than this
+  # Configurations evaluated by run_crypto.py (8 single-factor books + the
+  # default blend, each with and without the regime filter = 18), plus
+  # anything you tried by hand. Never lower it.
+  n_trials: 18
+
+portfolio:
+  top_n: 5
+  rebalance_weeks: 4
+  # Charged per unit of one-way turnover (sum |Δw| counts both legs).
+  # ~10 bps taker fee + ~20 bps spread/slippage on a top-50 coin. Majors are
+  # cheaper, small caps much dearer -- this is a deliberately middling guess.
+  one_way_cost_bps: 30
+
+dashboard:
+  history_weeks: 52         # weeks of factor history shipped for the rank grid
+  chart_weeks: 104

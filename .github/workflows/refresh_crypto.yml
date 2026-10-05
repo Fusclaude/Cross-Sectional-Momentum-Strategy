@@ -1,0 +1,112 @@
+name: Refresh Crypto Sleeve
+
+# Separate from refresh.yml on purpose: a crypto data problem must never block
+# the equity refresh, and vice versa. Shares the equity workflow's concurrency
+# group so the two never commit to main or deploy Pages at the same moment.
+#
+# Schedule: Monday 00:45 UTC (Monday ~11:45 AEDT / 10:45 AEST). Crypto weeks
+# close at Sunday 23:59 UTC; the fetch drops any still-open day or week, so the
+# exact run time never changes the numbers.
+on:
+  schedule:
+    - cron: "45 0 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: momentum-signals
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Includes tests/test_crypto.py: point-in-time truncation of the factor
+      # panel, universe and regime, plus a check that the dashboard's own JS
+      # scorer ranks identically to Python (node is preinstalled on runners).
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      # Exits non-zero on stale data, BTC/ETH missing, or a thin universe.
+      # Dead or renamed candidate coins are reported, not fatal.
+      - name: Fetch crypto prices (data quality gate)
+        run: python scripts/fetch_crypto.py
+
+      - name: Compute crypto signals and research
+        run: python scripts/run_crypto.py
+
+      - name: Sanity-check outputs
+        run: |
+          python - <<'PY'
+          import json, sys
+          from pathlib import Path
+          s = json.loads(Path("data/crypto_signals.json").read_text())
+          problems = list(s.get("qualityProblems", []))
+          if s["universeSize"] < 20:
+              problems.append(f"only {s['universeSize']} coins in universe")
+          if not s.get("book"):
+              problems.append("empty reference book")
+          ic = (s.get("research") or {}).get("ic", {}).get("4w", {})
+          # A price-only signal with a mean rank IC this high is a lookahead
+          # bug, not an edge. Refuse to publish it.
+          if ic.get("ic_mean") is not None and abs(ic["ic_mean"]) > 0.2:
+              problems.append(f"implausible 4w IC {ic['ic_mean']:.3f} -- check for lookahead")
+          if problems:
+              print("SANITY CHECK FAILED:")
+              for p in problems:
+                  print("  -", p)
+              sys.exit(1)
+          print("Sanity checks passed.")
+          PY
+
+      - name: Copy data into docs/ for the dashboard
+        run: |
+          mkdir -p docs/data
+          cp data/crypto_signals.json docs/data/
+          cp data/crypto_picks_history.jsonl docs/data/ 2>/dev/null || true
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "momentum-bot"
+          git config user.email "actions@github.com"
+          git add data/crypto_prices.json data/crypto_signals.json data/crypto_picks_history.jsonl docs/data/
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-refresh crypto $(date -u +%Y-%m-%d)"
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+            git push
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy-pages:
+    needs: refresh
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

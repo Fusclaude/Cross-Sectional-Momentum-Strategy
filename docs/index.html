@@ -25,6 +25,8 @@ body{font-family:var(--sans);color:var(--t1);min-height:100vh;padding-bottom:cal
 .top-hdr{position:sticky;top:0;z-index:200;background:var(--p1);border-bottom:1px solid var(--bdr);padding:9px 14px}
 .top-row{display:flex;align-items:center;gap:8px}
 .logo{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--teal);letter-spacing:.04em}
+.sleeve-link{font-family:var(--mono);font-size:10px;color:var(--t2);text-decoration:none;border:1px solid var(--bdr2);border-radius:5px;padding:3px 8px}
+.sleeve-link:hover{color:#F7931A;border-color:#F7931A}
 .status-pill{font-family:var(--mono);font-size:9px;color:var(--t3);background:var(--p2);border:1px solid var(--bdr);border-radius:3px;padding:2px 7px;margin-left:auto;display:flex;align-items:center;gap:5px}
 .status-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
 .status-dot.stale{background:var(--amber)}
@@ -293,6 +295,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 <header class="top-hdr">
   <div class="top-row">
     <div class="logo">MOMENTUM DASHBOARD</div>
+    <a class="sleeve-link" href="crypto/">Crypto</a>
     <div class="status-pill" id="status-pill"><span class="status-dot" id="status-dot"></span><span id="status-text">Loading…</span></div>
   </div>
   <div class="market-tabs">
