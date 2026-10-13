@@ -97,6 +97,35 @@ def _extract(frames: list[pd.DataFrame], chunks: list[list[str]], field: str) ->
     return pd.DataFrame(cols).sort_index()
 
 
+def trim_incomplete_tail(weekly: pd.DataFrame, weekly_dv: pd.DataFrame,
+                         min_frac: float = 0.5) -> tuple[pd.DataFrame, pd.DataFrame, list]:
+    """
+    Drop trailing weekly bars priced for fewer than `min_frac` of the names
+    priced in the best of the four weeks before. Returns (weekly, weekly_dv,
+    dropped bar dates).
+
+    A run part-way through a week creates a bar for the week in progress. That
+    is fine when the feed has the new days for every name, but Yahoo publishes
+    ASX daily bars unevenly after the close: on 2026-10-13 a Tuesday run got
+    the new week for ONE ASX stock. The bar existed, every other name was NaN
+    on it, and since the ranking is taken at the last bar the cross-section
+    collapsed from ~290 names to 1. A bar most of the universe has no price
+    for is not the latest week, it is a feed still filling in, so it is
+    dropped and the last complete week is used instead.
+    """
+    dropped = []
+    while len(weekly) >= 2:
+        last = int(weekly.iloc[-1].notna().sum())
+        # Compare with the best-covered of the previous four weeks, so two
+        # incomplete bars in a row can't vouch for each other.
+        ref = int(weekly.iloc[-5:-1].notna().sum(axis=1).max())
+        if ref == 0 or last >= min_frac * ref:
+            break
+        dropped.append(weekly.index[-1])
+        weekly, weekly_dv = weekly.iloc[:-1], weekly_dv.iloc[:-1]
+    return weekly, weekly_dv, dropped
+
+
 def fetch_market(tickers: list[str], names: dict, sectors: dict,
                  label: str, cfg: dict) -> dict:
     dcfg = cfg["data"]
@@ -122,6 +151,13 @@ def fetch_market(tickers: list[str], names: dict, sectors: dict,
     weekly = daily_px.resample(rule).last()
     weekly_dv = daily_dv.resample(rule).mean()          # avg daily $ volume in week
     median_dv = daily_dv.tail(60).median()              # 60-trading-day median
+
+    weekly, weekly_dv, incomplete = trim_incomplete_tail(
+        weekly, weekly_dv, dcfg.get("min_last_bar_coverage", 0.5))
+    if incomplete:
+        print(f"    dropped incomplete latest bar(s) "
+              f"{', '.join(d.strftime('%Y-%m-%d') for d in incomplete)}: "
+              f"too few names priced yet; using {weekly.index[-1].date()}")
 
     # ── Coverage filter ───────────────────────────────────────────────────
     # Measured SINCE EACH TICKER'S FIRST OBSERVATION, not against the whole
@@ -179,6 +215,7 @@ def fetch_market(tickers: list[str], names: dict, sectors: dict,
         "sectors": {t: sectors.get(t, "—") for t in keep},
         "ipoDates": {t: d for t, d in IPO_DATES.items() if t in keep},
         "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "droppedIncompleteBars": [d.strftime("%Y-%m-%d") for d in incomplete],
     }
 
 
@@ -384,6 +421,10 @@ def main() -> None:
         failures, warnings = quality_gate(
             payload, label, cfg["quality"],
             min_price=cfg["universe"]["min_price"].get(market, 0.0))
+        if payload.get("droppedIncompleteBars"):
+            warnings.append(f"{label}: dropped incomplete latest bar(s) "
+                            f"{', '.join(payload['droppedIncompleteBars'])} — the feed had "
+                            f"prices for too few names; ranking uses {payload['dates'][-1]}")
         payload["qualityProblems"] = failures
         payload["qualityWarnings"] = warnings
         all_problems += failures

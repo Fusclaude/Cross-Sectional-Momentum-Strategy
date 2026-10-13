@@ -14,6 +14,12 @@ data:
   # research-grade factor statistics; it costs nothing extra from yfinance.
   lookback_days: 3650
   resample: W-FRI          # weekly, Friday close
+  # A newest weekly bar priced for fewer than this fraction of the names in
+  # the bar before it is a feed still filling in (a mid-week run before Yahoo
+  # has published every ASX close), not a real week. It is dropped so the
+  # ranking uses the last complete week instead of collapsing to a handful of
+  # names, which is what failed the 2026-10-13 run.
+  min_last_bar_coverage: 0.5
   # Coverage is measured SINCE EACH TICKER'S FIRST BAR, not across the whole
   # window -- otherwise a 10-year fetch deletes every recent listing.
   min_coverage: 0.30
